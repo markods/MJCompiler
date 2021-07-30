@@ -1,4 +1,4 @@
-package rs.ac.bg.etf.pp1.test;
+package rs.ac.bg.etf.pp1;
 
 import java.util.List;
 
