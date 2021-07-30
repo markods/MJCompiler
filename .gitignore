@@ -178,7 +178,7 @@ $RECYCLE.BIN/
 
 
 ### My rules ###
-!**/lib/*.jar
+!**/lib/**/*.jar
 
 
 
