@@ -4,6 +4,10 @@
 
 package rs.ac.bg.etf.pp1;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+
 /** CUP generated interface containing symbol constants (terminals). */
 public class sym {
     // utility symbols
@@ -82,137 +86,43 @@ public class sym {
     // identifiers
     public static final int IDENTIFIER       = 100;
 
-
+    
+    // TODO: don't forget to add this code when this file regenerates
+    private static ArrayList<String> symbolNameList = null;
+    
     public static String getSymbolName( int symbol_id )
     {
-        return symbol_names[ symbol_id ];
+        if( symbolNameList == null )
+        {
+            Field[] fieldList = sym.class.getFields();
+            symbolNameList = new ArrayList<>( fieldList.length );
+
+            sym symbolInstance = new sym();
+            int wantedModifiers = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
+            for( Field field : fieldList )
+            {
+                try
+                {
+                    int fieldModifiers = field.getModifiers();
+                    if( field.getType() == int.class && ( fieldModifiers & wantedModifiers ) == wantedModifiers )
+                    {
+                        int fieldValue = field.getInt( symbolInstance );
+                        String fieldName = field.getName();
+
+                        while( fieldValue >= symbolNameList.size() )
+                        {
+                            symbolNameList.add( null );
+                        }
+                        
+                        symbolNameList.set( fieldValue, fieldName );
+                    }
+                }
+                catch( IllegalAccessException ex )
+                {}
+            }
+        }
+        
+        return symbolNameList.get( symbol_id );
     }
-
-    private static final String[] symbol_names = {
-        // utility symbols
-        "EOF",             // 0
-        "error",           // 1
-        "EOF_RULE",        // 2
-        "NO_ACTION",       // 3
-        "LOOK_AHEAD",      // 4
-        "WHITESPACE",      // 5
-
-        "--reserved--",    // 6
-        "--reserved--",    // 7
-        "--reserved--",    // 8
-        "--reserved--",    // 9
-
-        // keywords
-        "K_PROGRAM",       // 10
-        "K_CLASS",         // 11
-        "K_ENUM",          // 12
-        "K_EXTENDS",       // 13
-
-        "K_CONST",         // 14
-        "K_VOID",          // 15
-        "K_INT",           // 16
-        "K_BOOL",          // 17
-        "K_CHAR",          // 18
-
-        "K_IF",            // 19
-        "K_ELSE",          // 20
-        "K_SWITCH",        // 21
-        "K_CASE",          // 22
-        "K_DEFAULT",       // 23
-        "K_BREAK",         // 24
-        "K_CONTINUE",      // 25
-        "K_RETURN",        // 26
-
-        "K_DO",            // 27
-        "K_WHILE",         // 28
-
-        "K_NEW",           // 29
-        "K_PRINT",         // 30
-        "K_READ",          // 31
-
-        "--reserved--",    // 32
-        "--reserved--",    // 33
-        "--reserved--",    // 34
-        "--reserved--",    // 35
-        "--reserved--",    // 36
-        "--reserved--",    // 37
-        "--reserved--",    // 38
-        "--reserved--",    // 39
-        
-        // operators
-        "O_PLUS",          // 40
-        "O_MINUS",         // 41
-        "O_MUL",           // 42
-        "O_DIV",           // 43
-        "O_PERC",          // 44
-
-        "O_EQUAL",         // 45
-        "O_NOT_EQUAL",     // 46
-        "O_GREAT",         // 47
-        "O_GREAT_EQUALS",  // 48
-        "O_LESS",          // 49
-        "O_LESS_EQUALS",   // 50
-        "O_AND",           // 51
-        "O_OR",            // 52
-
-        "O_ASSIGN",        // 53
-        "O_PLUS_PLUS",     // 54
-        "O_MINUS_MINUS",   // 55
-
-        "O_SEMICOLON",     // 56
-        "O_COMMA",         // 57
-        "O_DOT",           // 58
-        "O_PAREN_OPEN",    // 59
-        "O_PAREN_CLOSE",   // 60
-        "O_BRACKET_OPEN",  // 61
-        "O_BRACKET_CLOSE", // 62
-        "O_BRACE_OPEN",    // 63
-        "O_BRACE_CLOSE",   // 64
-        "O_QUESTION_MARK", // 65
-        "O_COLON",         // 66
-
-        "--reserved--",    // 67
-        "--reserved--",    // 68
-        "--reserved--",    // 69
-        
-        "--reserved--",    // 70
-        "--reserved--",    // 71
-        "--reserved--",    // 72
-        "--reserved--",    // 73
-        "--reserved--",    // 74
-        "--reserved--",    // 75
-        "--reserved--",    // 76
-        "--reserved--",    // 77
-        "--reserved--",    // 78
-        "--reserved--",    // 79
-        
-        "--reserved--",    // 80
-        "--reserved--",    // 81
-        "--reserved--",    // 82
-        "--reserved--",    // 83
-        "--reserved--",    // 84
-        "--reserved--",    // 85
-        "--reserved--",    // 86
-        "--reserved--",    // 87
-        "--reserved--",    // 88
-        "--reserved--",    // 89
-
-        // constants
-        "C_INT",           // 90
-        "C_BOOL",          // 91
-        "C_CHAR",          // 92
-        
-        "--reserved--",    // 93
-        "--reserved--",    // 94
-        "--reserved--",    // 95
-        "--reserved--",    // 96
-        "--reserved--",    // 97
-        "--reserved--",    // 98
-        "--reserved--",    // 99
-        
-        
-        // identifiers
-        "IDENTIFIER",      // 100
-    };
 }
 
