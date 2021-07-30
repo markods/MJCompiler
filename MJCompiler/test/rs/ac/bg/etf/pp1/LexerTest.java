@@ -21,12 +21,12 @@ public class LexerTest {
 	}
 	
 	public static void main(String[] args) throws IOException {
-		Logger log = Logger.getLogger(LexerTest.class);
+		Logger logger = Logger.getLogger(LexerTest.class);
 		Reader br = null;
 		try {
 			
 			File sourceCode = new File("test/program.mj");	
-			log.info("Compiling source file: " + sourceCode.getAbsolutePath());
+			logger.info("Compiling source file: " + sourceCode.getAbsolutePath());
 			
 			br = new BufferedReader(new FileReader(sourceCode));
 			
@@ -34,11 +34,21 @@ public class LexerTest {
 			Symbol currToken = null;
 			while ((currToken = lexer.next_token()).sym != sym.EOF) {
 				if (currToken != null && currToken.value != null)
-					log.info(currToken.toString() + " " + currToken.value.toString());
+                {
+                    if( currToken.sym != sym.error )
+                    {
+                        logger.info( String.format( "%-15s %s", sym.getSymbolName( currToken.sym ), currToken.value.toString() ) );
+                    }
+                    else
+                    {
+                        logger.error( String.format( "Leksicka greska na liniji %d kolona %d:\n\t%-15s %s",
+                                currToken.left, currToken.right, sym.getSymbolName( currToken.sym ), currToken.value.toString() ) );
+                    }
+                }
 			}
 		} 
 		finally {
-			if (br != null) try { br.close(); } catch (IOException e1) { log.error(e1.getMessage(), e1); }
+			if (br != null) try { br.close(); } catch (IOException e1) { logger.error(e1.getMessage(), e1); }
 		}
 	}
 	

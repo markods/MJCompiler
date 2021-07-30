@@ -426,13 +426,13 @@ class Yylex implements java_cup.runtime.Scanner {
   private static final int [] ZZ_TRANS = zzUnpackTrans();
 
   private static final String ZZ_TRANS_PACKED_0 =
-    "\1\2\2\3\1\0\1\3\1\4\1\2\1\5\1\6"+
+    "\1\2\2\3\1\2\1\3\1\4\1\2\1\5\1\6"+
     "\1\7\1\10\1\11\1\12\1\13\1\14\1\15\1\16"+
     "\1\17\1\20\1\21\1\22\1\23\1\24\1\25\1\26"+
     "\1\27\1\30\1\31\1\32\1\33\1\6\1\34\1\35"+
     "\1\36\1\37\1\40\2\6\1\41\3\6\1\42\1\6"+
     "\1\43\1\44\1\45\1\46\1\6\1\47\1\50\1\6"+
-    "\1\51\1\52\1\53\1\0\1\54\1\6\1\2\75\0"+
+    "\1\51\1\52\1\53\1\2\1\54\1\6\1\2\75\0"+
     "\1\3\121\0\1\55\41\0\1\6\7\0\1\6\13\0"+
     "\2\6\10\0\26\6\3\0\3\6\13\0\1\56\60\0"+
     "\2\57\4\0\61\57\1\0\3\57\17\0\1\60\71\0"+
@@ -1106,7 +1106,7 @@ class Yylex implements java_cup.runtime.Scanner {
       else {
         switch (zzAction < 0 ? zzAction : ZZ_ACTION[zzAction]) {
           case 1:
-            { System.err.println( String.format( "Leksicka greska na liniji %d kolona %d:\n\t`%s`", yyline+1, yycolumn, yytext() ) );
+            { return new_symbol( sym.error, yytext() );
             }
             // fall through
           case 56: break;

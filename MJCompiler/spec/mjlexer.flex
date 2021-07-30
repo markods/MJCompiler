@@ -141,10 +141,8 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 // identifiers
 {Identifier} 	{ return new_symbol( sym.IDENTIFIER, yytext() ); }
 
-
-
-// default action (for unrecognized token)
-. { System.err.println( String.format( "Leksicka greska na liniji %d kolona %d:\n\t`%s`", yyline+1, yycolumn, yytext() ) ); }
+// error fallback (for unrecognized token)
+[^]             { return new_symbol( sym.error, yytext() ); }
 
 
 
