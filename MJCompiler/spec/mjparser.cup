@@ -12,49 +12,61 @@ import rs.ac.bg.etf.pp1.ast.*;
 // ________________________________________________________________________________________________
 // directive section
 parser code {:
-	
 	boolean errorDetected = false;
-	
-	Logger log = Logger.getLogger(getClass());
+	Logger logger = Logger.getLogger( getClass() );
    
-   
-    // slede redefinisani metodi za prijavu gresaka radi izmene teksta poruke
-     
-    public void report_fatal_error(String message, Object info) throws java.lang.Exception {
-      done_parsing();
-      report_error(message, info);
+    // redefine cup parser methods for error reporting
+    public void report_fatal_error( String message, Object info ) throws java.lang.Exception
+    {
+        done_parsing();
+        report_error( message, info );
     }
   
-    public void syntax_error(Symbol cur_token) {
-        report_error("\nSintaksna greska", cur_token);
+    public void syntax_error( Symbol cur_token )
+    {
+        report_error( "\nSintaksna greska", cur_token );
     }
   
-    public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
-        report_fatal_error("Fatalna greska, parsiranje se ne moze nastaviti", cur_token);
+    public void unrecovered_syntax_error( Symbol cur_token ) throws java.lang.Exception
+    {
+        report_fatal_error( "Fatalna greska, parsiranje se ne moze nastaviti", cur_token );
     }
 
-    public void report_error(String message, Object info) {
+    public void report_error( String message, Object info )
+    {
     	errorDetected = true;
-    	StringBuilder msg = new StringBuilder(message); 
-    	if (info instanceof Symbol)
-            msg.append (" na liniji ").append(((Symbol)info).left);
-        log.error(msg.toString());
+    	StringBuilder msg = new StringBuilder( message );
+
+    	if( info instanceof Symbol )
+        {
+            msg.append( " na liniji " ).append( ( ( Symbol )info ).left );
+        }
+
+        logger.error( msg.toString() );
     }
     
-    public void report_info(String message, Object info) {
-    	StringBuilder msg = new StringBuilder(message); 
-    	if (info instanceof Symbol)
-            msg.append (" na liniji ").append(((Symbol)info).left);
-        log.info(msg.toString());
+    public void report_info( String message, Object info )
+    {
+    	StringBuilder msg = new StringBuilder( message ); 
+
+    	if( info instanceof Symbol )
+        {
+            msg.append( " na liniji " ).append( ( ( Symbol )info ).left );
+        }
+
+        logger.info( msg.toString() );
     }
     
 :}
 
 scan with {:
-	Symbol s = this.getScanner().next_token();
-	if (s != null && s.value != null) 
-		log.info(s.toString() + " " + s.value.toString());
-	return s;
+	Symbol symbol = this.getScanner().next_token();
+	if( symbol != null && symbol.value != null )
+    {
+		logger.info( symbol.toString() + " " + symbol.value.toString() );
+    }
+
+	return symbol;
 :}
 
 
@@ -114,7 +126,7 @@ nonterminal Assignop, Relop, Addop, Mulop;
 
 
 // associativity [terminals]
-precedence left ELSE_K;        // levo asocijativna operacija => else se uparuje sa najblizim levim if-om
+precedence left ELSE_K;        // left associative operation => 'else' is paired with the closest left 'if'
 
 // starting non-terminal
 start with Program;

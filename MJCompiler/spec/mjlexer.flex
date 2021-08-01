@@ -70,66 +70,62 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 
 
 // keywords
-"program"    { return new_symbol( sym.K_PROGRAM, yytext() ); }
-"class"      { return new_symbol( sym.K_CLASS, yytext() ); }
-"enum"       { return new_symbol( sym.K_ENUM, yytext() ); }
-"extends"    { return new_symbol( sym.K_EXTENDS, yytext() ); }
+"program"    { return new_symbol( sym.PROGRAM_K, yytext() ); }
+"class"      { return new_symbol( sym.CLASS_K, yytext() ); }
+"enum"       { return new_symbol( sym.ENUM_K, yytext() ); }
+"extends"    { return new_symbol( sym.EXTENDS_K, yytext() ); }
 
-"const"      { return new_symbol( sym.K_CONST, yytext() ); }
-"void"       { return new_symbol( sym.K_VOID, yytext() ); }
-"int"        { return new_symbol( sym.K_INT, yytext() ); }
-"bool"       { return new_symbol( sym.K_BOOL, yytext() ); }
-"char"       { return new_symbol( sym.K_CHAR, yytext() ); }
+"const"      { return new_symbol( sym.CONST_K, yytext() ); }
+"void"       { return new_symbol( sym.VOID_K, yytext() ); }
 
-"if"         { return new_symbol( sym.K_IF, yytext() ); }
-"else"       { return new_symbol( sym.K_ELSE, yytext() ); }
-"switch"     { return new_symbol( sym.K_SWITCH, yytext() ); }
-"case"       { return new_symbol( sym.K_CASE, yytext() ); }
-"default"    { return new_symbol( sym.K_DEFAULT, yytext() ); }
-"break"      { return new_symbol( sym.K_BREAK, yytext() ); }
-"continue"   { return new_symbol( sym.K_CONTINUE, yytext() ); }
-"return"     { return new_symbol( sym.K_RETURN, yytext() ); }
+"if"         { return new_symbol( sym.IF_K, yytext() ); }
+"else"       { return new_symbol( sym.ELSE_K, yytext() ); }
+"switch"     { return new_symbol( sym.SWITCH_K, yytext() ); }
+"case"       { return new_symbol( sym.CASE_K, yytext() ); }
+"break"      { return new_symbol( sym.BREAK_K, yytext() ); }
+"continue"   { return new_symbol( sym.CONTINUE_K, yytext() ); }
+"return"     { return new_symbol( sym.RETURN_K, yytext() ); }
 
-"do"         { return new_symbol( sym.K_DO, yytext() ); }
-"while"      { return new_symbol( sym.K_WHILE, yytext() ); }
+"do"         { return new_symbol( sym.DO_K, yytext() ); }
+"while"      { return new_symbol( sym.WHILE_K, yytext() ); }
 
-"new"        { return new_symbol( sym.K_NEW, yytext() ); }
-"print"      { return new_symbol( sym.K_PRINT, yytext() ); }
-"read"       { return new_symbol( sym.K_READ, yytext() ); }
+"new"        { return new_symbol( sym.NEW_K, yytext() ); }
+"print"      { return new_symbol( sym.PRINT_K, yytext() ); }
+"read"       { return new_symbol( sym.READ_K, yytext() ); }
 
 
 
 // operators
-"+"          { return new_symbol( sym.O_PLUS, yytext() ); }
-"-"          { return new_symbol( sym.O_MINUS, yytext() ); }
-"*"          { return new_symbol( sym.O_MUL, yytext() ); }
-"/"          { return new_symbol( sym.O_DIV, yytext() ); }
-"%"          { return new_symbol( sym.O_PERC, yytext() ); }
+"+"          { return new_symbol( sym.plus, yytext() ); }
+"-"          { return new_symbol( sym.minus, yytext() ); }
+"*"          { return new_symbol( sym.mul, yytext() ); }
+"/"          { return new_symbol( sym.div, yytext() ); }
+"%"          { return new_symbol( sym.perc, yytext() ); }
 
-"=="         { return new_symbol( sym.O_EQUAL, yytext() ); }
-"!="         { return new_symbol( sym.O_NOT_EQUAL, yytext() ); }
-">"          { return new_symbol( sym.O_GREAT, yytext() ); }
-">="         { return new_symbol( sym.O_GREAT_EQUALS, yytext() ); }
-"<"          { return new_symbol( sym.O_LESS, yytext() ); }
-"<="         { return new_symbol( sym.O_LESS_EQUALS, yytext() ); }
-"&&"         { return new_symbol( sym.O_AND, yytext() ); }
-"||"         { return new_symbol( sym.O_OR, yytext() ); }
+"=="         { return new_symbol( sym.eq, yytext() ); }
+"!="         { return new_symbol( sym.neq, yytext() ); }
+">"          { return new_symbol( sym.gt, yytext() ); }
+">="         { return new_symbol( sym.geq, yytext() ); }
+"<"          { return new_symbol( sym.lt, yytext() ); }
+"<="         { return new_symbol( sym.leq, yytext() ); }
+"&&"         { return new_symbol( sym.and, yytext() ); }
+"||"         { return new_symbol( sym.or, yytext() ); }
 
-"="          { return new_symbol( sym.O_ASSIGN, yytext() ); }
-"++"         { return new_symbol( sym.O_PLUS_PLUS, yytext() ); }
-"‐‐"         { return new_symbol( sym.O_MINUS_MINUS, yytext() ); }
+"="          { return new_symbol( sym.assign, yytext() ); }
+"++"         { return new_symbol( sym.plusplus, yytext() ); }
+"‐‐"         { return new_symbol( sym.minusminus, yytext() ); }
 
-";"          { return new_symbol( sym.O_SEMICOLON, yytext() ); }
-","          { return new_symbol( sym.O_COMMA, yytext() ); }
-"."          { return new_symbol( sym.O_DOT, yytext() ); }
-"("          { return new_symbol( sym.O_PAREN_OPEN, yytext() ); }
-")"          { return new_symbol( sym.O_PAREN_CLOSE, yytext() ); }
-"["          { return new_symbol( sym.O_BRACKET_OPEN, yytext() ); }
-"]"          { return new_symbol( sym.O_BRACKET_CLOSE, yytext() ); }
-"{"          { return new_symbol( sym.O_BRACE_OPEN, yytext() ); }
-"}"          { return new_symbol( sym.O_BRACE_CLOSE, yytext() ); }
-"?"          { return new_symbol( sym.O_QUESTION_MARK, yytext() ); }
-":"          { return new_symbol( sym.O_COLON, yytext() ); }
+";"          { return new_symbol( sym.semicol, yytext() ); }
+","          { return new_symbol( sym.comma, yytext() ); }
+"."          { return new_symbol( sym.dot, yytext() ); }
+"{"          { return new_symbol( sym.lbrace, yytext() ); }
+"}"          { return new_symbol( sym.rbrace, yytext() ); }
+"("          { return new_symbol( sym.lparen, yytext() ); }
+")"          { return new_symbol( sym.rparen, yytext() ); }
+"["          { return new_symbol( sym.lbracket, yytext() ); }
+"]"          { return new_symbol( sym.rbracket, yytext() ); }
+"?"          { return new_symbol( sym.qmark, yytext() ); }
+":"          { return new_symbol( sym.colon, yytext() ); }
 
 
 
