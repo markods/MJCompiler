@@ -130,12 +130,12 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 
 
 // constants
-{IntLiteral}    { return new_symbol( sym.C_INT, Integer.parseInt( yytext() ) ); }
-{BoolLiteral}   { return new_symbol( sym.C_BOOL, Boolean.parseBoolean( yytext() ) ); }
-{CharLiteral}   { return new_symbol( sym.C_CHAR, yytext().charAt( 1 ) ); }
+{IntLiteral}    { return new_symbol( sym.int_lit, Integer.parseInt( yytext() ) ); }
+{BoolLiteral}   { return new_symbol( sym.bool_lit, Boolean.parseBoolean( yytext() ) ); }
+{CharLiteral}   { return new_symbol( sym.char_lit, yytext().charAt( 1 ) ); }
 
 // identifiers
-{Identifier} 	{ return new_symbol( sym.IDENTIFIER, yytext() ); }
+{Identifier} 	{ return new_symbol( sym.ident, yytext() ); }
 
 // error fallback (for unrecognized token)
 [^]             { return new_symbol( sym.error, yytext() ); }
