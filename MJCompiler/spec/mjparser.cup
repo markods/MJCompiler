@@ -1,3 +1,5 @@
+// ________________________________________________________________________________________________
+// import section
 package rs.ac.bg.etf.pp1;
 
 import java_cup.runtime.*;
@@ -7,6 +9,8 @@ import org.apache.log4j.*;
 import rs.ac.bg.etf.pp1.ast.*;
 
 
+// ________________________________________________________________________________________________
+// directive section
 parser code {:
 	
 	boolean errorDetected = false;
@@ -54,109 +58,443 @@ scan with {:
 :}
 
 
-terminal PROG, LBRACE, RBRACE, SEMI, LPAREN, RPAREN, COMMA, PRINT, RETURN, PLUS, EQUAL, VOID;
-terminal Integer NUMBER ;
-terminal String IDENT ;
-terminal IF, ELSE;
 
-nonterminal MethodDeclList, VarDecl;
-nonterminal FormalParamList, FormalParamDecl, FormPars, ActualPars, ActualParamList; 
-nonterminal StatementList, Statement, Addop;
-nonterminal Unmatched, Matched;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Program, ProgName, Designator, MethodDecl, MethodTypeName; 
-nonterminal rs.etf.pp1.symboltable.concepts.Struct Type, Term, Expr, Factor, VarDeclList; 
 
-Program ::= (Program) PROG ProgName:p VarDeclList LBRACE MethodDeclList RBRACE 
-;
+// ________________________________________________________________________________________________
+// language characters
 
-ProgName ::= (ProgName) IDENT:pName 
-;
 
-VarDeclList ::= (VarDeclarations) VarDeclList VarDecl  
-				|
-				(NoVarDecl)/* epsilon */ 
-				;
+// keywords [terminals]
+terminal PROGRAM_K, CLASS_K, ENUM_K, EXTENDS_K;   // enum not used
+terminal CONST_K, VOID_K;
+terminal IF_K, ELSE_K, SWITCH_K, CASE_K, BREAK_K, CONTINUE_K, RETURN_K;
+terminal DO_K, WHILE_K;
+terminal NEW_K, PRINT_K, READ_K;
+
+// operators [terminals]
+//       +     -      *    /    %
+terminal plus, minus, mul, div, perc;
+//       ==  !=   >   >=   <   <=   &&   ||
+terminal eq, neq, gt, geq, lt, leq, and, or;
+//       =       ++        --
+terminal assign, plusplus, minusminus;
+//       ;        ,      .    {       }       (       )       [         ]         ?      :
+terminal semicol, comma, dot, lbrace, rbrace, lparen, rparen, lbracket, rbracket, qmark, colon;
+
+// literals [terminals]
+terminal Integer int_lit;      // 0   10   12012
+terminal Boolean bool_lit;     // true   false
+terminal Character char_lit;   // 'a'   '-'
+
+// identifiers [terminals]
+terminal String ident;         // asdf0_13
+
+
+
+// declarations [nonterminals]
+nonterminal Program, ProgramDeclList, ProgramDeclKind;
+nonterminal ClassDecl, ClassDeclScope, MethodDeclScope, MethodDeclList;
+nonterminal MethodDecl, FormPars, VarDeclList;
+nonterminal VarDecl, IdentList;
+nonterminal ConstDecl, IdentInitList;
+
+// statement parts [nonterminals]
+nonterminal StatementList, Statement, DesignatorStatement;
+nonterminal CaseList, ActPars;
+nonterminal Condition, CondTerm, CondFact;
+nonterminal Expr, Addition, AdditionTerm;
+nonterminal Term, Factor;
+nonterminal Designator, DesignatorTerm;
+
+// types, literals, operators [nonterminals]
+nonterminal Literal, MethodType, Type;
+nonterminal Assignop, Relop, Addop, Mulop;
+
+
+
+// associativity [terminals]
+precedence left ELSE_K;        // levo asocijativna operacija => else se uparuje sa najblizim levim if-om
+
+// starting non-terminal
+start with Program;
+
+
+
+
+// ________________________________________________________________________________________________
+// language rules
+
+
+// program ident { }
+// program ident { method method method }
+// program ident constdl constdl vardl vardl classdl { }
+// program ident constdl constdl vardl vardl classdl { method method method }
+Program ::= PROGRAM_K ident MethodDeclScope;
+Program ::= PROGRAM_K ident ProgramDeclList MethodDeclScope;
+
+// constdl constdl vardl vardl classdl
+ProgramDeclList ::= ProgramDeclKind;
+ProgramDeclList ::= ProgramDeclKind ProgramDeclList;
+
+ProgramDeclKind ::= ConstDecl | VarDecl | ClassDecl;
+
+
+
+// class A { }
+// class A { { method method method } }
+// class A extends B { vardl vardl vardl vardl }
+// class A extends B { vardl vardl vardl vardl { method method method } }
+ClassDecl ::= CLASS_K ident ClassDeclScope;
+ClassDecl ::= CLASS_K ident EXTENDS_K Type ClassDeclScope;
+
+// { }
+// { { method method method } }
+// { vardl vardl vardl vardl }
+// { vardl vardl vardl vardl { method method method } }
+ClassDeclScope ::= lbrace rbrace;
+ClassDeclScope ::= lbrace MethodDeclScope rbrace;
+ClassDeclScope ::= lbrace VarDeclList rbrace;
+ClassDeclScope ::= lbrace VarDeclList MethodDeclScope rbrace;
+
+// { method method method }
+MethodDeclScope ::= lbrace rbrace;
+MethodDeclScope ::= lbrace MethodDeclList rbrace;
+
+MethodDeclList ::= MethodDecl;
+MethodDeclList ::= MethodDecl MethodDeclList;
+
+
+
+// void foo() { }
+// void foo() { statement statement }
+// void foo() vardl vardl { }
+// void foo() vardl vardl { statement statement }
+// void foo( int a, char c, Node Array[] ) { }
+// void foo( int a, char c, Node Array[] ) { statement statement }
+// void foo( int a, char c, Node Array[] ) vardl vardl { }
+// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
+MethodDecl ::= MethodType ident lparen          rparen             lbrace               rbrace;
+MethodDecl ::= MethodType ident lparen          rparen             lbrace StatementList rbrace;
+MethodDecl ::= MethodType ident lparen          rparen VarDeclList lbrace               rbrace;
+MethodDecl ::= MethodType ident lparen          rparen VarDeclList lbrace StatementList rbrace;
+MethodDecl ::= MethodType ident lparen FormPars rparen             lbrace               rbrace;
+MethodDecl ::= MethodType ident lparen FormPars rparen             lbrace StatementList rbrace;
+MethodDecl ::= MethodType ident lparen FormPars rparen VarDeclList lbrace               rbrace;
+MethodDecl ::= MethodType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
+
+// int ident, Node Array[], char c
+FormPars ::= Type ident;
+FormPars ::= Type ident lbracket rbracket;
+FormPars ::= Type ident                   comma FormPars;
+FormPars ::= Type ident lbracket rbracket comma FormPars;
+
+// vardl vardl vardl vardl
+VarDeclList ::= VarDecl;
+VarDeclList ::= VarDecl VarDeclList;
+
+
+
+// int a, b[], c;
+// A a1, a2;
+VarDecl ::= Type IdentList semicol;
+
+IdentList ::= ident;
+IdentList ::= ident lbracket rbracket;
+IdentList ::= ident                   comma IdentList;
+IdentList ::= ident lbracket rbracket comma IdentList;
+
+
+
+// const int a = 5, b = 6, c = 11;
+ConstDecl ::= CONST_K Type IdentInitList semicol;
+
+IdentInitList ::= ident eq Literal;
+IdentInitList ::= ident eq Literal comma IdentInitList;
+
+
+
+// statement statement statement statement
+StatementList ::= Statement;
+StatementList ::= Statement StatementList;
+
+// ident.ident[ expr ] = expr;
+// ident.ident[ expr ]( );
+// ident.ident[ expr ]( expr, expr, expr );
+// ident.ident[ expr ]++;
+// ident.ident[ expr ]--;
+//
+// if( condition ) statement
+// if( condition ) statement else statement
+// do statement while( condition );
+// switch( expr ) { }
+// switch( expr ) { case 1: statement statement statement   case 2: statement statement }
+// break;
+// continue;
+// return;
+// return expr;
+//
+// read( ident.ident[ expr ] );
+// print( ident.ident[ expr ], 2 );
+//
+// {}
+// { statement statement statement }
+Statement ::= DesignatorStatement semicol;
+Statement ::= IF_K lparen Condition rparen Statement;
+Statement ::= IF_K lparen Condition rparen Statement ELSE_K Statement;
+Statement ::= DO_K Statement WHILE_K lparen Condition rparen semicol;
+Statement ::= SWITCH_K lparen Expr rparen lbrace          rbrace;
+Statement ::= SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
+Statement ::= BREAK_K semicol;
+Statement ::= CONTINUE_K semicol;
+Statement ::= RETURN_K semicol;
+Statement ::= RETURN_K Expr semicol;
+Statement ::= READ_K lparen Designator rparen semicol;
+Statement ::= PRINT_K lparen Expr rparen semicol;
+Statement ::= PRINT_K lparen Expr comma int_lit rparen semicol;
+Statement ::= lbrace rbrace;
+Statement ::= lbrace StatementList rbrace;
+
+// ident.ident[ expr ] = expr
+// ident.ident[ expr ]( )
+// ident.ident[ expr ]( expr, expr, expr )
+// ident.ident[ expr ]++
+// ident.ident[ expr ]--
+DesignatorStatement ::= Designator Assignop Expr;
+DesignatorStatement ::= Designator lparen rparen;
+DesignatorStatement ::= Designator lparen ActPars rparen;
+DesignatorStatement ::= Designator plusplus;
+DesignatorStatement ::= Designator minusminus;
+
+
+
+// case 1: statement statement statement   case 2: statement statement
+CaseList ::= CASE_K int_lit colon;
+CaseList ::= CASE_K int_lit colon StatementList;
+CaseList ::= CASE_K int_lit colon               CaseList;
+CaseList ::= CASE_K int_lit colon StatementList CaseList;
+
+// expr, expr, expr
+ActPars ::= Expr;
+ActPars ::= Expr comma ActPars;
+
+// expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
+Condition ::= CondTerm;
+Condition ::= CondTerm or Condition;
+
+CondTerm ::= CondFact;
+CondTerm ::= CondFact and CondTerm;
+
+CondFact ::= Expr;
+CondFact ::= Expr Relop CondFact;
+
+// term
+// +term
+// -term
+// term + term - term + term
+// -term + term - term + term
+// +term + term + term + term
+// -term + term - term + term ? -term + term : term
+Expr ::= Addition;
+Expr ::= Addition qmark Addition colon Addition;
+
+Addition ::= Term;
+Addition ::= Term AdditionTerm;
+Addition ::=      AdditionTerm;
+
+AdditionTerm ::= Addop Term;
+AdditionTerm ::= Addop Term AdditionTerm;
+
+
+
+// factor*factor*factor
+Term ::= Factor;
+Term ::= Factor Mulop Term;
+
+// ident.ident[ expr ]
+// ident.ident[ expr ]( )
+// ident.ident[ expr ]( expr, expr, expr )
+// 1202 | 'c' | true
+// new Object
+// new Array[ expr ]
+// ( expr )
+Factor ::= Designator;
+Factor ::= Designator lparen         rparen;
+Factor ::= Designator lparen ActPars rparen;
+Factor ::= Literal;
+Factor ::= NEW_K Type;
+Factor ::= NEW_K Type lbracket Expr rbracket;
+Factor ::= lparen Expr rparen;
+
+// ident
+// ident.ident
+// ident[ expr ]
+// ident.ident.ident[ expr ].ident
+// ident.ident.ident[ expr ].ident[ expr ]
+Designator ::= ident;
+Designator ::= ident DesignatorTerm;
+
+DesignatorTerm ::= dot ident;
+DesignatorTerm ::= lbracket Expr rbracket;
+DesignatorTerm ::= dot ident              DesignatorTerm;
+DesignatorTerm ::= lbracket Expr rbracket DesignatorTerm;
+
+
+
+// 1202 | 'c' | true
+Literal ::= int_lit | char_lit | bool_lit;
+// void | type
+MethodType ::= VOID_K | Type;
+// int | bool | char | ident
+Type ::= ident;
+
+// =
+Assignop ::= assign;
+// ==  |  !=  |  >  |  >=  |  <  |  <=
+Relop ::= eq | neq | gt | geq | lt | leq;
+// +  |  -
+Addop ::= plus | minus;
+// *  |  /  |  %
+Mulop ::= mul | div | perc;
+
+
+
+/*
+  Поштоване колегинице и колеге,
+
+У претходном мејлу са измењеном граматиком је дошло до грешке приликом копирања из друге нотације, те  уместо 
+Expr1 = ["-"] Expr1 {Addop Term}
+треба да пише
+Expr1 = ["-"] Term {Addop Term}
+
+Извињавам се свима на овом пропусту. 
+
+Такође, добили смо велики број мејлова везаних за ову измену граматике, те бих овим путем нагласио да уколико се користи измењена граматика није потребно имплементирати релационе операторе за ниво А и да их је потребно избацити из јавног теста.
+
+Срдачан поздрав,
+Кристијан Жижа
+
+On Tue, Dec 29, 2020 at 11:37 AM Kristijan Ziza <ziza@etf.rs> wrote:
+Поштоване колегинице и колеге,
+
+Како нам се већи број студената јавио са проблемом око тернарног оператора у пројектном задатку, предложићемо поједностављену граматику језика Mikrojava. У циљу решавања кофликата, може се (за све нивое) користити следећи део граматике везан за тернарни оператор:
+
+Expr = Expr1 "?" Expr1 ":" Expr1 | Expr1.
+Expr1 =  ["-"] Term { Addop Term }.
+
+Студенти који су овај део пројектног задатка већ одрадили могу задржати своје решење под условом да приоритети оператора нису промењени.
+
+Срдачан поздрав,
+Кристијан Жижа
+*/
+
+
+
+
+
+// terminal PROG, LBRACE, RBRACE, SEMI, LPAREN, RPAREN, COMMA, PRINT, RETURN, PLUS, EQUAL, VOID;
+// terminal Integer NUMBER ;
+// terminal String IDENT ;
+// terminal IF, ELSE;
+
+// nonterminal MethodDeclList, VarDecl;
+// nonterminal FormalParamList, FormalParamDecl, FormPars, ActualPars, ActualParamList; 
+// nonterminal StatementList, Statement, Addop;
+// nonterminal Unmatched, Matched;
+
+// nonterminal rs.etf.pp1.symboltable.concepts.Obj Program, ProgName, Designator, MethodDecl, MethodTypeName; 
+// nonterminal rs.etf.pp1.symboltable.concepts.Struct Type, Term, Expr, Factor, VarDeclList; 
+
+// Program ::= (Program) PROG ProgName:p VarDeclList LBRACE MethodDeclList RBRACE 
+// ;
+
+// ProgName ::= (ProgName) IDENT:pName 
+// ;
+
+// VarDeclList ::= (VarDeclarations) VarDeclList VarDecl  
+// 				|
+// 				(NoVarDecl)/* epsilon */ 
+// 				;
 				
-VarDecl ::= (VarDecl) Type:varType IDENT:varName SEMI 
-;
+// VarDecl ::= (VarDecl) Type:varType IDENT:varName SEMI 
+// ;
 
-Type ::= (Type) IDENT:typeName 
-;
+// Type ::= (Type) IDENT:typeName 
+// ;
 
-MethodDeclList ::= (MethodDeclarations) MethodDeclList MethodDecl
-					|
-					(NoMethodDecl)/* epsilon */
-					;
+// MethodDeclList ::= (MethodDeclarations) MethodDeclList MethodDecl
+// 					|
+// 					(NoMethodDecl)/* epsilon */
+// 					;
 
-MethodDecl ::= (MethodDecl) MethodTypeName
-			   LPAREN FormPars RPAREN VarDeclList LBRACE StatementList RBRACE 
-			   ;
+// MethodDecl ::= (MethodDecl) MethodTypeName
+// 			   LPAREN FormPars RPAREN VarDeclList LBRACE StatementList RBRACE 
+// 			   ;
 
-MethodTypeName ::= (MethodTypeName) Type:retType IDENT:methName
-;
+// MethodTypeName ::= (MethodTypeName) Type:retType IDENT:methName
+// ;
 
-FormPars ::= (FormParams) FormalParamList | (NoFormParam) /* epsilon */ ;
+// FormPars ::= (FormParams) FormalParamList | (NoFormParam) /* epsilon */ ;
 
-FormalParamList ::= (FormalParamDecls) FormalParamList COMMA FormalParamDecl
-					|
-					(SingleFormalParamDecl) FormalParamDecl
-					;
+// FormalParamList ::= (FormalParamDecls) FormalParamList COMMA FormalParamDecl
+// 					|
+// 					(SingleFormalParamDecl) FormalParamDecl
+// 					;
 					
-FormalParamDecl ::= (FormalParamDecl) Type IDENT ;
+// FormalParamDecl ::= (FormalParamDecl) Type IDENT ;
 
-StatementList ::= (Statements) StatementList Statement 
-					|
-				  (NoStmt) /* epsilon */
-				  ;
+// StatementList ::= (Statements) StatementList Statement 
+// 					|
+// 				  (NoStmt) /* epsilon */
+// 				  ;
 
-Statement ::= (MatchedStmt) Matched | (UnmachedStmt) Unmatched ;
+// Statement ::= (MatchedStmt) Matched | (UnmachedStmt) Unmatched ;
 
-Unmatched ::= (UnmatchedIf) IF Expr Statement | (UnmatchedIfElse) IF Expr Matched ELSE Unmatched;
+// Unmatched ::= (UnmatchedIf) IF Expr Statement | (UnmatchedIfElse) IF Expr Matched ELSE Unmatched;
 	
 				  
-Matched ::= (Assignment) Designator:dest EQUAL Expr:e SEMI 
-			  |
-			  (ErrAssignment) Designator EQUAL error SEMI
-			  {: parser.log.debug("Uspesan oporavak od greske pri dodeli vrednosti."); :}
-			  |
-			  (PrintStmt) PRINT LPAREN Expr RPAREN SEMI 
-			  |
-			  (ReturnExpr) RETURN Expr:t SEMI
-			  |
-			  (ReturnNoExpr) RETURN SEMI
-			  | 
-			  (MatchedIf) IF Expr Matched ELSE Matched
-			  |
-			  (ProcCall) Designator:func LPAREN ActualPars RPAREN SEMI
-			  ;
+// Matched ::= (Assignment) Designator:dest EQUAL Expr:e SEMI 
+// 			  |
+// 			  (ErrAssignment) Designator EQUAL error SEMI
+// 			  {: parser.log.debug("Uspesan oporavak od greske pri dodeli vrednosti."); :}
+// 			  |
+// 			  (PrintStmt) PRINT LPAREN Expr RPAREN SEMI 
+// 			  |
+// 			  (ReturnExpr) RETURN Expr:t SEMI
+// 			  |
+// 			  (ReturnNoExpr) RETURN SEMI
+// 			  | 
+// 			  (MatchedIf) IF Expr Matched ELSE Matched
+// 			  |
+// 			  (ProcCall) Designator:func LPAREN ActualPars RPAREN SEMI
+// 			  ;
 			  
-Expr ::= (AddExpr) Expr:te Addop Term:t
-		 |
-		 (TermExpr) Term:t
-		 ;
+// Expr ::= (AddExpr) Expr:te Addop Term:t
+// 		 |
+// 		 (TermExpr) Term:t
+// 		 ;
 
-Term ::= (Term) Factor:t 
-;
+// Term ::= (Term) Factor:t 
+// ;
 
-Factor ::= (Const) NUMBER
-			|
-		   (Var) Designator:d
-		    |
-		   (FuncCall) Designator:func LPAREN ActualPars RPAREN
-		   ;
+// Factor ::= (Const) NUMBER
+// 			|
+// 		   (Var) Designator:d
+// 		    |
+// 		   (FuncCall) Designator:func LPAREN ActualPars RPAREN
+// 		   ;
 
-ActualPars ::= (Actuals) ActualParamList 
-				| 
-			   (NoActuals) /* epsilon */ 
-			   ;
+// ActualPars ::= (Actuals) ActualParamList 
+// 				| 
+// 			   (NoActuals) /* epsilon */ 
+// 			   ;
 			   
-ActualParamList ::= (ActualParams) ActualParamList COMMA Expr
-					|
-					(ActualParam) Expr
-					;
+// ActualParamList ::= (ActualParams) ActualParamList COMMA Expr
+// 					|
+// 					(ActualParam) Expr
+// 					;
 
-Designator ::= (Designator) IDENT:name
-;
+// Designator ::= (Designator) IDENT:name
+// ;
 
-Addop ::= (Addop) PLUS ;
+// Addop ::= (Addop) PLUS ;
