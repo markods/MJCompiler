@@ -109,7 +109,7 @@ if( "-cup" -in $args )
         "-cp", "'../lib/cup_v10k.jar'", "java_cup.Main",
         "-destdir", "'./rs/ac/bg/etf/pp1'",
         "-parser", "'MJParser'",
-        " -symbols", "'Isym'";
+        "-interface", "-symbols", "'Isym'";
 
     # build the abstract syntax tree
     if( "-ast" -in $args )
@@ -131,7 +131,7 @@ if( "-cup" -in $args )
 
 
     # print the build command
-    Write-Output "---------------------------------------------------------------------------------------------------------------- <<< AST/CUP"
+    Write-Output "---------------------------------------------------------------------------------------------------------------- <<< CUP"
     Write-Output $BuildCmd
 
 
@@ -153,14 +153,29 @@ if( "-clean" -in $args -or "-build" -in $args )
     if( "-clean" -in $args )
     {
         # remove compiled java code
-        Remove-Item "./MJCompiler/bin" -Recurse;
-        Remove-Item "./MJCompiler/build" -Recurse;
-        Remove-Item "./MJCompiler/dist" -Recurse;
-        # remove logs
-        Remove-Item "./MJCompiler/logs" -Recurse;
+        if( Test-Path "./MJCompiler/bin" -PathType "Container" )
+        {
+            Remove-Item "./MJCompiler/bin" -Recurse;
+        }
 
-        # remove the generated cup specification file
-        Remove-Item "./MJCompiler/spec/mjparser_astbuild.cup"
+        if( Test-Path "./MJCompiler/build" -PathType "Container" )
+        {
+            Remove-Item "./MJCompiler/build" -Recurse;
+        }
+        
+        if( Test-Path "./MJCompiler/dist" -PathType "Container" )
+        {
+            Remove-Item "./MJCompiler/dist" -Recurse;
+        }
+
+        # remove logs
+        if( Test-Path "./MJCompiler/logs" -PathType "Container" )
+        {
+            Remove-Item "./MJCompiler/logs" -Recurse;
+        }
+
+        # remove the generated cup specification files
+        Get-ChildItem -Path "./MJCompiler/spec" -Include "*_astbuild.cup" -File -Recurse | Remove-Item;
 
         # remove all .obj files from the test directory
         # +   When it is used with the Include parameter, the Recurse parameter might not delete all subfolders or all child items. This is a known issue.
@@ -172,11 +187,11 @@ if( "-clean" -in $args -or "-build" -in $args )
     {
         $Action = "rebuild clean jar";
     }
-    else if( "-build" -in $args )
+    elseif( "-build" -in $args )
     {
         $Action = "build jar";
     }
-    else if( "-clean" -in $args )
+    elseif( "-clean" -in $args )
     {
         $Action = "clean";
     }
