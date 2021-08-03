@@ -72,7 +72,7 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 // keywords
 "program"    { return new_symbol( sym.PROGRAM_K, yytext() ); }
 "class"      { return new_symbol( sym.CLASS_K, yytext() ); }
-"enum"       { return new_symbol( sym.ENUM_K, yytext() ); }
+"enum"       { return new_symbol( sym.error /*sym.ENUM_K*/, yytext() ); }
 "extends"    { return new_symbol( sym.EXTENDS_K, yytext() ); }
 
 "const"      { return new_symbol( sym.CONST_K, yytext() ); }

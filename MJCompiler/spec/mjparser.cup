@@ -22,16 +22,19 @@ parser code {:
         report_error( message, info );
     }
   
+    // redefine cup parser methods for error reporting
     public void syntax_error( Symbol cur_token )
     {
         report_error( "\nSintaksna greska", cur_token );
     }
   
+    // redefine cup parser methods for error reporting
     public void unrecovered_syntax_error( Symbol cur_token ) throws java.lang.Exception
     {
         report_fatal_error( "Fatalna greska, parsiranje se ne moze nastaviti", cur_token );
     }
 
+    // redefine cup parser methods for error reporting
     public void report_error( String message, Object info )
     {
     	errorDetected = true;
@@ -45,6 +48,7 @@ parser code {:
         logger.error( msg.toString() );
     }
     
+    // redefine cup parser methods for error reporting
     public void report_info( String message, Object info )
     {
     	StringBuilder msg = new StringBuilder( message ); 
@@ -78,7 +82,7 @@ scan with {:
 
 
 // keywords [terminals]
-terminal PROGRAM_K, CLASS_K, ENUM_K, EXTENDS_K;   // enum not used
+terminal PROGRAM_K, CLASS_K, /*ENUM_K,*/ EXTENDS_K;   // enum currently not used
 terminal CONST_K, VOID_K;
 terminal IF_K, ELSE_K, SWITCH_K, CASE_K, BREAK_K, CONTINUE_K, RETURN_K;
 terminal DO_K, WHILE_K;
@@ -105,22 +109,22 @@ terminal String ident;         // asdf0_13
 
 
 // declarations [nonterminals]
-nonterminal Program, ProgramDeclList, ProgramDeclKind;
+nonterminal Program, StaticDeclList, StaticDecl;
 nonterminal ClassDecl, ClassDeclScope, MethodDeclScope, MethodDeclList;
-nonterminal MethodDecl, FormPars, VarDeclList;
-nonterminal VarDecl, IdentList;
+nonterminal MethodDecl, FormPars, FormParsNext, VarDeclList;
+nonterminal VarDecl, VarIdentList;
 nonterminal ConstDecl, IdentInitList;
 
 // statement parts [nonterminals]
-nonterminal StatementList, Statement, DesignatorStatement;
-nonterminal CaseList, ActPars;
+nonterminal Statement, DesignatorStatement;
+nonterminal StatementList, CaseList, ActPars, ActParsNext;
 nonterminal Condition, CondTerm, CondFact;
-nonterminal Expr, Addition, AdditionTerm;
+nonterminal Expr, Addition, SignedTermNext;
 nonterminal Term, Factor;
-nonterminal Designator, DesignatorTerm;
+nonterminal Designator, DesignatorNext;
 
 // types, literals, operators [nonterminals]
-nonterminal Literal, MethodType, Type;
+nonterminal VarIdent, Literal, ReturnType, Type;
 nonterminal Assignop, Relop, Addop, Mulop;
 
 
@@ -142,14 +146,14 @@ start with Program;
 // program ident { method method method }
 // program ident constdl constdl vardl vardl classdl { }
 // program ident constdl constdl vardl vardl classdl { method method method }
-Program ::= PROGRAM_K ident MethodDeclScope;
-Program ::= PROGRAM_K ident ProgramDeclList MethodDeclScope;
+Program ::= PROGRAM_K ident StaticDeclList MethodDeclScope;
 
+// <epsilon>
 // constdl constdl vardl vardl classdl
-ProgramDeclList ::= ProgramDeclKind;
-ProgramDeclList ::= ProgramDeclKind ProgramDeclList;
+StaticDeclList ::= StaticDecl StaticDeclList;
+StaticDeclList ::= ;
 
-ProgramDeclKind ::= ConstDecl | VarDecl | ClassDecl;
+StaticDecl ::= ConstDecl | VarDecl | ClassDecl;
 
 
 
@@ -164,17 +168,15 @@ ClassDecl ::= CLASS_K ident EXTENDS_K Type ClassDeclScope;
 // { { method method method } }
 // { vardl vardl vardl vardl }
 // { vardl vardl vardl vardl { method method method } }
-ClassDeclScope ::= lbrace rbrace;
-ClassDeclScope ::= lbrace MethodDeclScope rbrace;
 ClassDeclScope ::= lbrace VarDeclList rbrace;
 ClassDeclScope ::= lbrace VarDeclList MethodDeclScope rbrace;
 
+// { }
 // { method method method }
-MethodDeclScope ::= lbrace rbrace;
 MethodDeclScope ::= lbrace MethodDeclList rbrace;
 
-MethodDeclList ::= MethodDecl;
 MethodDeclList ::= MethodDecl MethodDeclList;
+MethodDeclList ::= ;
 
 
 
@@ -186,49 +188,39 @@ MethodDeclList ::= MethodDecl MethodDeclList;
 // void foo( int a, char c, Node Array[] ) { statement statement }
 // void foo( int a, char c, Node Array[] ) vardl vardl { }
 // void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-MethodDecl ::= MethodType ident lparen          rparen             lbrace               rbrace;
-MethodDecl ::= MethodType ident lparen          rparen             lbrace StatementList rbrace;
-MethodDecl ::= MethodType ident lparen          rparen VarDeclList lbrace               rbrace;
-MethodDecl ::= MethodType ident lparen          rparen VarDeclList lbrace StatementList rbrace;
-MethodDecl ::= MethodType ident lparen FormPars rparen             lbrace               rbrace;
-MethodDecl ::= MethodType ident lparen FormPars rparen             lbrace StatementList rbrace;
-MethodDecl ::= MethodType ident lparen FormPars rparen VarDeclList lbrace               rbrace;
-MethodDecl ::= MethodType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
+MethodDecl ::= ReturnType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
 
+// <epsilon>
 // int ident, Node Array[], char c
-FormPars ::= Type ident;
-FormPars ::= Type ident lbracket rbracket;
-FormPars ::= Type ident                   comma FormPars;
-FormPars ::= Type ident lbracket rbracket comma FormPars;
+FormPars ::= Type VarIdent FormParsNext;
+FormPars ::= ;
 
+FormParsNext ::= comma Type VarIdent FormPars;
+FormParsNext ::= ;
+
+// <epsilon>
 // vardl vardl vardl vardl
-VarDeclList ::= VarDecl;
 VarDeclList ::= VarDecl VarDeclList;
+VarDeclList ::= ;
 
 
 
 // int a, b[], c;
 // A a1, a2;
-VarDecl ::= Type IdentList semicol;
+VarDecl ::= Type VarIdentList semicol;
 
-IdentList ::= ident;
-IdentList ::= ident lbracket rbracket;
-IdentList ::= ident                   comma IdentList;
-IdentList ::= ident lbracket rbracket comma IdentList;
+VarIdentList ::= VarIdent;
+VarIdentList ::= VarIdent comma VarIdentList;
 
 
 
 // const int a = 5, b = 6, c = 11;
 ConstDecl ::= CONST_K Type IdentInitList semicol;
 
-IdentInitList ::= ident eq Literal;
-IdentInitList ::= ident eq Literal comma IdentInitList;
+IdentInitList ::= ident Assignop Literal;
+IdentInitList ::= ident Assignop Literal comma IdentInitList;
 
 
-
-// statement statement statement statement
-StatementList ::= Statement;
-StatementList ::= Statement StatementList;
 
 // ident.ident[ expr ] = expr;
 // ident.ident[ expr ]( );
@@ -255,7 +247,6 @@ Statement ::= DesignatorStatement semicol;
 Statement ::= IF_K lparen Condition rparen Statement;
 Statement ::= IF_K lparen Condition rparen Statement ELSE_K Statement;
 Statement ::= DO_K Statement WHILE_K lparen Condition rparen semicol;
-Statement ::= SWITCH_K lparen Expr rparen lbrace          rbrace;
 Statement ::= SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
 Statement ::= BREAK_K semicol;
 Statement ::= CONTINUE_K semicol;
@@ -264,7 +255,6 @@ Statement ::= RETURN_K Expr semicol;
 Statement ::= READ_K lparen Designator rparen semicol;
 Statement ::= PRINT_K lparen Expr rparen semicol;
 Statement ::= PRINT_K lparen Expr comma int_lit rparen semicol;
-Statement ::= lbrace rbrace;
 Statement ::= lbrace StatementList rbrace;
 
 // ident.ident[ expr ] = expr
@@ -273,22 +263,30 @@ Statement ::= lbrace StatementList rbrace;
 // ident.ident[ expr ]++
 // ident.ident[ expr ]--
 DesignatorStatement ::= Designator Assignop Expr;
-DesignatorStatement ::= Designator lparen rparen;
 DesignatorStatement ::= Designator lparen ActPars rparen;
 DesignatorStatement ::= Designator plusplus;
 DesignatorStatement ::= Designator minusminus;
 
 
 
-// case 1: statement statement statement   case 2: statement statement
-CaseList ::= CASE_K int_lit colon;
-CaseList ::= CASE_K int_lit colon StatementList;
-CaseList ::= CASE_K int_lit colon               CaseList;
-CaseList ::= CASE_K int_lit colon StatementList CaseList;
+// <epsilon>
+// statement statement statement statement
+StatementList ::= Statement StatementList;
+StatementList ::= ;
 
+// <epsilon>
+// case 1: statement statement statement   case 2: statement statement
+CaseList ::= CASE_K int_lit colon StatementList CaseList;
+CaseList ::= ;
+
+// <epsilon>
+// expr
 // expr, expr, expr
-ActPars ::= Expr;
-ActPars ::= Expr comma ActPars;
+ActPars ::= Expr ActParsNext;
+ActPars ::= ;
+
+ActParsNext ::= comma Expr ActParsNext;
+ActParsNext ::= ;
 
 // expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
 Condition ::= CondTerm;
@@ -298,7 +296,7 @@ CondTerm ::= CondFact;
 CondTerm ::= CondFact and CondTerm;
 
 CondFact ::= Expr;
-CondFact ::= Expr Relop CondFact;
+CondFact ::= Expr Relop Expr;
 
 // term
 // +term
@@ -311,14 +309,15 @@ Expr ::= Addition;
 Expr ::= Addition qmark Addition colon Addition;
 
 Addition ::= Term;
-Addition ::= Term AdditionTerm;
-Addition ::=      AdditionTerm;
+Addition ::=      SignedTermNext;
+Addition ::= Term SignedTermNext;
 
-AdditionTerm ::= Addop Term;
-AdditionTerm ::= Addop Term AdditionTerm;
+SignedTermNext ::= Addop Term;
+SignedTermNext ::= Addop Term SignedTermNext;
 
 
 
+// factor
 // factor*factor*factor
 Term ::= Factor;
 Term ::= Factor Mulop Term;
@@ -331,7 +330,6 @@ Term ::= Factor Mulop Term;
 // new Array[ expr ]
 // ( expr )
 Factor ::= Designator;
-Factor ::= Designator lparen         rparen;
 Factor ::= Designator lparen ActPars rparen;
 Factor ::= Literal;
 Factor ::= NEW_K Type;
@@ -343,20 +341,21 @@ Factor ::= lparen Expr rparen;
 // ident[ expr ]
 // ident.ident.ident[ expr ].ident
 // ident.ident.ident[ expr ].ident[ expr ]
-Designator ::= ident;
-Designator ::= ident DesignatorTerm;
+Designator ::= ident DesignatorNext;
 
-DesignatorTerm ::= dot ident;
-DesignatorTerm ::= lbracket Expr rbracket;
-DesignatorTerm ::= dot ident              DesignatorTerm;
-DesignatorTerm ::= lbracket Expr rbracket DesignatorTerm;
+DesignatorNext ::= dot ident              DesignatorNext;
+DesignatorNext ::= lbracket Expr rbracket DesignatorNext;
+DesignatorNext ::= ;
 
 
 
+// ident | array[]
+VarIdent ::= ident;
+VarIdent ::= ident lbracket rbracket;
 // 1202 | 'c' | true
 Literal ::= int_lit | char_lit | bool_lit;
 // void | type
-MethodType ::= VOID_K | Type;
+ReturnType ::= VOID_K | Type;
 // int | bool | char | ident
 Type ::= ident;
 
@@ -369,36 +368,6 @@ Addop ::= plus | minus;
 // *  |  /  |  %
 Mulop ::= mul | div | perc;
 
-
-
-/*
-  Поштоване колегинице и колеге,
-
-У претходном мејлу са измењеном граматиком је дошло до грешке приликом копирања из друге нотације, те  уместо 
-Expr1 = ["-"] Expr1 {Addop Term}
-треба да пише
-Expr1 = ["-"] Term {Addop Term}
-
-Извињавам се свима на овом пропусту. 
-
-Такође, добили смо велики број мејлова везаних за ову измену граматике, те бих овим путем нагласио да уколико се користи измењена граматика није потребно имплементирати релационе операторе за ниво А и да их је потребно избацити из јавног теста.
-
-Срдачан поздрав,
-Кристијан Жижа
-
-On Tue, Dec 29, 2020 at 11:37 AM Kristijan Ziza <ziza@etf.rs> wrote:
-Поштоване колегинице и колеге,
-
-Како нам се већи број студената јавио са проблемом око тернарног оператора у пројектном задатку, предложићемо поједностављену граматику језика Mikrojava. У циљу решавања кофликата, може се (за све нивое) користити следећи део граматике везан за тернарни оператор:
-
-Expr = Expr1 "?" Expr1 ":" Expr1 | Expr1.
-Expr1 =  ["-"] Term { Addop Term }.
-
-Студенти који су овај део пројектног задатка већ одрадили могу задржати своје решење под условом да приоритети оператора нису промењени.
-
-Срдачан поздрав,
-Кристијан Жижа
-*/
 
 
 

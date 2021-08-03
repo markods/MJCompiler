@@ -71,32 +71,6 @@ if( $args.count -eq 0 )
 }
 
 
-# jflex tool
-if( "-jflex" -in $args )
-{
-    # always initialize variables before use (since an exception can occur during assignment)
-    $BuildCmd = $null;
-
-    # create the build comand array
-    $BuildCmd = "java",
-        "-cp", "'./MJCompiler/lib/jflex-1.4.3.jar'", "JFlex.Main",
-        "-nobak",
-        "-d", "'./MJCompiler/src/rs/ac/bg/etf/pp1'",
-        "'./MJCompiler/spec/mjlexer.flex'";
-
-    # join the array of strings into a single string separated by spaces
-    $BuildCmd = $BuildCmd -Join ' ';
-
-
-    # print the build command
-    Write-Output "---------------------------------------------------------------------------------------------------------------- <<< JFlex"
-    Write-Output $BuildCmd
-
-    # invoke the build command
-    Invoke-Expression -Command $BuildCmd
-}
-
-
 # cup tool
 if( "-cup" -in $args )
 {
@@ -144,6 +118,33 @@ if( "-cup" -in $args )
     Invoke-Expression -Command $BuildCmd
     # restore the previous working directory
     Pop-Location;
+}
+
+
+# jflex tool
+# +   jflex should be run after cup, since its output depends on cup output (more precisely on the cup-generated symbol class)
+if( "-jflex" -in $args )
+{
+    # always initialize variables before use (since an exception can occur during assignment)
+    $BuildCmd = $null;
+
+    # create the build comand array
+    $BuildCmd = "java",
+        "-cp", "'./MJCompiler/lib/jflex-1.4.3.jar'", "JFlex.Main",
+        "-nobak",
+        "-d", "'./MJCompiler/src/rs/ac/bg/etf/pp1'",
+        "'./MJCompiler/spec/mjlexer.flex'";
+
+    # join the array of strings into a single string separated by spaces
+    $BuildCmd = $BuildCmd -Join ' ';
+
+
+    # print the build command
+    Write-Output "---------------------------------------------------------------------------------------------------------------- <<< JFlex"
+    Write-Output $BuildCmd
+
+    # invoke the build command
+    Invoke-Expression -Command $BuildCmd
 }
 
 
