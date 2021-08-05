@@ -164,15 +164,15 @@ StaticDecl ::= (StaticDeclClass) ClassDecl;
 // class A { { method method method } }
 // class A extends B { vardl vardl vardl vardl }
 // class A extends B { vardl vardl vardl vardl { method method method } }
-ClassDecl ::= (ClassDecl       ) CLASS_K ident ClassDeclScope;
-ClassDecl ::= (ClassExtendsDecl) CLASS_K ident EXTENDS_K Type ClassDeclScope;
+ClassDecl ::= (ClassDeclPlain  ) CLASS_K ident ClassDeclScope;
+ClassDecl ::= (ClassDeclExtends) CLASS_K ident EXTENDS_K Type ClassDeclScope;
 
 // { }
 // { { method method method } }
 // { vardl vardl vardl vardl }
 // { vardl vardl vardl vardl { method method method } }
-ClassDeclScope ::= (ClassDeclScope       ) lbrace VarDeclList rbrace;
-ClassDeclScope ::= (ClassDeclScopeMethods) lbrace VarDeclList MethodDeclScope rbrace;
+ClassDeclScope ::= (ClassDeclScopeVars       ) lbrace VarDeclList rbrace;
+ClassDeclScope ::= (ClassDeclScopeVarsMethods) lbrace VarDeclList MethodDeclScope rbrace;
 
 // { }
 // { method method method }
@@ -195,7 +195,7 @@ MethodDecl ::= (MethodDecl) ReturnType ident lparen FormPars rparen VarDeclList 
 
 // <epsilon>
 // int ident, Node Array[], char c
-FormPars ::= (FormPars     ) Type VarIdent FormParsNext;
+FormPars ::= (FormParsTail ) Type VarIdent FormParsNext;
 FormPars ::= (FormParsEmpty) ;
 
 FormParsNext ::= (FormParsNextFormPar) comma Type VarIdent FormPars;
@@ -353,15 +353,15 @@ DesignatorNext ::= (DesignatorNextEmpty    ) ;
 
 
 // ident | array[]
-VarIdent ::= (VarIdent     ) ident;
-VarIdent ::= (VarArrayIdent) ident lbracket rbracket;
+VarIdent ::= (VarIdentIdent) ident;
+VarIdent ::= (VarIdentArray) ident lbracket rbracket;
 // 1202 | 'c' | true
 Literal ::= (LiteralInt ) int_lit;
 Literal ::= (LiteralChar) char_lit;
 Literal ::= (LiteralBool) bool_lit;
 // void | type
-ReturnType ::= (ReturnTypeVoid) VOID_K;
-ReturnType ::= (ReturnType    ) Type;
+ReturnType ::= (ReturnTypeVoid ) VOID_K;
+ReturnType ::= (ReturnTypeIdent) ident;
 // int | bool | char | ident
 Type ::= (Type) ident;
 
