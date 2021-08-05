@@ -109,7 +109,7 @@ terminal String ident;         // asdf0_13
 
 
 // declarations [nonterminals]
-nonterminal Program, StaticDeclList, StaticDecl;
+nonterminal Program, GlobalDeclList, GlobalDecl;
 nonterminal ClassDecl, ClassDeclScope, MethodDeclScope, MethodDeclList;
 nonterminal MethodDecl, FormPars, FormParsNext, VarDeclList;
 nonterminal VarDecl, VarIdentList;
@@ -147,16 +147,16 @@ start with Program;
 // program ident { method method method }
 // program ident constdl constdl vardl vardl classdl { }
 // program ident constdl constdl vardl vardl classdl { method method method }
-Program ::= (Program) PROGRAM_K ident StaticDeclList MethodDeclScope;
+Program ::= (Program) PROGRAM_K ident GlobalDeclList MethodDeclScope;
 
 // <epsilon>
 // constdl constdl vardl vardl classdl
-StaticDeclList ::= (StaticDeclListTail ) StaticDecl StaticDeclList;
-StaticDeclList ::= (StaticDeclListEmpty) ;
+GlobalDeclList ::= (GlobalDeclListTail ) GlobalDecl GlobalDeclList;
+GlobalDeclList ::= (GlobalDeclListEmpty) ;
 
-StaticDecl ::= (StaticDeclConst) ConstDecl;
-StaticDecl ::= (StaticDeclVar  ) VarDecl;
-StaticDecl ::= (StaticDeclClass) ClassDecl;
+GlobalDecl ::= (GlobalDeclConst) ConstDecl;
+GlobalDecl ::= (GlobalDeclVar  ) VarDecl;
+GlobalDecl ::= (GlobalDeclClass) ClassDecl;
 
 
 

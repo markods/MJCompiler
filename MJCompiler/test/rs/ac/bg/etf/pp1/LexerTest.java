@@ -5,35 +5,38 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import rs.ac.bg.etf.pp1.util.Log4JUtils;
 
 import java_cup.runtime.Symbol;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import rs.ac.bg.etf.pp1.util.Log4JUtils;
 
-public class LexerTest {
+public class LexerTest
+{
+    static
+    {
+        DOMConfigurator.configure( Log4JUtils.instance().findLoggerConfigFile() );
+        Log4JUtils.instance().prepareLogFile( Logger.getRootLogger() );
+    }
 
-	static {
-		DOMConfigurator.configure(Log4JUtils.instance().findLoggerConfigFile());
-		Log4JUtils.instance().prepareLogFile(Logger.getRootLogger());
-	}
-	
-	public static void main(String[] args) throws IOException {
-		Logger logger = Logger.getLogger(LexerTest.class);
-		Reader br = null;
-		try {
-			
-			File sourceCode = new File("test/program.mj");	
-			logger.info("Compiling source file: " + sourceCode.getAbsolutePath());
-			
-			br = new BufferedReader(new FileReader(sourceCode));
-			
-			Yylex lexer = new Yylex(br);
-			Symbol currToken = null;
-			while ((currToken = lexer.next_token()).sym != sym.EOF) {
-				if (currToken != null && currToken.value != null)
+    public static void main( String[] args ) throws IOException
+    {
+        Logger logger = Logger.getLogger( LexerTest.class );
+        Reader br = null;
+        try
+        {
+
+            File sourceCode = new File( "test/program.mj" );
+            logger.info( "Compiling source file: " + sourceCode.getAbsolutePath() );
+
+            br = new BufferedReader( new FileReader( sourceCode ) );
+
+            Yylex lexer = new Yylex( br );
+            Symbol currToken = null;
+            while( (currToken = lexer.next_token()).sym != sym.EOF )
+            {
+                if( currToken != null && currToken.value != null )
                 {
                     if( currToken.sym != sym.error )
                     {
@@ -45,11 +48,19 @@ public class LexerTest {
                                 currToken.left, currToken.right, sym.getSymbolName( currToken.sym ), currToken.value.toString() ) );
                     }
                 }
-			}
-		} 
-		finally {
-			if (br != null) try { br.close(); } catch (IOException e1) { logger.error(e1.getMessage(), e1); }
-		}
-	}
-	
+            }
+        }
+        finally
+        {
+            if( br != null ) try
+            {
+                br.close();
+            }
+            catch( IOException e1 )
+            {
+                logger.error( e1.getMessage(), e1 );
+            }
+        }
+    }
+
 }

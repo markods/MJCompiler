@@ -5,7 +5,7 @@
 
 package rs.ac.bg.etf.pp1.ast;
 
-public abstract class StatementList implements SyntaxNode {
+public abstract class GlobalDecl implements SyntaxNode {
 
     private SyntaxNode parent;
 

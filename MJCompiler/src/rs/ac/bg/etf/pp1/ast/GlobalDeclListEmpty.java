@@ -5,9 +5,9 @@
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class StatementReturn extends Statement {
+public class GlobalDeclListEmpty extends GlobalDeclList {
 
-    public StatementReturn () {
+    public GlobalDeclListEmpty () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class StatementReturn extends Statement {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("StatementReturn(\n");
+        buffer.append("GlobalDeclListEmpty(\n");
 
         buffer.append(tab);
-        buffer.append(") [StatementReturn]");
+        buffer.append(") [GlobalDeclListEmpty]");
         return buffer.toString();
     }
 }

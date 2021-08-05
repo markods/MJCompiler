@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 5/7/2021 12:12:27
+// 5/7/2021 17:50:47
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -15,7 +15,6 @@ public interface Visitor {
     public void visit(Relop Relop);
     public void visit(Assignop Assignop);
     public void visit(IdentInitList IdentInitList);
-    public void visit(StaticDeclList StaticDeclList);
     public void visit(ActParsNext ActParsNext);
     public void visit(StatementList StatementList);
     public void visit(ClassDeclScope ClassDeclScope);
@@ -24,11 +23,11 @@ public interface Visitor {
     public void visit(Factor Factor);
     public void visit(CondTerm CondTerm);
     public void visit(DesignatorNext DesignatorNext);
-    public void visit(StaticDecl StaticDecl);
     public void visit(Term Term);
     public void visit(Condition Condition);
     public void visit(CaseList CaseList);
     public void visit(SignedAddition SignedAddition);
+    public void visit(GlobalDeclList GlobalDeclList);
     public void visit(VarDeclList VarDeclList);
     public void visit(Expr Expr);
     public void visit(ActPars ActPars);
@@ -38,6 +37,7 @@ public interface Visitor {
     public void visit(ClassDecl ClassDecl);
     public void visit(CondFact CondFact);
     public void visit(MethodDeclList MethodDeclList);
+    public void visit(GlobalDecl GlobalDecl);
     public void visit(FormPars FormPars);
     public void visit(MulopPerc MulopPerc);
     public void visit(MulopDiv MulopDiv);
@@ -129,11 +129,11 @@ public interface Visitor {
     public void visit(ClassDeclScopeVars ClassDeclScopeVars);
     public void visit(ClassDeclExtends ClassDeclExtends);
     public void visit(ClassDeclPlain ClassDeclPlain);
-    public void visit(StaticDeclClass StaticDeclClass);
-    public void visit(StaticDeclVar StaticDeclVar);
-    public void visit(StaticDeclConst StaticDeclConst);
-    public void visit(StaticDeclListEmpty StaticDeclListEmpty);
-    public void visit(StaticDeclListTail StaticDeclListTail);
+    public void visit(GlobalDeclClass GlobalDeclClass);
+    public void visit(GlobalDeclVar GlobalDeclVar);
+    public void visit(GlobalDeclConst GlobalDeclConst);
+    public void visit(GlobalDeclListEmpty GlobalDeclListEmpty);
+    public void visit(GlobalDeclListTail GlobalDeclListTail);
     public void visit(Program Program);
 
 }

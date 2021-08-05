@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 5/7/2021 12:12:27
+// 5/7/2021 17:50:47
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -15,7 +15,6 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Relop Relop) { }
     public void visit(Assignop Assignop) { }
     public void visit(IdentInitList IdentInitList) { }
-    public void visit(StaticDeclList StaticDeclList) { }
     public void visit(ActParsNext ActParsNext) { }
     public void visit(StatementList StatementList) { }
     public void visit(ClassDeclScope ClassDeclScope) { }
@@ -24,11 +23,11 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Factor Factor) { }
     public void visit(CondTerm CondTerm) { }
     public void visit(DesignatorNext DesignatorNext) { }
-    public void visit(StaticDecl StaticDecl) { }
     public void visit(Term Term) { }
     public void visit(Condition Condition) { }
     public void visit(CaseList CaseList) { }
     public void visit(SignedAddition SignedAddition) { }
+    public void visit(GlobalDeclList GlobalDeclList) { }
     public void visit(VarDeclList VarDeclList) { }
     public void visit(Expr Expr) { }
     public void visit(ActPars ActPars) { }
@@ -38,6 +37,7 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(ClassDecl ClassDecl) { }
     public void visit(CondFact CondFact) { }
     public void visit(MethodDeclList MethodDeclList) { }
+    public void visit(GlobalDecl GlobalDecl) { }
     public void visit(FormPars FormPars) { }
     public void visit(MulopPerc MulopPerc) { visit(); }
     public void visit(MulopDiv MulopDiv) { visit(); }
@@ -129,11 +129,11 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(ClassDeclScopeVars ClassDeclScopeVars) { visit(); }
     public void visit(ClassDeclExtends ClassDeclExtends) { visit(); }
     public void visit(ClassDeclPlain ClassDeclPlain) { visit(); }
-    public void visit(StaticDeclClass StaticDeclClass) { visit(); }
-    public void visit(StaticDeclVar StaticDeclVar) { visit(); }
-    public void visit(StaticDeclConst StaticDeclConst) { visit(); }
-    public void visit(StaticDeclListEmpty StaticDeclListEmpty) { visit(); }
-    public void visit(StaticDeclListTail StaticDeclListTail) { visit(); }
+    public void visit(GlobalDeclClass GlobalDeclClass) { visit(); }
+    public void visit(GlobalDeclVar GlobalDeclVar) { visit(); }
+    public void visit(GlobalDeclConst GlobalDeclConst) { visit(); }
+    public void visit(GlobalDeclListEmpty GlobalDeclListEmpty) { visit(); }
+    public void visit(GlobalDeclListTail GlobalDeclListTail) { visit(); }
     public void visit(Program Program) { visit(); }
 
 
