@@ -5,9 +5,10 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
 /** CUP generated class containing symbol constants. */
-public class sym implements Isym {
+public class sym implements Isym
+{
     private static ArrayList<String> symbolNameList = null;
-    
+
     public static String getSymbolName( int symbol_id )
     {
         if( symbolNameList == null )
@@ -22,7 +23,7 @@ public class sym implements Isym {
                 try
                 {
                     int fieldModifiers = field.getModifiers();
-                    if( field.getType() == int.class && ( fieldModifiers & wantedModifiers ) == wantedModifiers )
+                    if( field.getType() == int.class && (fieldModifiers & wantedModifiers) == wantedModifiers )
                     {
                         int fieldValue = field.getInt( symbolInstance );
                         String fieldName = field.getName();
@@ -31,16 +32,16 @@ public class sym implements Isym {
                         {
                             symbolNameList.add( null );
                         }
-                        
+
                         symbolNameList.set( fieldValue, fieldName );
                     }
                 }
                 catch( IllegalAccessException ex )
-                {}
+                {
+                }
             }
         }
-        
+
         return symbolNameList.get( symbol_id );
     }
 }
-

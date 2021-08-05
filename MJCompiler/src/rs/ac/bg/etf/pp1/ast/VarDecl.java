@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 17/11/2017 14:22:55
+// 5/7/2021 12:12:27
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -10,12 +10,13 @@ public class VarDecl implements SyntaxNode {
     private SyntaxNode parent;
     private int line;
     private Type Type;
-    private String varName;
+    private VarIdentList VarIdentList;
 
-    public VarDecl (Type Type, String varName) {
+    public VarDecl (Type Type, VarIdentList VarIdentList) {
         this.Type=Type;
         if(Type!=null) Type.setParent(this);
-        this.varName=varName;
+        this.VarIdentList=VarIdentList;
+        if(VarIdentList!=null) VarIdentList.setParent(this);
     }
 
     public Type getType() {
@@ -26,12 +27,12 @@ public class VarDecl implements SyntaxNode {
         this.Type=Type;
     }
 
-    public String getVarName() {
-        return varName;
+    public VarIdentList getVarIdentList() {
+        return VarIdentList;
     }
 
-    public void setVarName(String varName) {
-        this.varName=varName;
+    public void setVarIdentList(VarIdentList VarIdentList) {
+        this.VarIdentList=VarIdentList;
     }
 
     public SyntaxNode getParent() {
@@ -56,15 +57,18 @@ public class VarDecl implements SyntaxNode {
 
     public void childrenAccept(Visitor visitor) {
         if(Type!=null) Type.accept(visitor);
+        if(VarIdentList!=null) VarIdentList.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
         if(Type!=null) Type.traverseTopDown(visitor);
+        if(VarIdentList!=null) VarIdentList.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
         if(Type!=null) Type.traverseBottomUp(visitor);
+        if(VarIdentList!=null) VarIdentList.traverseBottomUp(visitor);
         accept(visitor);
     }
 
@@ -79,7 +83,10 @@ public class VarDecl implements SyntaxNode {
             buffer.append(tab+"  null");
         buffer.append("\n");
 
-        buffer.append(" "+tab+varName);
+        if(VarIdentList!=null)
+            buffer.append(VarIdentList.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
         buffer.append("\n");
 
         buffer.append(tab);

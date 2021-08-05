@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 17/11/2017 14:22:55
+// 5/7/2021 12:12:27
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -9,43 +9,40 @@ public class Program implements SyntaxNode {
 
     private SyntaxNode parent;
     private int line;
-    public rs.etf.pp1.symboltable.concepts.Obj obj = null;
+    private String i1;
+    private StaticDeclList StaticDeclList;
+    private MethodDeclScope MethodDeclScope;
 
-    private ProgName ProgName;
-    private VarDeclList VarDeclList;
-    private MethodDeclList MethodDeclList;
-
-    public Program (ProgName ProgName, VarDeclList VarDeclList, MethodDeclList MethodDeclList) {
-        this.ProgName=ProgName;
-        if(ProgName!=null) ProgName.setParent(this);
-        this.VarDeclList=VarDeclList;
-        if(VarDeclList!=null) VarDeclList.setParent(this);
-        this.MethodDeclList=MethodDeclList;
-        if(MethodDeclList!=null) MethodDeclList.setParent(this);
+    public Program (String i1, StaticDeclList StaticDeclList, MethodDeclScope MethodDeclScope) {
+        this.i1=i1;
+        this.StaticDeclList=StaticDeclList;
+        if(StaticDeclList!=null) StaticDeclList.setParent(this);
+        this.MethodDeclScope=MethodDeclScope;
+        if(MethodDeclScope!=null) MethodDeclScope.setParent(this);
     }
 
-    public ProgName getProgName() {
-        return ProgName;
+    public String getI1() {
+        return i1;
     }
 
-    public void setProgName(ProgName ProgName) {
-        this.ProgName=ProgName;
+    public void setI1(String i1) {
+        this.i1=i1;
     }
 
-    public VarDeclList getVarDeclList() {
-        return VarDeclList;
+    public StaticDeclList getStaticDeclList() {
+        return StaticDeclList;
     }
 
-    public void setVarDeclList(VarDeclList VarDeclList) {
-        this.VarDeclList=VarDeclList;
+    public void setStaticDeclList(StaticDeclList StaticDeclList) {
+        this.StaticDeclList=StaticDeclList;
     }
 
-    public MethodDeclList getMethodDeclList() {
-        return MethodDeclList;
+    public MethodDeclScope getMethodDeclScope() {
+        return MethodDeclScope;
     }
 
-    public void setMethodDeclList(MethodDeclList MethodDeclList) {
-        this.MethodDeclList=MethodDeclList;
+    public void setMethodDeclScope(MethodDeclScope MethodDeclScope) {
+        this.MethodDeclScope=MethodDeclScope;
     }
 
     public SyntaxNode getParent() {
@@ -69,22 +66,19 @@ public class Program implements SyntaxNode {
     }
 
     public void childrenAccept(Visitor visitor) {
-        if(ProgName!=null) ProgName.accept(visitor);
-        if(VarDeclList!=null) VarDeclList.accept(visitor);
-        if(MethodDeclList!=null) MethodDeclList.accept(visitor);
+        if(StaticDeclList!=null) StaticDeclList.accept(visitor);
+        if(MethodDeclScope!=null) MethodDeclScope.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
-        if(ProgName!=null) ProgName.traverseTopDown(visitor);
-        if(VarDeclList!=null) VarDeclList.traverseTopDown(visitor);
-        if(MethodDeclList!=null) MethodDeclList.traverseTopDown(visitor);
+        if(StaticDeclList!=null) StaticDeclList.traverseTopDown(visitor);
+        if(MethodDeclScope!=null) MethodDeclScope.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
-        if(ProgName!=null) ProgName.traverseBottomUp(visitor);
-        if(VarDeclList!=null) VarDeclList.traverseBottomUp(visitor);
-        if(MethodDeclList!=null) MethodDeclList.traverseBottomUp(visitor);
+        if(StaticDeclList!=null) StaticDeclList.traverseBottomUp(visitor);
+        if(MethodDeclScope!=null) MethodDeclScope.traverseBottomUp(visitor);
         accept(visitor);
     }
 
@@ -93,20 +87,17 @@ public class Program implements SyntaxNode {
         buffer.append(tab);
         buffer.append("Program(\n");
 
-        if(ProgName!=null)
-            buffer.append(ProgName.toString("  "+tab));
+        buffer.append(" "+tab+i1);
+        buffer.append("\n");
+
+        if(StaticDeclList!=null)
+            buffer.append(StaticDeclList.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");
 
-        if(VarDeclList!=null)
-            buffer.append(VarDeclList.toString("  "+tab));
-        else
-            buffer.append(tab+"  null");
-        buffer.append("\n");
-
-        if(MethodDeclList!=null)
-            buffer.append(MethodDeclList.toString("  "+tab));
+        if(MethodDeclScope!=null)
+            buffer.append(MethodDeclScope.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");
