@@ -16,20 +16,22 @@ import rs.etf.pp1.symboltable.Tab;
 
 public class Compiler
 {
-    public List<CompilerError> compile( String sourceFilePath, String outputFilePath )
-    {
-        return null;
-    }
-
     static
     {
         DOMConfigurator.configure( Log4JUtils.instance().findLoggerConfigFile() );
         Log4JUtils.instance().prepareLogFile( Logger.getRootLogger() );
     }
 
+    public static List<CompilerError> compile()
+    {
+        return null;
+    }
+
     public static void main( String[] args ) throws Exception
     {
-        Logger log = Logger.getLogger( CompilerTest.class );
+        // Compiler.compile( args );
+        
+        Logger log = Logger.getLogger( Compiler.class );
         if( args.length < 2 )
         {
             log.error( "Not enough arguments supplied! Usage: MJParser <source-file> <obj-file> " );

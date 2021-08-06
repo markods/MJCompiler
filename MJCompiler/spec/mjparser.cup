@@ -91,8 +91,8 @@ terminal NEW_K, PRINT_K, READ_K;
 // operators [terminals]
 //       +     -      *    /    %
 terminal plus, minus, mul, div, perc;
-//       ==  !=   >   >=   <   <=   &&   ||
-terminal eq, neq, gt, geq, lt, leq, and, or;
+//       ==  !=  >   >=  <   <=  &&   ||
+terminal eq, ne, gt, ge, lt, le, and, or;
 //       =       ++        --
 terminal assign, plusplus, minusminus;
 //       ;        ,      .    {       }       (       )       [         ]         ?      :
@@ -147,16 +147,16 @@ start with Program;
 // program ident { method method method }
 // program ident constdl constdl vardl vardl classdl { }
 // program ident constdl constdl vardl vardl classdl { method method method }
-Program ::= (Program) PROGRAM_K ident GlobalDeclList MethodDeclScope;
+Program ::= (Program_Plain) PROGRAM_K ident GlobalDeclList MethodDeclScope;
 
 // <epsilon>
 // constdl constdl vardl vardl classdl
-GlobalDeclList ::= (GlobalDeclListTail ) GlobalDecl GlobalDeclList;
-GlobalDeclList ::= (GlobalDeclListEmpty) ;
+GlobalDeclList ::= (GlobalDeclList_Tail ) GlobalDecl GlobalDeclList;
+GlobalDeclList ::= (GlobalDeclList_Empty) ;
 
-GlobalDecl ::= (GlobalDeclConst) ConstDecl;
-GlobalDecl ::= (GlobalDeclVar  ) VarDecl;
-GlobalDecl ::= (GlobalDeclClass) ClassDecl;
+GlobalDecl ::= (GlobalDecl_Const) ConstDecl;
+GlobalDecl ::= (GlobalDecl_Var  ) VarDecl;
+GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
 
 
 
@@ -164,22 +164,22 @@ GlobalDecl ::= (GlobalDeclClass) ClassDecl;
 // class A { { method method method } }
 // class A extends B { vardl vardl vardl vardl }
 // class A extends B { vardl vardl vardl vardl { method method method } }
-ClassDecl ::= (ClassDeclPlain  ) CLASS_K ident ClassDeclScope;
-ClassDecl ::= (ClassDeclExtends) CLASS_K ident EXTENDS_K Type ClassDeclScope;
+ClassDecl ::= (ClassDecl_Plain  ) CLASS_K ident ClassDeclScope;
+ClassDecl ::= (ClassDecl_Extends) CLASS_K ident EXTENDS_K Type ClassDeclScope;
 
 // { }
 // { { method method method } }
 // { vardl vardl vardl vardl }
 // { vardl vardl vardl vardl { method method method } }
-ClassDeclScope ::= (ClassDeclScopeVars       ) lbrace VarDeclList rbrace;
-ClassDeclScope ::= (ClassDeclScopeVarsMethods) lbrace VarDeclList MethodDeclScope rbrace;
+ClassDeclScope ::= (ClassDeclScope_Vars       ) lbrace VarDeclList rbrace;
+ClassDeclScope ::= (ClassDeclScope_VarsMethods) lbrace VarDeclList MethodDeclScope rbrace;
 
 // { }
 // { method method method }
-MethodDeclScope ::= (MethodDeclScope) lbrace MethodDeclList rbrace;
+MethodDeclScope ::= (MethodDeclScope_Plain) lbrace MethodDeclList rbrace;
 
-MethodDeclList ::= (MethodDeclListTail ) MethodDecl MethodDeclList;
-MethodDeclList ::= (MethodDeclListEmpty) ;
+MethodDeclList ::= (MethodDeclList_Tail ) MethodDecl MethodDeclList;
+MethodDeclList ::= (MethodDeclList_Empty) ;
 
 
 
@@ -191,37 +191,37 @@ MethodDeclList ::= (MethodDeclListEmpty) ;
 // void foo( int a, char c, Node Array[] ) { statement statement }
 // void foo( int a, char c, Node Array[] ) vardl vardl { }
 // void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-MethodDecl ::= (MethodDecl) ReturnType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
+MethodDecl ::= (MethodDecl_Plain) ReturnType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
 
 // <epsilon>
 // int ident, Node Array[], char c
-FormPars ::= (FormParsTail ) Type VarIdent FormParsNext;
-FormPars ::= (FormParsEmpty) ;
+FormPars ::= (FormPars_Tail ) Type VarIdent FormParsNext;
+FormPars ::= (FormPars_Empty) ;
 
-FormParsNext ::= (FormParsNextFormPar) comma Type VarIdent FormPars;
-FormParsNext ::= (FormParsNextEmpty  ) ;
+FormParsNext ::= (FormParsNext_FormPar) comma Type VarIdent FormPars;
+FormParsNext ::= (FormParsNext_Empty  ) ;
 
 // <epsilon>
 // vardl vardl vardl vardl
-VarDeclList ::= (VarDeclListVarDecl) VarDecl VarDeclList;
-VarDeclList ::= (VarDeclListEmpty  ) ;
+VarDeclList ::= (VarDeclList_VarDecl) VarDecl VarDeclList;
+VarDeclList ::= (VarDeclList_Empty  ) ;
 
 
 
 // int a, b[], c;
 // A a1, a2;
-VarDecl ::= (VarDecl) Type VarIdentList semicol;
+VarDecl ::= (VarDecl_Plain) Type VarIdentList semicol;
 
-VarIdentList ::= (VarIdentListVarIdent) VarIdent;
-VarIdentList ::= (VarIdentListTail    ) VarIdent comma VarIdentList;
+VarIdentList ::= (VarIdentList_VarIdent) VarIdent;
+VarIdentList ::= (VarIdentList_Tail    ) VarIdent comma VarIdentList;
 
 
 
 // const int a = 5, b = 6, c = 11;
-ConstDecl ::= (ConstDecl) CONST_K Type IdentInitList semicol;
+ConstDecl ::= (ConstDecl_Plain) CONST_K Type IdentInitList semicol;
 
-IdentInitList ::= (IdentInitListInit) ident Assignop Literal;
-IdentInitList ::= (IdentInitListTail) ident Assignop Literal comma IdentInitList;
+IdentInitList ::= (IdentInitList_Init) ident Assignop Literal;
+IdentInitList ::= (IdentInitList_Tail) ident Assignop Literal comma IdentInitList;
 
 
 
@@ -246,60 +246,60 @@ IdentInitList ::= (IdentInitListTail) ident Assignop Literal comma IdentInitList
 //
 // {}
 // { statement statement statement }
-Statement ::= (StatementDesignator ) DesignatorStatement semicol;
-Statement ::= (StatementIf         ) IF_K lparen Condition rparen Statement;
-Statement ::= (StatementIfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
-Statement ::= (StatementDoWhile    ) DO_K Statement WHILE_K lparen Condition rparen semicol;
-Statement ::= (StatementSwitch     ) SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
-Statement ::= (StatementBreak      ) BREAK_K semicol;
-Statement ::= (StatementContinue   ) CONTINUE_K semicol;
-Statement ::= (StatementReturn     ) RETURN_K semicol;
-Statement ::= (StatementReturnExpr ) RETURN_K Expr semicol;
-Statement ::= (StatementRead       ) READ_K lparen Designator rparen semicol;
-Statement ::= (StatementPrint      ) PRINT_K lparen Expr rparen semicol;
-Statement ::= (StatementPrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
-Statement ::= (StatementScope      ) lbrace StatementList rbrace;
+Statement ::= (Statement_Designator ) DesignatorStatement semicol;
+Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
+Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
+Statement ::= (Statement_DoWhile    ) DO_K Statement WHILE_K lparen Condition rparen semicol;
+Statement ::= (Statement_Switch     ) SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
+Statement ::= (Statement_Break      ) BREAK_K semicol;
+Statement ::= (Statement_Continue   ) CONTINUE_K semicol;
+Statement ::= (Statement_Return     ) RETURN_K semicol;
+Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
+Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
+Statement ::= (Statement_Print      ) PRINT_K lparen Expr rparen semicol;
+Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
+Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
 
 // ident.ident[ expr ] = expr
 // ident.ident[ expr ]( )
 // ident.ident[ expr ]( expr, expr, expr )
 // ident.ident[ expr ]++
 // ident.ident[ expr ]--
-DesignatorStatement ::= (DesignatorStatementAssign    ) Designator Assignop Expr;
-DesignatorStatement ::= (DesignatorStatementCall      ) Designator lparen ActPars rparen;
-DesignatorStatement ::= (DesignatorStatementPlusplus  ) Designator plusplus;
-DesignatorStatement ::= (DesignatorStatementMinusminus) Designator minusminus;
+DesignatorStatement ::= (DesignatorStatement_Assign    ) Designator Assignop Expr;
+DesignatorStatement ::= (DesignatorStatement_Call      ) Designator lparen ActPars rparen;
+DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
+DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
 
 
 
 // <epsilon>
 // statement statement statement statement
-StatementList ::= (StatementListTail ) Statement StatementList;
-StatementList ::= (StatementListEmpty) ;
+StatementList ::= (StatementList_Tail ) Statement StatementList;
+StatementList ::= (StatementList_Empty) ;
 
 // <epsilon>
 // case 1: statement statement statement   case 2: statement statement
-CaseList ::= (CaseListTail ) CASE_K int_lit colon StatementList CaseList;
-CaseList ::= (CaseListEmpty) ;
+CaseList ::= (CaseList_Tail ) CASE_K int_lit colon StatementList CaseList;
+CaseList ::= (CaseList_Empty) ;
 
 // <epsilon>
 // expr
 // expr, expr, expr
-ActPars ::= (ActParsTail ) Expr ActParsNext;
-ActPars ::= (ActParsEmpty) ;
+ActPars ::= (ActPars_Tail ) Expr ActParsNext;
+ActPars ::= (ActPars_Empty) ;
 
-ActParsNext ::= (ActParsNextTail ) comma Expr ActParsNext;
-ActParsNext ::= (ActParsNextEmpty) ;
+ActParsNext ::= (ActParsNext_Tail ) comma Expr ActParsNext;
+ActParsNext ::= (ActParsNext_Empty) ;
 
 // expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
-Condition ::= (ConditionTerm) CondTerm;
-Condition ::= (ConditionTail) CondTerm or Condition;
+Condition ::= (Condition_Term) CondTerm;
+Condition ::= (Condition_Tail) CondTerm or Condition;
 
-CondTerm ::= (CondTermFact) CondFact;
-CondTerm ::= (CondTermTail) CondFact and CondTerm;
+CondTerm ::= (CondTerm_Fact) CondFact;
+CondTerm ::= (CondTerm_Tail) CondFact and CondTerm;
 
-CondFact ::= (CondFactExpr) Expr;
-CondFact ::= (CondFactTail) Expr Relop Expr;
+CondFact ::= (CondFact_Expr) Expr;
+CondFact ::= (CondFact_Tail) Expr Relop Expr;
 
 // term
 // +term
@@ -308,22 +308,22 @@ CondFact ::= (CondFactTail) Expr Relop Expr;
 // -term + term - term + term
 // +term + term + term + term
 // -term + term - term + term ? -term + term : term
-Expr ::= (ExprAddition) Addition;
-Expr ::= (ExprTernary ) Addition qmark Addition colon Addition;
+Expr ::= (Expr_Addition) Addition;
+Expr ::= (Expr_Ternary ) Addition qmark Addition colon Addition;
 
-Addition ::= (AdditionTerm    ) Term;
-Addition ::= (AdditionTail    )      SignedAddition;
-Addition ::= (AdditionTermTail) Term SignedAddition;
+Addition ::= (Addition_Term    ) Term;
+Addition ::= (Addition_Tail    )      SignedAddition;
+Addition ::= (Addition_TermTail) Term SignedAddition;
 
-SignedAddition ::= (SignedAdditionTerm) Addop Term;
-SignedAddition ::= (SignedAdditionTail) Addop Term SignedAddition;
+SignedAddition ::= (SignedAddition_Term) Addop Term;
+SignedAddition ::= (SignedAddition_Tail) Addop Term SignedAddition;
 
 
 
 // factor
 // factor*factor*factor
-Term ::= (TermFactor) Factor;
-Term ::= (TermTail  ) Factor Mulop Term;
+Term ::= (Term_Factor) Factor;
+Term ::= (Term_Tail  ) Factor Mulop Term;
 
 // ident.ident[ expr ]
 // ident.ident[ expr ]( )
@@ -332,55 +332,55 @@ Term ::= (TermTail  ) Factor Mulop Term;
 // new Object
 // new Array[ expr ]
 // ( expr )
-Factor ::= (FactorDesignator    ) Designator;
-Factor ::= (FactorDesignatorCall) Designator lparen ActPars rparen;
-Factor ::= (FactorLiteral       ) Literal;
-Factor ::= (FactorNewVar        ) NEW_K Type;
-Factor ::= (FactorNewArray      ) NEW_K Type lbracket Expr rbracket;
-Factor ::= (FactorExpr          ) lparen Expr rparen;
+Factor ::= (Factor_Designator    ) Designator;
+Factor ::= (Factor_DesignatorCall) Designator lparen ActPars rparen;
+Factor ::= (Factor_Literal       ) Literal;
+Factor ::= (Factor_NewVar        ) NEW_K Type;
+Factor ::= (Factor_NewArray      ) NEW_K Type lbracket Expr rbracket;
+Factor ::= (Factor_Expr          ) lparen Expr rparen;
 
 // ident
 // ident.ident
 // ident[ expr ]
 // ident.ident.ident[ expr ].ident
 // ident.ident.ident[ expr ].ident[ expr ]
-Designator ::= (Designator) ident DesignatorNext;
+Designator ::= (Designator_Plain) ident DesignatorNext;
 
-DesignatorNext ::= (DesignatorNextFieldTail) dot ident              DesignatorNext;
-DesignatorNext ::= (DesignatorNextElemTail ) lbracket Expr rbracket DesignatorNext;
-DesignatorNext ::= (DesignatorNextEmpty    ) ;
+DesignatorNext ::= (DesignatorNext_FieldTail) dot ident              DesignatorNext;
+DesignatorNext ::= (DesignatorNext_ElemTail ) lbracket Expr rbracket DesignatorNext;
+DesignatorNext ::= (DesignatorNext_Empty    ) ;
 
 
 
 // ident | array[]
-VarIdent ::= (VarIdentIdent) ident;
-VarIdent ::= (VarIdentArray) ident lbracket rbracket;
+VarIdent ::= (VarIdent_Ident) ident;
+VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
 // 1202 | 'c' | true
-Literal ::= (LiteralInt ) int_lit;
-Literal ::= (LiteralChar) char_lit;
-Literal ::= (LiteralBool) bool_lit;
+Literal ::= (Literal_Int ) int_lit;
+Literal ::= (Literal_Char) char_lit;
+Literal ::= (Literal_Bool) bool_lit;
 // void | type
-ReturnType ::= (ReturnTypeVoid ) VOID_K;
-ReturnType ::= (ReturnTypeIdent) ident;
+ReturnType ::= (ReturnType_Void ) VOID_K;
+ReturnType ::= (ReturnType_Ident) ident;
 // int | bool | char | ident
-Type ::= (Type) ident;
+Type ::= (Type_Ident) ident;
 
 // =
-Assignop ::= (AssignopAssign) assign;
+Assignop ::= (Assignop_Assign) assign;
 // ==  |  !=  |  >  |  >=  |  <  |  <=
-Relop ::= (RelopEq ) eq;
-Relop ::= (RelopNeq) neq;
-Relop ::= (RelopGt ) gt;
-Relop ::= (RelopGeq) geq;
-Relop ::= (RelopLt ) lt;
-Relop ::= (RelopLeq) leq;
+Relop ::= (Relop_Eq ) eq;
+Relop ::= (Relop_Neq) ne;
+Relop ::= (Relop_Gt ) gt;
+Relop ::= (Relop_Geq) ge;
+Relop ::= (Relop_Lt ) lt;
+Relop ::= (Relop_Leq) le;
 // +  |  -
-Addop ::= (AddopPlus ) plus;
-Addop ::= (AddopMinus) minus;
+Addop ::= (Addop_Plus ) plus;
+Addop ::= (Addop_Minus) minus;
 // *  |  /  |  %
-Mulop ::= (MulopMul ) mul;
-Mulop ::= (MulopDiv ) div;
-Mulop ::= (MulopPerc) perc;
+Mulop ::= (Mulop_Mul ) mul;
+Mulop ::= (Mulop_Div ) div;
+Mulop ::= (Mulop_Perc) perc;
 
 
 
