@@ -5,13 +5,16 @@
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Factor_NewVar extends Factor {
+public class ClassVarDecl_Plain extends ClassVarDecl {
 
     private Type Type;
+    private VarIdentList VarIdentList;
 
-    public Factor_NewVar (Type Type) {
+    public ClassVarDecl_Plain (Type Type, VarIdentList VarIdentList) {
         this.Type=Type;
         if(Type!=null) Type.setParent(this);
+        this.VarIdentList=VarIdentList;
+        if(VarIdentList!=null) VarIdentList.setParent(this);
     }
 
     public Type getType() {
@@ -22,28 +25,39 @@ public class Factor_NewVar extends Factor {
         this.Type=Type;
     }
 
+    public VarIdentList getVarIdentList() {
+        return VarIdentList;
+    }
+
+    public void setVarIdentList(VarIdentList VarIdentList) {
+        this.VarIdentList=VarIdentList;
+    }
+
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
 
     public void childrenAccept(Visitor visitor) {
         if(Type!=null) Type.accept(visitor);
+        if(VarIdentList!=null) VarIdentList.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
         if(Type!=null) Type.traverseTopDown(visitor);
+        if(VarIdentList!=null) VarIdentList.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
         if(Type!=null) Type.traverseBottomUp(visitor);
+        if(VarIdentList!=null) VarIdentList.traverseBottomUp(visitor);
         accept(visitor);
     }
 
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Factor_NewVar(\n");
+        buffer.append("ClassVarDecl_Plain(\n");
 
         if(Type!=null)
             buffer.append(Type.toString("  "+tab));
@@ -51,8 +65,14 @@ public class Factor_NewVar extends Factor {
             buffer.append(tab+"  null");
         buffer.append("\n");
 
+        if(VarIdentList!=null)
+            buffer.append(VarIdentList.toString("  "+tab));
+        else
+            buffer.append(tab+"  null");
+        buffer.append("\n");
+
         buffer.append(tab);
-        buffer.append(") [Factor_NewVar]");
+        buffer.append(") [ClassVarDecl_Plain]");
         return buffer.toString();
     }
 }

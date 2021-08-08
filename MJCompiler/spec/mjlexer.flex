@@ -81,6 +81,7 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 "enum"       { return new_symbol( sym.error /*sym.ENUM_K*/, new_error( "Enum not implemented" ) ); }
 "extends"    { return new_symbol( sym.EXTENDS_K, yytext() ); }
 
+"static"     { return new_symbol( sym.STATIC_K, yytext() ); }
 "const"      { return new_symbol( sym.CONST_K, yytext() ); }
 "void"       { return new_symbol( sym.VOID_K, yytext() ); }
 
@@ -131,7 +132,7 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 ")"          { return new_symbol( sym.rparen, yytext() ); }
 "["          { return new_symbol( sym.lbracket, yytext() ); }
 "]"          { return new_symbol( sym.rbracket, yytext() ); }
-"?"          { return new_symbol( sym.qmark, yytext() ); }
+// "?"          { return new_symbol( sym.qmark, yytext() ); }
 ":"          { return new_symbol( sym.colon, yytext() ); }
 
 

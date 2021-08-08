@@ -5,9 +5,9 @@
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Mulop_Perc extends Mulop {
+public class ClassVarDeclList_Empty extends ClassVarDeclList {
 
-    public Mulop_Perc () {
+    public ClassVarDeclList_Empty () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Mulop_Perc extends Mulop {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Mulop_Perc(\n");
+        buffer.append("ClassVarDeclList_Empty(\n");
 
         buffer.append(tab);
-        buffer.append(") [Mulop_Perc]");
+        buffer.append(") [ClassVarDeclList_Empty]");
         return buffer.toString();
     }
 }

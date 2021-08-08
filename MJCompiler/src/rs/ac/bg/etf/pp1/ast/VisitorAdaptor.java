@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 8/7/2021 20:30:1
+// 8/7/2021 21:10:27
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -19,11 +19,13 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(ActParsNext ActParsNext) { }
     public void visit(StatementList StatementList) { }
     public void visit(ClassDeclScope ClassDeclScope) { }
+    public void visit(ClassVarDecl ClassVarDecl) { }
     public void visit(Addop Addop) { }
     public void visit(Addition Addition) { }
     public void visit(Factor Factor) { }
     public void visit(CondTerm CondTerm) { }
     public void visit(DesignatorNext DesignatorNext) { }
+    public void visit(ClassVarDeclList ClassVarDeclList) { }
     public void visit(Designator Designator) { }
     public void visit(Term Term) { }
     public void visit(Condition Condition) { }
@@ -83,7 +85,6 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(Addition_TermTail Addition_TermTail) { visit(); }
     public void visit(Addition_Tail Addition_Tail) { visit(); }
     public void visit(Addition_Term Addition_Term) { visit(); }
-    public void visit(Expr_Ternary Expr_Ternary) { visit(); }
     public void visit(Expr_Addition Expr_Addition) { visit(); }
     public void visit(CondFact_Tail CondFact_Tail) { visit(); }
     public void visit(CondFact_Expr CondFact_Expr) { visit(); }
@@ -133,6 +134,10 @@ public abstract class VisitorAdaptor implements Visitor {
     public void visit(MethodDeclList_Empty MethodDeclList_Empty) { visit(); }
     public void visit(MethodDeclList_Tail MethodDeclList_Tail) { visit(); }
     public void visit(MethodDeclScope_Plain MethodDeclScope_Plain) { visit(); }
+    public void visit(ClassVarDecl_Static ClassVarDecl_Static) { visit(); }
+    public void visit(ClassVarDecl_Plain ClassVarDecl_Plain) { visit(); }
+    public void visit(ClassVarDeclList_Empty ClassVarDeclList_Empty) { visit(); }
+    public void visit(ClassVarDeclList_VarDecl ClassVarDeclList_VarDecl) { visit(); }
     public void visit(ClassDeclScope_VarsMethods ClassDeclScope_VarsMethods) { visit(); }
     public void visit(ClassDeclScope_Vars ClassDeclScope_Vars) { visit(); }
     public void visit(ClassDecl_Extends ClassDecl_Extends) { visit(); }

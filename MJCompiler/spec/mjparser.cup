@@ -83,7 +83,7 @@ scan with {:
 
 // keywords [terminals]
 terminal PROGRAM_K, CLASS_K, /*ENUM_K,*/ EXTENDS_K;   // enum currently not used
-terminal CONST_K, VOID_K;
+terminal STATIC_K, CONST_K, VOID_K;
 terminal IF_K, ELSE_K, SWITCH_K, CASE_K, BREAK_K, CONTINUE_K, RETURN_K;
 terminal DO_K, WHILE_K;
 terminal NEW_K, PRINT_K, READ_K;
@@ -95,8 +95,8 @@ terminal plus, minus, mul, div, perc;
 terminal eq, ne, gt, ge, lt, le, and, or;
 //       =       ++        --
 terminal assign, plusplus, minusminus;
-//       ;        ,      .    {       }       (       )       [         ]         ?      :
-terminal semicol, comma, dot, lbrace, rbrace, lparen, rparen, lbracket, rbracket, qmark, colon;
+//       ;        ,      .    {       }       (       )       [         ]         :
+terminal semicol, comma, dot, lbrace, rbrace, lparen, rparen, lbracket, rbracket, colon;
 
 // literals [terminals]
 terminal Integer int_lit;      // 0   10   12012
@@ -110,7 +110,7 @@ terminal String ident;         // asdf0_13
 
 // declarations [nonterminals]
 nonterminal Program, GlobalDeclList, GlobalDecl;
-nonterminal ClassDecl, ClassDeclScope, MethodDeclScope, MethodDeclList;
+nonterminal ClassDecl, ClassDeclScope, ClassVarDeclList, ClassVarDecl, MethodDeclScope, MethodDeclList;
 nonterminal MethodDecl, FormPars, FormParsNext, VarDeclList;
 nonterminal VarDecl, VarIdentList;
 nonterminal ConstDecl, IdentInitList;
@@ -164,15 +164,27 @@ GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
 // class A { { method method method } }
 // class A extends B { vardl vardl vardl vardl }
 // class A extends B { vardl vardl vardl vardl { method method method } }
-ClassDecl ::= (ClassDecl_Plain  ) CLASS_K ident ClassDeclScope;
+ClassDecl ::= (ClassDecl_Plain  ) CLASS_K ident                ClassDeclScope;
 ClassDecl ::= (ClassDecl_Extends) CLASS_K ident EXTENDS_K Type ClassDeclScope;
 
 // { }
 // { { method method method } }
 // { vardl vardl vardl vardl }
 // { vardl vardl vardl vardl { method method method } }
-ClassDeclScope ::= (ClassDeclScope_Vars       ) lbrace VarDeclList rbrace;
-ClassDeclScope ::= (ClassDeclScope_VarsMethods) lbrace VarDeclList MethodDeclScope rbrace;
+ClassDeclScope ::= (ClassDeclScope_Vars       ) lbrace ClassVarDeclList                 rbrace;
+ClassDeclScope ::= (ClassDeclScope_VarsMethods) lbrace ClassVarDeclList MethodDeclScope rbrace;
+
+// <epsilon>
+// clsvardl clsvardl clsvardl clsvardl
+ClassVarDeclList ::= (ClassVarDeclList_VarDecl) ClassVarDecl ClassVarDeclList;
+ClassVarDeclList ::= (ClassVarDeclList_Empty  ) ;
+
+// int a, b[], c;
+// A a1, a2;
+// static int a, b[], c;
+// static A a1, a2;
+ClassVarDecl ::= (ClassVarDecl_Plain )          Type VarIdentList semicol;
+ClassVarDecl ::= (ClassVarDecl_Static) STATIC_K Type VarIdentList semicol;
 
 // { }
 // { method method method }
@@ -308,9 +320,7 @@ CondFact ::= (CondFact_Tail) Expr Relop Expr;
 // term + term - term + term
 // -term + term - term + term
 // +term + term + term + term
-// -term + term - term + term ? -term + term : term
 Expr ::= (Expr_Addition) Addition;
-Expr ::= (Expr_Ternary ) Addition qmark Addition colon Addition;
 
 Addition ::= (Addition_Term    ) Term;
 Addition ::= (Addition_Tail    )      SignedAddition;
