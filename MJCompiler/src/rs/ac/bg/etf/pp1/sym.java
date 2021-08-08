@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 
+import java_cup.runtime.Symbol;
+
 /** CUP generated class containing symbol constants. */
 public class sym implements Isym
 {
@@ -43,5 +45,13 @@ public class sym implements Isym
         }
 
         return symbolNameList.get( symbol_id );
+    }
+
+    public static String symbolToString( Symbol symbol )
+    {
+        String symbolName = ( symbol != null ) ? getSymbolName( symbol.sym ) : "<INVALID TOKEN>";
+        String symbolValue = ( symbol != null && symbol.value != null ) ? "'" + symbol.value.toString() + "'" : "''";
+
+        return String.format( "Ln %3d, Col %3d   %-15s %s", symbol.left, symbol.right, symbolName, symbolValue );
     }
 }

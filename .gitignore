@@ -3,10 +3,13 @@
 *.zip
 *.pdf
 *~$*
+
 logs/
-*.obj
 *~
 *_astbuild.cup
+*.lex
+*.par
+*.obj
 
 
 

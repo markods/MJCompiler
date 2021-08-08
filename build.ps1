@@ -55,7 +55,7 @@ function Find-Recursive
 
 if( "-help" -in $args -or "--help" -in $args )
 {
-    Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-lex] [-par] [-cmp] [-o file] file]   [-disasm file] [-run -debug file]";
+    Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-lex file] [-par file] [-o file] file]   [-disasm file] [-run -debug file]";
     Write-Output "";
     Write-Output "Switches:";
     Write-Output "    --help      shows the help menu";
@@ -223,34 +223,22 @@ if( "-clean" -in $args -or "-build" -in $args )
 
     if( "-clean" -in $args )
     {
-        # remove compiled java code
-        if( Test-Path "./MJCompiler/bin" -PathType "Container" )
-        {
-            Remove-Item "./MJCompiler/bin" -Recurse;
-        }
+        # remove compiled java code directories
+        if( Test-Path "./MJCompiler/bin"   -PathType "Container" ) { Remove-Item "./MJCompiler/bin"   -Recurse; }
+        if( Test-Path "./MJCompiler/build" -PathType "Container" ) { Remove-Item "./MJCompiler/build" -Recurse; }
+        if( Test-Path "./MJCompiler/dist"  -PathType "Container" ) { Remove-Item "./MJCompiler/dist"  -Recurse; }
 
-        if( Test-Path "./MJCompiler/build" -PathType "Container" )
-        {
-            Remove-Item "./MJCompiler/build" -Recurse;
-        }
-        
-        if( Test-Path "./MJCompiler/dist" -PathType "Container" )
-        {
-            Remove-Item "./MJCompiler/dist" -Recurse;
-        }
+        # remove 'logs' directory
+        if( Test-Path "./MJCompiler/logs" -PathType "Container" ) { Remove-Item "./MJCompiler/logs" -Recurse; }
 
-        # remove logs
-        if( Test-Path "./MJCompiler/logs" -PathType "Container" )
-        {
-            Remove-Item "./MJCompiler/logs" -Recurse;
-        }
-
-        # remove the generated cup specification files
+        # remove the generated cup specification files from the 'spec' directory
         Get-ChildItem -Path "./MJCompiler/spec" -Include "*_astbuild.cup" -File -Recurse | Remove-Item;
 
-        # remove all .obj files from the test directory
+        # remove all .lex, .par and .obj files from the test directory
         # +   When it is used with the Include parameter, the Recurse parameter might not delete all subfolders or all child items. This is a known issue.
         # +   As a workaround, try piping results of the Get-ChildItem -Recurse command to Remove-Item, as described in "Example 4" in this topic.
+        Get-ChildItem -Path "./MJCompiler/test" -Include "*.lex" -File -Recurse | Remove-Item;
+        Get-ChildItem -Path "./MJCompiler/test" -Include "*.par" -File -Recurse | Remove-Item;
         Get-ChildItem -Path "./MJCompiler/test" -Include "*.obj" -File -Recurse | Remove-Item;
     }
 
@@ -308,7 +296,7 @@ if( "-compile" -in $args )
     $RunCmd = $null;
     # create the run comand array
     $RunCmd = "java",
-        "-cp", "'../dist/MJCompiler.jar'", "rs.ac.bg.etf.pp1.Main";
+        "-cp", "'../dist/MJCompiler.jar'", "rs.ac.bg.etf.pp1.Compiler";
 
     if( $CompileArgs.count -gt 0 ) { $RunCmd += $CompileArgs; }
 
