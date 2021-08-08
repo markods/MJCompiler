@@ -52,6 +52,6 @@ public class sym implements Isym
         String symbolName = ( symbol != null ) ? getSymbolName( symbol.sym ) : "<INVALID TOKEN>";
         String symbolValue = ( symbol != null && symbol.value != null ) ? "'" + symbol.value.toString() + "'" : "''";
 
-        return String.format( "Ln %3d, Col %3d   %-15s %s", symbol.left, symbol.right, symbolName, symbolValue );
+        return String.format( "Ln #%-3d, Col #%-3d   %-15s %s", symbol.left, symbol.right, symbolName, symbolValue );
     }
 }

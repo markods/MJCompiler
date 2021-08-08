@@ -46,7 +46,7 @@ public class CompilerErrors {
         StringBuilder builder = new StringBuilder();
         for( CompilerError error : errors )
         {
-            builder.append( error.toString() );
+            builder.append( error.toString() ).append( "\n" );
         }
 
         return builder.toString();

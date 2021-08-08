@@ -6,7 +6,7 @@ public class CompilerError
     {
         ARGUMENTS_ERROR, LEXICAL_ERROR, SYNTAX_ERROR, SEMANTIC_ERROR, RUNTIME_ERROR;
         
-        String getErrorName( CompilerErrorType errType )
+        public static String getTypeName( CompilerErrorType errType )
         {
             switch( errType )
             {
@@ -54,6 +54,6 @@ public class CompilerError
     @Override
     public String toString()
     {
-        return String.format( "[Line #%-3d] [%3s]: %s", line, type, message );
+        return String.format( "Ln %-4s %3s   %s", ( line >= 0 ? "#" + line : "?" ), CompilerErrorType.getTypeName( type ), message );
     }
 }

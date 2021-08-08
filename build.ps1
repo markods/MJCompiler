@@ -179,7 +179,7 @@ if( "-cup" -in $args )
     Invoke-Expression -Command $BuildCmd;
 
     # if the result is non-zero, exit
-    if( $? ) { Pop-Location; exit $?; }
+    if( !$? ) { Pop-Location; exit -1; }
 
     # restore the previous working directory
     Pop-Location;
@@ -212,7 +212,7 @@ if( "-jflex" -in $args )
     Invoke-Expression -Command $BuildCmd;
 
     # if the result is non-zero, exit
-    if( $? ) { exit $?; }
+    if( !$? ) { exit -1; }
 }
 
 
@@ -230,6 +230,7 @@ if( "-clean" -in $args -or "-build" -in $args )
 
         # remove 'logs' directory
         if( Test-Path "./MJCompiler/logs" -PathType "Container" ) { Remove-Item "./MJCompiler/logs" -Recurse; }
+        if( Test-Path "./MJCompiler/test/logs" -PathType "Container" ) { Remove-Item "./MJCompiler/test/logs" -Recurse; }
 
         # remove the generated cup specification files from the 'spec' directory
         Get-ChildItem -Path "./MJCompiler/spec" -Include "*_astbuild.cup" -File -Recurse | Remove-Item;
@@ -282,7 +283,7 @@ if( "-clean" -in $args -or "-build" -in $args )
     Invoke-Expression -Command $BuildCmd;
 
     # if the result is non-zero, exit
-    if( $? ) { exit $?; }
+    if( !$? ) { exit -1; }
 }
 
 
@@ -312,8 +313,8 @@ if( "-compile" -in $args )
     Invoke-Expression -Command $RunCmd;
 
     # if the result is non-zero, exit
-    if( $? ) { Pop-Location; exit $?; }
-    
+    if( !$? ) { Pop-Location; exit -1; }
+
     # restore the previous working directory
     Pop-Location;
 }
@@ -345,7 +346,7 @@ if( "-disasm" -in $args )
     Invoke-Expression -Command $RunCmd;
 
     # if the result is non-zero, exit
-    if( $? ) { Pop-Location; exit $?; }
+    if( !$? ) { Pop-Location; exit -1; }
 
     # restore the previous working directory
     Pop-Location;
@@ -378,7 +379,7 @@ if( "-run" -in $args )
     Invoke-Expression -Command $RunCmd;
 
     # if the result is non-zero, exit
-    if( $? ) { Pop-Location; exit $?; }
+    if( !$? ) { Pop-Location; exit -1; }
 
     # restore the previous working directory
     Pop-Location;

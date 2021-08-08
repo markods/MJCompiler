@@ -2,6 +2,9 @@ package rs.ac.bg.etf.pp1.util;
 
 import java.io.File;
 import java.net.URL;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
@@ -23,27 +26,37 @@ public class Log4JUtils
 
     public void prepareLogFile( Logger root )
     {
-        Appender appender = root.getAppender( "file" );
+        Appender appender = root.getAppender( "LogFileAppender" );
         if( !( appender instanceof FileAppender ) )
         {
+            System.err.println( "Log file's file appender missing!" );
             return;
         }
         
-        FileAppender fAppender = ( FileAppender )appender;
+        FileAppender fileAppender = ( FileAppender )appender;
+        
+        String fnameTmpLog = fileAppender.getFile();
+        String fnameLog = fnameTmpLog.substring( 0, fnameTmpLog.lastIndexOf( '.' ) ) + ".log";
+        String fnameRenLog = String.format(
+            "%s %s%s",
+            fnameLog.substring( 0, fnameLog.lastIndexOf( '.' ) ),   // filename
+            ZonedDateTime.now( ZoneOffset.UTC ).format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH.mm.ss" ) ),   // current time
+            ".log"   // extension
+        );
 
-        String logFileName = fAppender.getFile();
-        logFileName = logFileName.substring( 0, logFileName.lastIndexOf( '.' ) ) + "-test.log";
+        File fTmpLog = new File( fnameTmpLog );
+        File fLog = new File( fnameLog );
+        File fRenLog = new File( fnameRenLog );
 
-        File logFile = new File( logFileName );
-        File renamedFile = new File( logFile.getAbsoluteFile() + "." + System.currentTimeMillis() );
-
-        if( logFile.exists() && !logFile.renameTo( renamedFile ) )
+        if( fLog.exists() && !fLog.renameTo( fRenLog ) )
         {
             System.err.println( "Could not rename log file!" );
         }
 
-        fAppender.setFile( logFile.getAbsolutePath() );
-        fAppender.activateOptions();
+        fileAppender.setFile( fLog.getAbsolutePath() );
+        fileAppender.activateOptions();
+        
+        fTmpLog.delete();
     }
 
 }

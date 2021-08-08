@@ -48,7 +48,10 @@ public class Compiler
     // compile [-lex file] [-par file] [-o file] file
     public static void main( String[] args )
     {
-        if( !Compiler.compile( args ) ) { System.err.println( Compiler.getErrors().toString() ); return; }
+        if( !Compiler.compile( args ) )
+        {
+            System.err.println( Compiler.getErrors().toString() );
+        }
     }
     
 
@@ -77,53 +80,99 @@ public class Compiler
             {
                 case "-lex":
                 {
-                    if( fnameLex != null     ) { errors.add( i, "Lexer output file already specified", CompilerErrorType.ARGUMENTS_ERROR ); break; }
-                    if( i+1 >= params.length ) { errors.add( i, "Lexer output file not specified after the -lex flag", CompilerErrorType.ARGUMENTS_ERROR ); break; }
+                    if( fnameLex != null )
+                    {
+                        errors.add( i, "Lexer output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
+                    if( i+1 >= params.length )
+                    {
+                        errors.add( i, "Lexer output file not specified after the -lex flag", CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
 
                     fnameLex = params[ ++i ];
                     if( !fnameLex.endsWith( ".lex" ) ) { fnameLex = fnameLex + ".lex"; }
+                    
+                    logger.info( "fnameLex = " + fnameLex );
                     break;
                 }
 
                 case "-par":
                 {
-                    if( fnameParse != null   ) { errors.add( i, "Parser output file already specified", CompilerErrorType.ARGUMENTS_ERROR ); break; }
-                    if( i+1 >= params.length ) { errors.add( i, "Parser output file not specified after the -par flag", CompilerErrorType.ARGUMENTS_ERROR ); break; }
+                    if( fnameParse != null )
+                    {
+                        errors.add( i, "Parser output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
+                    if( i+1 >= params.length )
+                    {
+                        errors.add( i, "Parser output file not specified after the -par flag", CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
 
                     fnameParse = params[ ++i ];
                     if( !fnameParse.endsWith( ".par" ) ) { fnameParse = fnameParse + ".par"; }
+
+                    logger.info( "fnameParse = " + fnameParse );
                     break;
                 }
 
                 case "-o":
                 {
-                    if( fnameOutput != null  ) { errors.add( i, "Output file already specified", CompilerErrorType.ARGUMENTS_ERROR ); break; }
-                    if( i+1 >= params.length ) { errors.add( i, "Output file not specified after the -o flag", CompilerErrorType.ARGUMENTS_ERROR ); break; }
+                    if( fnameOutput != null )
+                    {
+                        errors.add( i, "Output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
+                    if( i+1 >= params.length )
+                    {
+                        errors.add( i, "Output file not specified after the -o flag", CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
                     
                     fnameOutput = params[ ++i ];
                     if( !fnameOutput.endsWith( ".obj" ) ) { fnameOutput = fnameOutput + ".obj"; }
+
+                    logger.info( "fnameOutput = " + fnameOutput );
                     break;
                 }
 
                 default:
                 {
-                    if( fnameInput != null  ) { errors.add( i, "Unknown option", CompilerErrorType.ARGUMENTS_ERROR ); break; }
+                    if( fnameInput != null )
+                    {
+                        errors.add( i, String.format( "Unknown option: '%s'", params[ i ] ), CompilerErrorType.ARGUMENTS_ERROR );
+                        logger.error( errors.getLast().toString() );
+                        break;
+                    }
                     
                     fnameInput = params[ i ];
                     if( !fnameInput.endsWith( ".mj" ) ) { fnameInput = fnameInput + ".mj"; }
+
+                    logger.info( "fnameInput = " + fnameInput );
                     break;
                 }
             }
         }
 
         // the input file must be specified
-        if( fnameInput == null ) { errors.add( -1, "Input file not specified", CompilerErrorType.ARGUMENTS_ERROR ); }
+        if( fnameInput == null )
+        {
+            errors.add( -1, "Input file not specified", CompilerErrorType.ARGUMENTS_ERROR );
+            logger.error( errors.getLast().toString() );
+        }
 
         // if there are errors log them and return
         if( errors.hasErrors() )
         {
             resetParams();
-            logger.error( errors.toString() );
             return false;
         }
 
@@ -140,24 +189,52 @@ public class Compiler
         // check if the files exist and are readable/writable
         if( fInput != null )
         {
-            if( !fInput.exists()  ) { errors.add( -1, "Input file does not exist", CompilerErrorType.ARGUMENTS_ERROR ); }
-            if( !fInput.canRead() ) { errors.add( -1, "Input file is not readable", CompilerErrorType.ARGUMENTS_ERROR ); }
+            if( !fInput.exists() )
+            {
+                errors.add( -1, "Input file does not exist", CompilerErrorType.ARGUMENTS_ERROR );
+                logger.error( errors.getLast().toString() );
+            }
+            else if( !fInput.canRead() )
+            {
+                errors.add( -1, "Input file is not readable", CompilerErrorType.ARGUMENTS_ERROR );
+                logger.error( errors.getLast().toString() );
+            }
+            
+            logger.info( "fInput = " + fInput.getAbsolutePath() );
         }
         
-        if( fLex    != null && !fLex.canWrite()    ) { errors.add( -1, "Lexer output file is not writable", CompilerErrorType.ARGUMENTS_ERROR ); }
-        if( fParse  != null && !fParse.canWrite()  ) { errors.add( -1, "Parser output file is not writable", CompilerErrorType.ARGUMENTS_ERROR ); }
-        if( fOutput != null && !fOutput.canWrite() ) { errors.add( -1, "Output file is not writable", CompilerErrorType.ARGUMENTS_ERROR ); }
+        if( fLex != null && fLex.exists() && !fLex.canWrite() )
+        {
+            errors.add( -1, "Lexer output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+            logger.error( errors.getLast().toString() );
+
+            logger.info( "fLex = " + fLex.getAbsolutePath() );
+        }
+
+        if( fParse != null && fParse.exists() && !fParse.canWrite() )
+        {
+            errors.add( -1, "Parser output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+            logger.error( errors.getLast().toString() );
+
+            logger.info( "fParse = " + fParse.getAbsolutePath() );
+        }
+
+        if( fOutput != null && fOutput.exists() && !fOutput.canWrite() )
+        {
+            errors.add( -1, "Output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+            logger.error( errors.getLast().toString() );
+
+            logger.info( "fOutput = " + fOutput.getAbsolutePath() );
+        }
 
         // if there are errors log them and return
         if( errors.hasErrors() )
         {
             resetParams();
-            logger.error( errors.toString() );
             return false;
         }
 
         // return that the compiler params are successfully set
-        resetParams();
         logger.info( "Compiler parameters are valid" );
         return true;
     }
@@ -179,10 +256,6 @@ public class Compiler
     {
         // if there are argument errors, skip compilation
         if( !Compiler.setParams( args ) ) return false;
-        if( fInput == null ) { errors.add( -1, "Input file not specified", CompilerErrorType.ARGUMENTS_ERROR ); }
-
-        // return if there are argument errors
-        if( errors.hasErrors() ) return false;
         
 
 
