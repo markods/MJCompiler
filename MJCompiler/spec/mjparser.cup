@@ -25,7 +25,7 @@ parser code {:
     // redefine cup parser methods for error reporting
     public void syntax_error( Symbol cur_token )
     {
-        report_error( "\nSintaksna greska", cur_token );
+        report_error( "Sintaksna greska", cur_token );
     }
   
     // redefine cup parser methods for error reporting
@@ -198,7 +198,7 @@ MethodDecl ::= (MethodDecl_Plain) ReturnType ident lparen FormPars rparen VarDec
 FormPars ::= (FormPars_Tail ) Type VarIdent FormParsNext;
 FormPars ::= (FormPars_Empty) ;
 
-FormParsNext ::= (FormParsNext_FormPar) comma Type VarIdent FormPars;
+FormParsNext ::= (FormParsNext_FormPar) comma Type VarIdent FormParsNext;
 FormParsNext ::= (FormParsNext_Empty  ) ;
 
 // <epsilon>
@@ -259,6 +259,7 @@ Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
 Statement ::= (Statement_Print      ) PRINT_K lparen Expr rparen semicol;
 Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
 Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
+Statement ::= (Statement_Semicolon  ) semicol;
 
 // ident.ident[ expr ] = expr
 // ident.ident[ expr ]( )

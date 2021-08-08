@@ -177,8 +177,8 @@ public class Compiler
         }
 
 
-        // if the output file is missing, set it to be the input file with the .obj extension
-        if( fnameOutput == null ) { fnameOutput = fnameInput.substring( 0, fnameInput.length() - ".mj".length() ) + ".obj"; }
+        // if the output file is missing and other switches are not specified, set it to be the input file with the .obj extension
+        if( fnameOutput == null && ( fnameLex != null || fnameParse != null ) ) { fnameOutput = fnameInput.substring( 0, fnameInput.length() - ".mj".length() ) + ".obj"; }
 
         // open the given files
         if( fnameInput  != null ) fInput  = new File( fnameInput  );

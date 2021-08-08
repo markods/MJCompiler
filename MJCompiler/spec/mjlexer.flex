@@ -102,6 +102,9 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 
 
 // operators
+"++"         { return new_symbol( sym.plusplus, yytext() ); }
+"--"         { return new_symbol( sym.minusminus, yytext() ); }
+
 "+"          { return new_symbol( sym.plus, yytext() ); }
 "-"          { return new_symbol( sym.minus, yytext() ); }
 "*"          { return new_symbol( sym.mul, yytext() ); }
@@ -118,8 +121,6 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 "||"         { return new_symbol( sym.or, yytext() ); }
 
 "="          { return new_symbol( sym.assign, yytext() ); }
-"++"         { return new_symbol( sym.plusplus, yytext() ); }
-"‐‐"         { return new_symbol( sym.minusminus, yytext() ); }
 
 ";"          { return new_symbol( sym.semicol, yytext() ); }
 ","          { return new_symbol( sym.comma, yytext() ); }

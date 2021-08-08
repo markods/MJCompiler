@@ -78,21 +78,20 @@ int niz[];
 		print(eol); 
 		print(inkrement(niz[2], 2));
 		
-		j =	switch(i){
+		j = 10;
+		switch(i){
 					case 1:
 						print(1);
-						yield 1;
+						j = 1;
 					case 3:
 						print(3);
 					case 2:
 						print(2);
-						yield 2;
+						j = 2;
 					case 4:
 						print(5);
 						i = i + 3;
-						yield 7;
-					default:
-						yield 10;
+						j = 7;
 			};
 		print(eol);
 		print(i);

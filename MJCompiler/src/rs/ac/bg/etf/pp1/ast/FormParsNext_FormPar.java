@@ -1,6 +1,6 @@
 // generated with ast extension for cup
 // version 0.8
-// 8/7/2021 15:21:33
+// 8/7/2021 20:30:1
 
 
 package rs.ac.bg.etf.pp1.ast;
@@ -9,15 +9,15 @@ public class FormParsNext_FormPar extends FormParsNext {
 
     private Type Type;
     private VarIdent VarIdent;
-    private FormPars FormPars;
+    private FormParsNext FormParsNext;
 
-    public FormParsNext_FormPar (Type Type, VarIdent VarIdent, FormPars FormPars) {
+    public FormParsNext_FormPar (Type Type, VarIdent VarIdent, FormParsNext FormParsNext) {
         this.Type=Type;
         if(Type!=null) Type.setParent(this);
         this.VarIdent=VarIdent;
         if(VarIdent!=null) VarIdent.setParent(this);
-        this.FormPars=FormPars;
-        if(FormPars!=null) FormPars.setParent(this);
+        this.FormParsNext=FormParsNext;
+        if(FormParsNext!=null) FormParsNext.setParent(this);
     }
 
     public Type getType() {
@@ -36,12 +36,12 @@ public class FormParsNext_FormPar extends FormParsNext {
         this.VarIdent=VarIdent;
     }
 
-    public FormPars getFormPars() {
-        return FormPars;
+    public FormParsNext getFormParsNext() {
+        return FormParsNext;
     }
 
-    public void setFormPars(FormPars FormPars) {
-        this.FormPars=FormPars;
+    public void setFormParsNext(FormParsNext FormParsNext) {
+        this.FormParsNext=FormParsNext;
     }
 
     public void accept(Visitor visitor) {
@@ -51,20 +51,20 @@ public class FormParsNext_FormPar extends FormParsNext {
     public void childrenAccept(Visitor visitor) {
         if(Type!=null) Type.accept(visitor);
         if(VarIdent!=null) VarIdent.accept(visitor);
-        if(FormPars!=null) FormPars.accept(visitor);
+        if(FormParsNext!=null) FormParsNext.accept(visitor);
     }
 
     public void traverseTopDown(Visitor visitor) {
         accept(visitor);
         if(Type!=null) Type.traverseTopDown(visitor);
         if(VarIdent!=null) VarIdent.traverseTopDown(visitor);
-        if(FormPars!=null) FormPars.traverseTopDown(visitor);
+        if(FormParsNext!=null) FormParsNext.traverseTopDown(visitor);
     }
 
     public void traverseBottomUp(Visitor visitor) {
         if(Type!=null) Type.traverseBottomUp(visitor);
         if(VarIdent!=null) VarIdent.traverseBottomUp(visitor);
-        if(FormPars!=null) FormPars.traverseBottomUp(visitor);
+        if(FormParsNext!=null) FormParsNext.traverseBottomUp(visitor);
         accept(visitor);
     }
 
@@ -85,8 +85,8 @@ public class FormParsNext_FormPar extends FormParsNext {
             buffer.append(tab+"  null");
         buffer.append("\n");
 
-        if(FormPars!=null)
-            buffer.append(FormPars.toString("  "+tab));
+        if(FormParsNext!=null)
+            buffer.append(FormParsNext.toString("  "+tab));
         else
             buffer.append(tab+"  null");
         buffer.append("\n");

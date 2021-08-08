@@ -5,9 +5,9 @@
 
 package rs.ac.bg.etf.pp1.ast;
 
-public class Relop_Neq extends Relop {
+public class Statement_Semicolon extends Statement {
 
-    public Relop_Neq () {
+    public Statement_Semicolon () {
     }
 
     public void accept(Visitor visitor) {
@@ -28,10 +28,10 @@ public class Relop_Neq extends Relop {
     public String toString(String tab) {
         StringBuffer buffer=new StringBuffer();
         buffer.append(tab);
-        buffer.append("Relop_Neq(\n");
+        buffer.append("Statement_Semicolon(\n");
 
         buffer.append(tab);
-        buffer.append(") [Relop_Neq]");
+        buffer.append(") [Statement_Semicolon]");
         return buffer.toString();
     }
 }

@@ -132,21 +132,20 @@ int tezinaK, tezinaS;
 		
 		i = 0;
 		do{
-			j =	switch(i+1){
+			j =	10;
+			switch(i+1){
 					case 1:
 						print(1);
-						yield 1;
+						j = 1;
 					case 3:
 						print(3);
 					case 2:
 						print(2);
-						yield 2;
+						j = 2;
 					case 5:
 						print(5);
 						i = i + 3;
-						yield 7;
-					default:
-						yield 10;
+						j = 7;
 			};
 			print(eol);
 			print(j);
