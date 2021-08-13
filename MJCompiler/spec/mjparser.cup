@@ -12,26 +12,31 @@ import rs.ac.bg.etf.pp1.ast.*;
 // ________________________________________________________________________________________________
 // directive section
 parser code {:
-	boolean errorDetected = false;
-	Logger logger = Logger.getLogger( getClass() );
-   
+	protected static Logger logger = Logger.getLogger( MJParser.class );
+	private boolean errorDetected = false;
+
+
+    // check if there are parse errors
+    public boolean hasErrors() { return errorDetected; }
+
+
+    // redefine cup parser methods for error reporting
+    public void unrecovered_syntax_error( Symbol cur_token ) throws java.lang.Exception
+    {
+        report_fatal_error( "Fatal error, parsing stopped", cur_token );
+    }
+
+    // redefine cup parser methods for error reporting
+    public void syntax_error( Symbol cur_token )
+    {
+        report_error( "Syntax error", cur_token );
+    }
+
     // redefine cup parser methods for error reporting
     public void report_fatal_error( String message, Object info ) throws java.lang.Exception
     {
         done_parsing();
         report_error( message, info );
-    }
-  
-    // redefine cup parser methods for error reporting
-    public void syntax_error( Symbol cur_token )
-    {
-        report_error( "Sintaksna greska", cur_token );
-    }
-  
-    // redefine cup parser methods for error reporting
-    public void unrecovered_syntax_error( Symbol cur_token ) throws java.lang.Exception
-    {
-        report_fatal_error( "Fatalna greska, parsiranje se ne moze nastaviti", cur_token );
     }
 
     // redefine cup parser methods for error reporting
@@ -42,7 +47,7 @@ parser code {:
 
     	if( info instanceof Symbol )
         {
-            msg.append( " na liniji " ).append( ( ( Symbol )info ).left );
+            msg.append( " on line " ).append( ( ( Symbol )info ).left );
         }
 
         logger.error( msg.toString() );
@@ -55,7 +60,7 @@ parser code {:
 
     	if( info instanceof Symbol )
         {
-            msg.append( " na liniji " ).append( ( ( Symbol )info ).left );
+            msg.append( " on line " ).append( ( ( Symbol )info ).left );
         }
 
         logger.info( msg.toString() );
@@ -65,11 +70,7 @@ parser code {:
 
 scan with {:
 	Symbol symbol = this.getScanner().next_token();
-	if( symbol != null && symbol.value != null )
-    {
-		logger.info( symbol.toString() + " " + symbol.value.toString() );
-    }
-
+    logger.info( sym.symbolToString( symbol ) );
 	return symbol;
 :}
 

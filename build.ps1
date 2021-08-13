@@ -175,14 +175,15 @@ if( "-cup" -in $args )
 
     # set current working directory to the project 'src' folder, since the ast_cup tool can't find the 'ast' folder otherwise
     Push-Location "./MJCompiler/src";
+
     # invoke the build command
     Invoke-Expression -Command $BuildCmd;
 
-    # if the result is non-zero, exit
-    if( !$? ) { Pop-Location; exit -1; }
-
     # restore the previous working directory
     Pop-Location;
+
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 }
 
 
@@ -211,8 +212,8 @@ if( "-jflex" -in $args )
     # invoke the build command
     Invoke-Expression -Command $BuildCmd;
 
-    # if the result is non-zero, exit
-    if( !$? ) { exit -1; }
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 }
 
 
@@ -282,8 +283,8 @@ if( "-clean" -in $args -or "-build" -in $args )
     # invoke the build command
     Invoke-Expression -Command $BuildCmd;
 
-    # if the result is non-zero, exit
-    if( !$? ) { exit -1; }
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 }
 
 
@@ -309,14 +310,15 @@ if( "-compile" -in $args )
 
     # set current working directory to the project 'test' folder to simplify test file paths
     Push-Location "./MJCompiler/test";
+
     # invoke the run command
     Invoke-Expression -Command $RunCmd;
 
-    # if the result is non-zero, exit
-    if( !$? ) { Pop-Location; exit -1; }
-
     # restore the previous working directory
     Pop-Location;
+
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 }
 
 
@@ -342,11 +344,12 @@ if( "-disasm" -in $args )
 
     # set current working directory to the project 'test' folder to simplify test file paths
     Push-Location "./MJCompiler/test";
+
     # invoke the run command
     Invoke-Expression -Command $RunCmd;
 
-    # if the result is non-zero, exit
-    if( !$? ) { Pop-Location; exit -1; }
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 
     # restore the previous working directory
     Pop-Location;
@@ -375,11 +378,12 @@ if( "-run" -in $args )
 
     # set current working directory to the project 'test' folder to simplify test file paths
     Push-Location "./MJCompiler/test";
+
     # invoke the run command
     Invoke-Expression -Command $RunCmd;
 
-    # if the result is non-zero, exit
-    if( !$? ) { Pop-Location; exit -1; }
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 
     # restore the previous working directory
     Pop-Location;

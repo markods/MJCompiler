@@ -2,16 +2,21 @@ package rs.ac.bg.etf.pp1;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import java_cup.runtime.Symbol;
+import org.apache.log4j.Priority;
 import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.ac.bg.etf.pp1.util.Log4JUtils;
@@ -178,7 +183,11 @@ public class Compiler
 
 
         // if the output file is missing and other switches are not specified, set it to be the input file with the .obj extension
-        if( fnameOutput == null && ( fnameLex != null || fnameParse != null ) ) { fnameOutput = fnameInput.substring( 0, fnameInput.length() - ".mj".length() ) + ".obj"; }
+        if( fnameOutput == null && fnameLex == null && fnameParse == null )
+        {
+            fnameOutput = fnameInput.substring( 0, fnameInput.length() - ".mj".length() ) + ".obj";
+            logger.info( "fnameOutput = " + fnameOutput );
+        }
 
         // open the given files
         if( fnameInput  != null ) fInput  = new File( fnameInput  );
@@ -203,27 +212,36 @@ public class Compiler
             logger.info( "fInput = " + fInput.getAbsolutePath() );
         }
         
-        if( fLex != null && fLex.exists() && !fLex.canWrite() )
+        if( fLex != null )
         {
-            errors.add( -1, "Lexer output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
-            logger.error( errors.getLast().toString() );
-
+            if( fLex.exists() && !fLex.canWrite() )
+            {
+                errors.add( -1, "Lexer output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+                logger.error( errors.getLast().toString() );
+            }
+            
             logger.info( "fLex = " + fLex.getAbsolutePath() );
         }
 
-        if( fParse != null && fParse.exists() && !fParse.canWrite() )
+        if( fParse != null )
         {
-            errors.add( -1, "Parser output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
-            logger.error( errors.getLast().toString() );
-
+            if( fParse.exists() && !fParse.canWrite() )
+            {
+                errors.add( -1, "Parser output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+                logger.error( errors.getLast().toString() );
+            }
+            
             logger.info( "fParse = " + fParse.getAbsolutePath() );
         }
 
-        if( fOutput != null && fOutput.exists() && !fOutput.canWrite() )
+        if( fOutput != null )
         {
-            errors.add( -1, "Output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
-            logger.error( errors.getLast().toString() );
-
+            if( fOutput.exists() && !fOutput.canWrite() )
+            {
+                errors.add( -1, "Output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+                logger.error( errors.getLast().toString() );
+            }
+            
             logger.info( "fOutput = " + fOutput.getAbsolutePath() );
         }
 
@@ -363,7 +381,7 @@ public class Compiler
                     Symbol rootSymbol = parser.parse();
                     rootNode = ( SyntaxNode )( rootSymbol.value );
                     
-                    if( parser.errorDetected )
+                    if( parser.hasErrors() || rootNode == null )
                     {
                         errors.add( -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
                         logger.error( errors.getLast().toString() );
@@ -422,7 +440,16 @@ public class Compiler
                 rootNode.traverseBottomUp( semanticCheck );
                 
                 // print the symbol table
-                Tab.dump();
+                {
+                    String symbolTable = tsdump();
+                    if( symbolTable == null ) symbolTable = "";
+                    
+                    String[] lines = symbolTable.split( "\\R", -1 );
+                    for( String line: lines )
+                    {
+                        logger.info( line );
+                    }
+                }
 
                 // return if the semantic check failed
                 if( !semanticCheck.passed() ) return false;
@@ -454,5 +481,34 @@ public class Compiler
         // return true if there are no errors during compilation
         return errors.hasErrors();
     }
-
+    
+    
+    // return the compiler's symbol table as string
+    public static String tsdump()
+    {
+        PrintStream stdout = System.out;
+        String output = null;
+        
+        try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+             PrintStream printStream = new PrintStream( buffer, true );
+        )
+        {
+            // workaround since symbol table dump method only outputs to System.out
+            System.setOut( printStream );
+            Tab.dump();
+            printStream.flush();
+            output = buffer.toString( "UTF-8" );
+        }
+        catch( IOException ex )
+        {
+            logger.error( "IOException during conversion of symbol table to string", ex );
+        }
+        finally
+        {
+            // restore the previous print stream
+            System.setOut( stdout );
+        }
+        
+        return output;
+    }
 }
