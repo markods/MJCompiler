@@ -4,12 +4,19 @@
 *.pdf
 *~$*
 
+# temporary files
 logs/
 *~
 *_astbuild.cup
 *.lex
 *.par
 *.obj
+
+# generated source files
+ast/
+YYlex.java
+Isym.java
+MJParser.java
 
 
 

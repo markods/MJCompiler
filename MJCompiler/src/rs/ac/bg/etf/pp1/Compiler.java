@@ -8,15 +8,12 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import java_cup.runtime.Symbol;
-import org.apache.log4j.Priority;
 import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.ac.bg.etf.pp1.util.Log4JUtils;
@@ -45,7 +42,7 @@ public class Compiler
     // private constructor
     private Compiler() {}
 
-    public static CompilerErrors getErrors() { return errors; }
+    public static CompilerErrors errorList() { return errors; }
     public static boolean hasErrors() { return errors.hasErrors(); }
 
 
@@ -55,7 +52,7 @@ public class Compiler
     {
         if( !Compiler.compile( args ) )
         {
-            System.err.println( Compiler.getErrors().toString() );
+            System.err.println( Compiler.errorList().toString() );
         }
     }
     
@@ -87,13 +84,13 @@ public class Compiler
                 {
                     if( fnameLex != null )
                     {
-                        errors.add( i, "Lexer output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, "Lexer output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( i, "Lexer output file not specified after the -lex flag", CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, "Lexer output file not specified after the -lex flag", CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
@@ -109,13 +106,13 @@ public class Compiler
                 {
                     if( fnameParse != null )
                     {
-                        errors.add( i, "Parser output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, "Parser output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( i, "Parser output file not specified after the -par flag", CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, "Parser output file not specified after the -par flag", CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
@@ -131,13 +128,13 @@ public class Compiler
                 {
                     if( fnameOutput != null )
                     {
-                        errors.add( i, "Output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, "Output file already specified", CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( i, "Output file not specified after the -o flag", CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, "Output file not specified after the -o flag", CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
@@ -153,7 +150,7 @@ public class Compiler
                 {
                     if( fnameInput != null )
                     {
-                        errors.add( i, String.format( "Unknown option: '%s'", params[ i ] ), CompilerErrorType.ARGUMENTS_ERROR );
+                        errors.add( -1, i, String.format( "Unknown option: '%s'", params[ i ] ), CompilerErrorType.ARGUMENTS_ERROR );
                         logger.error( errors.getLast().toString() );
                         break;
                     }
@@ -170,7 +167,7 @@ public class Compiler
         // the input file must be specified
         if( fnameInput == null )
         {
-            errors.add( -1, "Input file not specified", CompilerErrorType.ARGUMENTS_ERROR );
+            errors.add( -1, -1, "Input file not specified", CompilerErrorType.ARGUMENTS_ERROR );
             logger.error( errors.getLast().toString() );
         }
 
@@ -200,12 +197,12 @@ public class Compiler
         {
             if( !fInput.exists() )
             {
-                errors.add( -1, "Input file does not exist", CompilerErrorType.ARGUMENTS_ERROR );
+                errors.add( -1, -1, "Input file does not exist", CompilerErrorType.ARGUMENTS_ERROR );
                 logger.error( errors.getLast().toString() );
             }
             else if( !fInput.canRead() )
             {
-                errors.add( -1, "Input file is not readable", CompilerErrorType.ARGUMENTS_ERROR );
+                errors.add( -1, -1, "Input file is not readable", CompilerErrorType.ARGUMENTS_ERROR );
                 logger.error( errors.getLast().toString() );
             }
             
@@ -216,7 +213,7 @@ public class Compiler
         {
             if( fLex.exists() && !fLex.canWrite() )
             {
-                errors.add( -1, "Lexer output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+                errors.add( -1, -1, "Lexer output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
                 logger.error( errors.getLast().toString() );
             }
             
@@ -227,7 +224,7 @@ public class Compiler
         {
             if( fParse.exists() && !fParse.canWrite() )
             {
-                errors.add( -1, "Parser output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+                errors.add( -1, -1, "Parser output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
                 logger.error( errors.getLast().toString() );
             }
             
@@ -238,7 +235,7 @@ public class Compiler
         {
             if( fOutput.exists() && !fOutput.canWrite() )
             {
-                errors.add( -1, "Output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
+                errors.add( -1, -1, "Output file exists and is not writable", CompilerErrorType.ARGUMENTS_ERROR );
                 logger.error( errors.getLast().toString() );
             }
             
@@ -307,7 +304,7 @@ public class Compiler
 
                         if( token == null )
                         {
-                            errors.add( -1, "Invalid token", CompilerErrorType.LEXICAL_ERROR );
+                            errors.add( -1, -1, "Invalid token", CompilerErrorType.LEXICAL_ERROR );
                             logger.error( errors.getLast().toString() );
                         }
                         else if( token.value instanceof CompilerError )
@@ -321,19 +318,16 @@ public class Compiler
                 }
                 catch( IOException ex )
                 {
-                    errors.add( ( token != null ? token.left : -1 ), "Error lexing current token", CompilerErrorType.LEXICAL_ERROR );
+                    errors.add( ( token != null ? token.left  : -1 ),
+                                ( token != null ? token.right : -1 ), "Error lexing current token", CompilerErrorType.LEXICAL_ERROR );
                     logger.error( errors.getLast().toString(), ex );
                 }
             }
             catch( IOException ex )
             {
-                errors.add( -1, "Cannot open input file", CompilerErrorType.LEXICAL_ERROR );
+                errors.add( -1, -1, "Cannot open input file", CompilerErrorType.LEXICAL_ERROR );
                 logger.error( errors.getLast().toString(), ex );
             }
-
-            // return if there are lexing errors
-            if( errors.hasErrors() ) return false;
-
 
 
             // write lex results to output lex file
@@ -346,12 +340,9 @@ public class Compiler
             }
             catch( IOException ex )
             {
-                errors.add( -1, "Cannot open/write to output lex file", CompilerErrorType.LEXICAL_ERROR );
+                errors.add( -1, -1, "Cannot open/write to output lex file", CompilerErrorType.LEXICAL_ERROR );
                 logger.error( errors.getLast().toString(), ex );
             }
-
-            // return if there are lexing errors
-            if( errors.hasErrors() ) return false;
         }
 
 
@@ -363,7 +354,6 @@ public class Compiler
             logger.info( "Parsing input file:" );
 
             SyntaxNode rootNode = null;
-
 
 
             // read file and parse it
@@ -381,27 +371,23 @@ public class Compiler
                     Symbol rootSymbol = parser.parse();
                     rootNode = ( SyntaxNode )( rootSymbol.value );
                     
-                    if( parser.hasErrors() || rootNode == null )
+                    if( !parser.hasErrors() && rootNode == null )
                     {
-                        errors.add( -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
+                        errors.add( -1, -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
                         logger.error( errors.getLast().toString() );
                     }
                 }
                 catch( Exception ex )
                 {
-                    errors.add( -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
+                    errors.add( -1, -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
                     logger.error( errors.getLast().toString(), ex );
                 }
             }
             catch( IOException ex )
             {
-                errors.add( -1, "Cannot open input file", CompilerErrorType.LEXICAL_ERROR );
+                errors.add( -1, -1, "Cannot open input file", CompilerErrorType.LEXICAL_ERROR );
                 logger.error( errors.getLast().toString(), ex );
             }
-
-            // return if there are parsing errors
-            if( errors.hasErrors() ) return false;
-
 
 
             // if parser output is requested, write the parse results to the parse output file
@@ -417,12 +403,9 @@ public class Compiler
                 }
                 catch( IOException ex )
                 {
-                    errors.add( -1, "Cannot open/write to output parse file", CompilerErrorType.SYNTAX_ERROR );
+                    errors.add( -1, -1, "Cannot open/write to output parse file", CompilerErrorType.SYNTAX_ERROR );
                     logger.error( errors.getLast().toString(), ex );
                 }
-
-                // return if there are parsing errors
-                if( errors.hasErrors() ) return false;
             }
 
 
@@ -430,8 +413,8 @@ public class Compiler
             // if compiler output is requested, write the parse results to the parse output file
             if( fOutput != null )
             {
-                logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER" );
-                logger.info( "Semantic checking and compiling abstract syntax tree" );
+                logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ SEMANTIC" );
+                logger.info( "Semantic checking" );
                 
                 // initialize global ("universal") scope in the symbol table
                 Tab.init();
@@ -439,6 +422,10 @@ public class Compiler
                 SemanticPass semanticCheck = new SemanticPass();
                 rootNode.traverseBottomUp( semanticCheck );
                 
+                // if there are syntax or semantic errors, return
+                if( errors.hasErrors() ) return false;
+    
+
                 // print the symbol table
                 {
                     String symbolTable = tsdump();
@@ -451,9 +438,10 @@ public class Compiler
                     }
                 }
 
-                // return if the semantic check failed
-                if( !semanticCheck.passed() ) return false;
-    
+
+
+                logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER" );
+                logger.info( "Compiling code" );
 
                 // generate code from the abstract syntax tree
                 CodeGenerator codeGenerator = new CodeGenerator();
@@ -468,17 +456,14 @@ public class Compiler
                 }
                 catch( IOException ex )
                 {
-                    errors.add( -1, "Cannot open/write to output file", CompilerErrorType.SEMANTIC_ERROR );
+                    errors.add( -1, -1, "Cannot open/write to output file", CompilerErrorType.SEMANTIC_ERROR );
                     logger.error( errors.getLast().toString(), ex );
                 }
-
-                // return if there are compiling errors
-                if( errors.hasErrors() ) return false;
             }
         }
         
 
-        // return true if there are no errors during compilation
+        // return if there were compilation errors
         return errors.hasErrors();
     }
     
@@ -501,7 +486,8 @@ public class Compiler
         }
         catch( IOException ex )
         {
-            logger.error( "IOException during conversion of symbol table to string", ex );
+            CompilerError error = new CompilerError( -1, -1, "Error during conversion of symbol table to string", CompilerErrorType.SEMANTIC_ERROR );
+            logger.error( error.toString(), ex );
         }
         finally
         {

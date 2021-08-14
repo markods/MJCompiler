@@ -15,18 +15,20 @@ public class CompilerError
                 case SYNTAX_ERROR:    return "SYN";
                 case SEMANTIC_ERROR:  return "SEM";
                 case RUNTIME_ERROR:   return "RUN";
-                default:              return "UNK";
+                default:              return "?";
             }
         }
     };
 
     private int line;
+    private int col;
     private String message;
     private CompilerErrorType type;
 
-    public CompilerError( int line, String message, CompilerErrorType type )
+    public CompilerError( int line, int col, String message, CompilerErrorType type )
     {
         this.line = line;
+        this.col = col;
         this.message = message;
         this.type = type;
     }
@@ -39,6 +41,16 @@ public class CompilerError
     public int getLine()
     {
         return line;
+    }
+
+    public void setCol( int col )
+    {
+        this.col = col;
+    }
+
+    public int getCol()
+    {
+        return col;
     }
 
     public String getMessage()
@@ -54,6 +66,6 @@ public class CompilerError
     @Override
     public String toString()
     {
-        return String.format( "Ln %-4s %3s   %s", ( line >= 0 ? "#" + line : "?" ), CompilerErrorType.getTypeName( type ), message );
+        return String.format( "Ln %-4s Col %-4s %-3s   %s", ( line >= 0 ? "#" + line : "?" ), ( col >= 0 ? "#" + line : "?" ), CompilerErrorType.getTypeName( type ), message );
     }
 }

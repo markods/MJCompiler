@@ -14,10 +14,12 @@ import rs.ac.bg.etf.pp1.ast.*;
 parser code {:
 	protected static Logger logger = Logger.getLogger( MJParser.class );
 	private boolean errorDetected = false;
+	private boolean fatalErrorDetected = false;
 
 
     // check if there are parse errors
-    public boolean hasErrors() { return errorDetected; }
+    public boolean hasErrors()     { return errorDetected || fatalErrorDetected; }
+    public boolean hasFatalError() { return fatalErrorDetected; }
 
 
     // redefine cup parser methods for error reporting
@@ -35,8 +37,9 @@ parser code {:
     // redefine cup parser methods for error reporting
     public void report_fatal_error( String message, Object info ) throws java.lang.Exception
     {
-        done_parsing();
+        fatalErrorDetected = true;
         report_error( message, info );
+        done_parsing();
     }
 
     // redefine cup parser methods for error reporting
@@ -45,12 +48,17 @@ parser code {:
     	errorDetected = true;
     	StringBuilder msg = new StringBuilder( message );
 
-    	if( info instanceof Symbol )
+        int line = -1;
+        int col  = -1;
+        if( ( info instanceof Symbol ) )
         {
-            msg.append( " on line " ).append( ( ( Symbol )info ).left );
+            Symbol symbol = ( Symbol )info;
+            line = symbol.left;
+            col  = symbol.right;
         }
 
-        logger.error( msg.toString() );
+        Compiler.errorList().add( line, col, message, CompilerError.CompilerErrorType.SYNTAX_ERROR );
+        logger.error( Compiler.errorList().getLast().toString() );
     }
     
     // redefine cup parser methods for error reporting

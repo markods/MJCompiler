@@ -34,7 +34,7 @@ import java_cup.runtime.Symbol;
     // create a lexical error object
     private CompilerError new_error( String message )
     {
-        return new CompilerError( yyline+1, message, CompilerError.CompilerErrorType.LEXICAL_ERROR );
+        return new CompilerError( yyline+1, yycolumn, message, CompilerError.CompilerErrorType.LEXICAL_ERROR );
     }
 
 %}

@@ -10,9 +10,9 @@ public class CompilerErrors {
     public CompilerErrors() {}
 
 
-    public boolean add( int line, String message, CompilerErrorType type )
+    public boolean add( int line, int col, String message, CompilerErrorType type )
     {
-        return errors.add( new CompilerError( line, message, type ) );
+        return errors.add( new CompilerError( line, col, message, type ) );
     }
     
     public boolean add( CompilerError error )
