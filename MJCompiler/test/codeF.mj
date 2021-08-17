@@ -2,51 +2,46 @@
 
 program test301
 
-	int nula = 0, jedan =;
-	int 3$nula = 0, jedan =;
-	int dva, 3tri[];
-	int 3tri[];
+	int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
+	int pet=5-;
+	int sest[6];
+	int 'sedam[7];
+	const int osam=-8;
 
-	int niz[1];
-	char nizch[123];
-	
-{
-	void main()	
-		int bodovi;
+	/*
+	class Predmet
 	{
-		bodovi = 0;
-		bodovi++;
-		bodovi = bodovi + jedan;
-		bodovi = bodovi * pet;
-		bodovi--;
-		print(bodovi); 
-			
-		
-		niz = new int[3];
-		niz[nula] = jedan;
-		niz[1] = 2;
-		niz[niz[jedan]] = niz[niz[0]] * 3;
-		bodovi = niz[2]/niz[0];
-		print(bodovi); 
-		print(niz[2]);
-		
-		
-		nizch = new char[3];
-		nizch[0] = 'a';
-		nizch[jedan] = 'b';
-		nizch[pet - 3] = 'c';
-		print(nizch[1]);
-		print(nizch[jedan * 2]);
-			
-		
-		bodovi = bodovi + (pet * jedan - 1) * bodovi - (3 % 2 + 3 * 2 - 3); 
-		print(bodovi);
-			
-		read(bodovi);
-		if(bodovi%2 == 0) bodovi = bodovi + 10;
-		if(false) print(bodovi + 20);
-		else print(bodovi);
+		 int tezina;
+		 char vrsta = 5, #aslkd = 12, 123;
+
+		{
+			 void postaviTezinu(int tezina) {this.tezina = tezina;}  
+			 void ucitajTezinu() { read(tezina); }
+			 int zapremina() { return 0;}
+			 int Q() {return zapremina() * tezina;}
+			 void postaviVrstu(char vrsta) {this.vrsta = vrsta;}
+			 char dohvVrstu() { return vrsta; }
+			 int dohvTezinu() { return tezina; }
+		}
 	}
+	*/
+{
+	/*
+	int sumA(1int z)
+	{
+		z = z + # + 1321 + 123;
+		if( z > 0 && z >> 1 ) return -1;
+		return z;
+	}
+
+	int sumB(int z, int2 d, int[] c, int d[])
+	{
+		return z +* d;
+	}
+	*/
+
+	void main()	
+	{}
 }
 
 

@@ -1,6 +1,8 @@
 // ________________________________________________________________________________________________
 // import section
 package rs.ac.bg.etf.pp1;
+
+import org.apache.log4j.*;
 import java_cup.runtime.Symbol;
 
 
@@ -18,6 +20,7 @@ import java_cup.runtime.Symbol;
 
 // methods
 %{
+	protected static Logger logger = Logger.getLogger( Yylex.class );
 
     // create a symbol from the given symbol type
     private Symbol new_symbol( int type )
@@ -32,34 +35,39 @@ import java_cup.runtime.Symbol;
     }
 
     // create a lexical error object
-    private CompilerError new_error( String message )
+    private void report_error( String message )
     {
-        return new CompilerError( yyline+1, yycolumn, message, CompilerError.CompilerErrorType.LEXICAL_ERROR );
+        Compiler.errorList().add( new CompilerError( yyline+1, yycolumn, message, CompilerError.CompilerErrorType.LEXICAL_ERROR ) );
+        logger.error( Compiler.errorList().getLast() );
     }
 
+    // create a lexical error object
+    private void report_error()
+    {
+        String message = String.format( "Invalid token\n```%s```", yytext() );
+        report_error( message );
+    }
 %}
-
-%eofval{
-    return new_symbol( sym.EOF );
-%eofval}
 
 
 
 // classes
-LineTerminator   = \r|\n|\r\n
-CommentCharacter = [^\r\n]
-Whitespace       = {LineTerminator} | [ \t\f]
+Newline    = \r|\n|\r\n
+NotNewline = [^\r\n]
+Whitespace = [ \t\f]+
 
-// comment can be the last line of the file, without line terminator
+// different types of comments
+// +   the line comment can be on the last line of the file, therefore not ending with a newline
 Comment          = {LineComment} | {MultilineComment}
-LineComment      = "//" {CommentCharacter}* {LineTerminator}?
+LineComment      = "//" {NotNewline}* {Newline}?
 MultilineComment = "/*" [^*] ~"*/" | "/*" "*"+ "/"
 
 IntLiteral = 0 | [1-9][0-9]*
 BoolLiteral = true | false
 CharLiteral = "'"."'"
 
-Identifier = [:jletter:] ([:jletterdigit:]|_)*
+Identifier        = ([:jletter:]|_) ([:jletterdigit:]|_)*
+InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 
 
@@ -69,16 +77,18 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 // regex section
 %%
 
-// ignore whitespaces and comments
-{Whitespace} { }
-{Comment} { }
+// send newlines, whitespaces and comments to the parser
+// +   the parser will filter them out (used for better error reporting)
+{Newline}    { return new_symbol( sym.ignore, yytext() ); }
+{Whitespace} { return new_symbol( sym.ignore, yytext() ); }
+{Comment}    { return new_symbol( sym.ignore, yytext() ); }
 
 
 
 // keywords
 "program"    { return new_symbol( sym.PROGRAM_K, yytext() ); }
 "class"      { return new_symbol( sym.CLASS_K, yytext() ); }
-"enum"       { return new_symbol( sym.error /*sym.ENUM_K*/, new_error( "Enum not implemented" ) ); }
+"enum"       { report_error( "Keyword not implemented\n```enum```" ); return new_symbol( sym.error /*sym.ENUM_K*/, yytext() ); }
 "extends"    { return new_symbol( sym.EXTENDS_K, yytext() ); }
 
 "static"     { return new_symbol( sym.STATIC_K, yytext() ); }
@@ -89,6 +99,7 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 "else"       { return new_symbol( sym.ELSE_K, yytext() ); }
 "switch"     { return new_symbol( sym.SWITCH_K, yytext() ); }
 "case"       { return new_symbol( sym.CASE_K, yytext() ); }
+"default"    { report_error( "Keyword not implemented\n```default```" ); return new_symbol( sym.error /*sym.DEFAULT_K*/, yytext() ); }
 "break"      { return new_symbol( sym.BREAK_K, yytext() ); }
 "continue"   { return new_symbol( sym.CONTINUE_K, yytext() ); }
 "return"     { return new_symbol( sym.RETURN_K, yytext() ); }
@@ -132,8 +143,9 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 ")"          { return new_symbol( sym.rparen, yytext() ); }
 "["          { return new_symbol( sym.lbracket, yytext() ); }
 "]"          { return new_symbol( sym.rbracket, yytext() ); }
-// "?"          { return new_symbol( sym.qmark, yytext() ); }
+// "?"       { return new_symbol( sym.qmark, yytext() ); }
 ":"          { return new_symbol( sym.colon, yytext() ); }
+<<EOF>>      { return new_symbol( sym.EOF ); }
 
 
 
@@ -143,10 +155,11 @@ Identifier = [:jletter:] ([:jletterdigit:]|_)*
 {CharLiteral}   { return new_symbol( sym.char_lit, yytext().charAt( 1 ) ); }
 
 // identifiers
-{Identifier} 	{ return new_symbol( sym.ident, yytext() ); }
+{Identifier} 	      { return new_symbol( sym.ident, yytext() ); }
+{InvalidIdentifier}   { report_error(); return new_symbol( sym.error, yytext() ); }
 
 // error fallback (for unrecognized token)
-[^]             { return new_symbol( sym.error, new_error( "Syntax error" ) ); }
+[^]             { report_error(); return new_symbol( sym.error, yytext() ); }
 
 
 

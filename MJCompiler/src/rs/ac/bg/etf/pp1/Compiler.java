@@ -11,12 +11,11 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
 
 import java_cup.runtime.Symbol;
 import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
-import rs.ac.bg.etf.pp1.util.Log4JUtils;
+import rs.ac.bg.etf.pp1.util.Log4JUtil;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 
@@ -24,9 +23,7 @@ public class Compiler
 {
     static
     {
-        DOMConfigurator.configure( Log4JUtils.instance().findLoggerConfigFile() );
-        Log4JUtils.instance().prepareLogFile( Logger.getRootLogger() );
-        
+        Log4JUtil.load();
         logger = Logger.getLogger( Compiler.class );
         errors = new CompilerErrors();
     }
@@ -53,6 +50,7 @@ public class Compiler
         if( !Compiler.compile( args ) )
         {
             System.err.println( Compiler.errorList().toString() );
+            System.exit( -1 );
         }
     }
     
@@ -353,7 +351,8 @@ public class Compiler
             logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ PARSER" );
             logger.info( "Parsing input file:" );
 
-            SyntaxNode rootNode = null;
+            SyntaxNode syntaxRoot = null;
+            MJParser parser = null;
 
 
             // read file and parse it
@@ -365,28 +364,36 @@ public class Compiler
                 try
                 {
                     Yylex lexer = new Yylex( brInput );
-                    MJParser parser = new MJParser( lexer );
+                    parser = new MJParser( lexer );
                     
                     // parse the input file
                     Symbol rootSymbol = parser.parse();
-                    rootNode = ( SyntaxNode )( rootSymbol.value );
+                    if( rootSymbol != null )
+                    {
+                        syntaxRoot = ( SyntaxNode )( rootSymbol.value );
+                    }
                     
-                    if( !parser.hasErrors() && rootNode == null )
+                    // if the syntax tree is missing but no errors are reported (should never happen)
+                    if( ( !parser.hasErrors() && syntaxRoot == null ) )
                     {
                         errors.add( -1, -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
                         logger.error( errors.getLast().toString() );
+                        return false;
                     }
+
                 }
                 catch( Exception ex )
                 {
                     errors.add( -1, -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
                     logger.error( errors.getLast().toString(), ex );
+                    return false;
                 }
             }
             catch( IOException ex )
             {
                 errors.add( -1, -1, "Cannot open input file", CompilerErrorType.LEXICAL_ERROR );
                 logger.error( errors.getLast().toString(), ex );
+                return false;
             }
 
 
@@ -399,7 +406,7 @@ public class Compiler
                      BufferedWriter bwParse = new BufferedWriter( fwParse );
                 )
                 {
-                    bwParse.write( rootNode.toString() );
+                    bwParse.write( syntaxTree( syntaxRoot ) );
                 }
                 catch( IOException ex )
                 {
@@ -418,25 +425,24 @@ public class Compiler
                 
                 // initialize global ("universal") scope in the symbol table
                 Tab.init();
-                // do a semantic pass over the abstract syntax tree and fill in the symbol table
+                // create a semantic pass visitor
                 SemanticPass semanticCheck = new SemanticPass();
-                rootNode.traverseBottomUp( semanticCheck );
-                
+
+                // if the parsing didn't encounter a fatal error
+                if( !parser.hasFatalError() )
+                {
+                    // do a semantic pass over the abstract syntax tree and fill in the symbol table
+                    syntaxRoot.traverseBottomUp( semanticCheck );
+                    
+                    // print the symbol table
+                    Log4JUtil.logMultiline( logger::info, tsdump() );
+                }
+
+                // print the syntax tree
+                Log4JUtil.logMultiline( logger::info, syntaxTree( syntaxRoot ) );
+
                 // if there are syntax or semantic errors, return
                 if( errors.hasErrors() ) return false;
-    
-
-                // print the symbol table
-                {
-                    String symbolTable = tsdump();
-                    if( symbolTable == null ) symbolTable = "";
-                    
-                    String[] lines = symbolTable.split( "\\R", -1 );
-                    for( String line: lines )
-                    {
-                        logger.info( line );
-                    }
-                }
 
 
 
@@ -445,7 +451,7 @@ public class Compiler
 
                 // generate code from the abstract syntax tree
                 CodeGenerator codeGenerator = new CodeGenerator();
-                rootNode.traverseBottomUp( codeGenerator );
+                syntaxRoot.traverseBottomUp( codeGenerator );
                 Code.dataSize = semanticCheck.nVars;
                 Code.mainPc = codeGenerator.getMainPc();
                 
@@ -496,5 +502,14 @@ public class Compiler
         }
         
         return output;
+    }
+
+    // return the syntax tree as a string
+    public static String syntaxTree( SyntaxNode syntaxRoot )
+    {
+        if( syntaxRoot == null ) return null;
+        String syntaxTree = "========================SYNTAX TREE============================\n"
+                          + syntaxRoot.toString();
+        return syntaxTree;
     }
 }

@@ -2,19 +2,25 @@
 // import section
 package rs.ac.bg.etf.pp1;
 
-import java_cup.runtime.*;
+import java.util.ArrayList;
 import org.apache.log4j.*;
 
-// import java.io.*;
+import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
+import rs.ac.bg.etf.pp1.util.Log4JUtil;
 
 
 // ________________________________________________________________________________________________
 // directive section
+
 parser code {:
 	protected static Logger logger = Logger.getLogger( MJParser.class );
+    
 	private boolean errorDetected = false;
 	private boolean fatalErrorDetected = false;
+
+    private Symbol currSymbol = null;
+    private ArrayList<Symbol> errorSymbols = new ArrayList<Symbol>();
 
 
     // check if there are parse errors
@@ -22,64 +28,122 @@ parser code {:
     public boolean hasFatalError() { return fatalErrorDetected; }
 
 
-    // redefine cup parser methods for error reporting
-    public void unrecovered_syntax_error( Symbol cur_token ) throws java.lang.Exception
-    {
-        report_fatal_error( "Fatal error, parsing stopped", cur_token );
-    }
+    @Override
+    protected int error_sync_size() { return 1; }
 
-    // redefine cup parser methods for error reporting
-    public void syntax_error( Symbol cur_token )
-    {
-        report_error( "Syntax error", cur_token );
-    }
-
-    // redefine cup parser methods for error reporting
-    public void report_fatal_error( String message, Object info ) throws java.lang.Exception
+    // NOTE: info is currently unused
+    @Override
+    public void report_fatal_error( String message, Object info )
     {
         fatalErrorDetected = true;
+
         report_error( message, info );
         done_parsing();
     }
 
-    // redefine cup parser methods for error reporting
+    // NOTE: info is currently unused
+    @Override
     public void report_error( String message, Object info )
     {
     	errorDetected = true;
-    	StringBuilder msg = new StringBuilder( message );
 
-        int line = -1;
-        int col  = -1;
-        if( ( info instanceof Symbol ) )
+        // ignore default messages (lr parser messages that can't be replaced without rewriting that part of the parser in the .jar file)
+        if( message == null
+        || "Syntax error".equals( message )
+        || "Couldn't repair and continue parse".equals( message ) )
         {
-            Symbol symbol = ( Symbol )info;
-            line = symbol.left;
-            col  = symbol.right;
+            message = null;
         }
 
-        Compiler.errorList().add( line, col, message, CompilerError.CompilerErrorType.SYNTAX_ERROR );
-        logger.error( Compiler.errorList().getLast().toString() );
+        // if a fatal error is detected and the message is null, set the default fatal error message
+        if( fatalErrorDetected && message == null )
+        {
+            message = "Fatal error detected, parsing stopped";
+        }
+
+        // prepare the error message
+        {
+            // if the error symbol list is empty, add the first error symbol to the error symbol list
+            if( errorSymbols.size() == 0 ) errorSymbols.add( currSymbol );
+
+            // if the message is not ready, don't report yet
+            if( message == null ) return;
+            
+            // if the error is not fatal
+            if( !fatalErrorDetected )
+            {
+                // remove the last n non-error symbols from the error symbols list
+                // +   don't count ignored symbols while removing
+                for( int i = 0; i < error_sync_size() + 1; i++ )
+                {
+                    int lastIdx = errorSymbols.size() - 1;
+
+                    // if the current symbol is an ignored symbol, include it in the removal
+                    if( sym.ignore == errorSymbols.get( lastIdx ).sym )   i--;
+
+                    // remove the last element from the list
+                    errorSymbols.remove( lastIdx );
+                }
+            }
+
+            // build the error message
+            StringBuilder messageBuilder = new StringBuilder( message ).append( "\n```" );
+            for( int i = 0; i < errorSymbols.size(); i++ )
+            {
+                Symbol token = errorSymbols.get( i );
+                messageBuilder.append( token.value );
+            }
+            messageBuilder.append( "```" );
+            message = messageBuilder.toString();
+
+            // clear all error symbols in the current syntax error
+            errorSymbols.clear();
+        }
+
+        // report the syntax error
+        Compiler.errorList().add( currSymbol.left, currSymbol.right, message, CompilerError.CompilerErrorType.SYNTAX_ERROR );
+        Log4JUtil.logMultiline( logger::error, Compiler.errorList().getLast().toString() );
     }
     
-    // redefine cup parser methods for error reporting
-    public void report_info( String message, Object info )
+
+    // these functions are not designed for advanced error logging, therefore ignore the <message> and current <symbol/ast node>
+    @Override
+    public void unrecovered_syntax_error( Symbol cur_token )
     {
-    	StringBuilder msg = new StringBuilder( message ); 
-
-    	if( info instanceof Symbol )
-        {
-            msg.append( " on line " ).append( ( ( Symbol )info ).left );
-        }
-
-        logger.info( msg.toString() );
+        report_fatal_error( null, cur_token );
     }
-    
+
+    @Override
+    public void syntax_error( Symbol cur_token )
+    {
+        report_error( null, cur_token );
+    }
+
 :}
 
 scan with {:
-	Symbol symbol = this.getScanner().next_token();
-    logger.info( sym.symbolToString( symbol ) );
-	return symbol;
+    while( true )
+    {
+        // replace the current symbol with the next symbol from the scanner
+    	currSymbol = getScanner().next_token();
+
+        // if the parser is currently resolving an error, save the symbol
+        if( errorSymbols.size() > 0 )
+        {
+            errorSymbols.add( currSymbol );
+        }
+
+        // if the current symbol should not be ignored
+        if( currSymbol.sym != sym.ignore )
+        {
+            // log the current symbol and break
+            Log4JUtil.logMultiline( logger::info, sym.symbolToString( currSymbol ) );
+            break;
+        }
+    }
+
+    // return the current symbol
+    return currSymbol;
 :}
 
 
@@ -115,25 +179,29 @@ terminal Character char_lit;   // 'a'   '-'
 // identifiers [terminals]
 terminal String ident;         // asdf0_13
 
+// newlines, whitespaces, comments [terminals]
+// +   whitespace does not include newlines!
+terminal ignore;               // // ... newline? | /* ... */
+
 
 
 // declarations [nonterminals]
 nonterminal Program, GlobalDeclList, GlobalDecl;
-nonterminal ClassDecl, ClassDeclScope, ClassVarDeclList, ClassVarDecl, MethodDeclScope, MethodDeclList;
-nonterminal MethodDecl, FormPars, FormParsNext, VarDeclList;
+nonterminal ClassDecl, ClassIdentDecl, ClassDeclScope, ClassVarDeclList, ClassVarDecl, MethodDeclScope, MethodDeclList;
+nonterminal MethodDecl, FormPars, FormParsList, VarDeclList;
 nonterminal VarDecl, VarIdentList;
 nonterminal ConstDecl, IdentInitList;
 
 // statement parts [nonterminals]
 nonterminal Statement, DesignatorStatement;
-nonterminal StatementList, CaseList, ActPars, ActParsNext;
+nonterminal StatementList, CaseList, ActPars, ActParsList;
 nonterminal Condition, CondTerm, CondFact;
 nonterminal Expr, Addition, SignedAddition;
 nonterminal Term, Factor;
 nonterminal Designator, DesignatorNext;
 
 // types, literals, operators [nonterminals]
-nonterminal VarIdent, Literal, ReturnType, Type;
+nonterminal VarIdent, IdentInit, Literal, ReturnType, Type;
 nonterminal Assignop, Relop, Addop, Mulop;
 
 
@@ -173,8 +241,13 @@ GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
 // class A { { method method method } }
 // class A extends B { vardl vardl vardl vardl }
 // class A extends B { vardl vardl vardl vardl { method method method } }
-ClassDecl ::= (ClassDecl_Plain  ) CLASS_K ident                ClassDeclScope;
-ClassDecl ::= (ClassDecl_Extends) CLASS_K ident EXTENDS_K Type ClassDeclScope;
+ClassDecl ::= (ClassDecl_Plain) ClassIdentDecl ClassDeclScope;
+
+// class A
+// class A extends B
+ClassIdentDecl ::= (ClassIdentDecl_Plain  ) CLASS_K ident;
+ClassIdentDecl ::= (ClassIdentDecl_Extends) CLASS_K ident EXTENDS_K Type;
+ClassIdentDecl ::= (ClassIdentDecl_Err    ) error:e {: parser.report_error( "Invalid class identifier declaration", null ); :};
 
 // { }
 // { { method method method } }
@@ -216,11 +289,11 @@ MethodDecl ::= (MethodDecl_Plain) ReturnType ident lparen FormPars rparen VarDec
 
 // <epsilon>
 // int ident, Node Array[], char c
-FormPars ::= (FormPars_Tail ) Type VarIdent FormParsNext;
+FormPars ::= (FormPars_List ) FormParsList;
 FormPars ::= (FormPars_Empty) ;
 
-FormParsNext ::= (FormParsNext_FormPar) comma Type VarIdent FormParsNext;
-FormParsNext ::= (FormParsNext_Empty  ) ;
+FormParsList ::= (FormParsList_Init) Type VarIdent;
+FormParsList ::= (FormParsList_Tail) Type VarIdent comma FormParsList;
 
 // <epsilon>
 // vardl vardl vardl vardl
@@ -241,8 +314,8 @@ VarIdentList ::= (VarIdentList_Tail    ) VarIdent comma VarIdentList;
 // const int a = 5, b = 6, c = 11;
 ConstDecl ::= (ConstDecl_Plain) CONST_K Type IdentInitList semicol;
 
-IdentInitList ::= (IdentInitList_Init) ident Assignop Literal;
-IdentInitList ::= (IdentInitList_Tail) ident Assignop Literal comma IdentInitList;
+IdentInitList ::= (IdentInitList_Init) IdentInit;
+IdentInitList ::= (IdentInitList_Tail) IdentInit comma IdentInitList;
 
 
 
@@ -281,6 +354,7 @@ Statement ::= (Statement_Print      ) PRINT_K lparen Expr rparen semicol;
 Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
 Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
 Statement ::= (Statement_Semicolon  ) semicol;
+Statement ::= (Statement_Err        ) error:e semicol {: parser.report_error( "Invalid statement", null ); :};
 
 // ident.ident[ expr ] = expr
 // ident.ident[ expr ]( )
@@ -307,11 +381,11 @@ CaseList ::= (CaseList_Empty) ;
 // <epsilon>
 // expr
 // expr, expr, expr
-ActPars ::= (ActPars_Tail ) Expr ActParsNext;
+ActPars ::= (ActPars_Tail ) ActParsList;
 ActPars ::= (ActPars_Empty) ;
 
-ActParsNext ::= (ActParsNext_Tail ) comma Expr ActParsNext;
-ActParsNext ::= (ActParsNext_Empty) ;
+ActParsList ::= (ActParsList_Expr) Expr;
+ActParsList ::= (ActParsList_Tail) Expr comma ActParsList;
 
 // expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
 Condition ::= (Condition_Term) CondTerm;
@@ -330,6 +404,7 @@ CondFact ::= (CondFact_Tail) Expr Relop Expr;
 // -term + term - term + term
 // +term + term + term + term
 Expr ::= (Expr_Addition) Addition;
+Expr ::= (Expr_Err     ) error:e {: parser.report_error( "Invalid expression", null ); :};
 
 Addition ::= (Addition_Term    ) Term;
 Addition ::= (Addition_Tail    )      SignedAddition;
@@ -372,9 +447,13 @@ DesignatorNext ::= (DesignatorNext_Empty    ) ;
 
 
 
+// ident = 12430
+IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
+IdentInit ::= (IdentInit_Err  ) error:e {: parser.report_error( "Invalid identifier initialization", null ); :};
 // ident | array[]
 VarIdent ::= (VarIdent_Ident) ident;
 VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
+VarIdent ::= (VarIdent_Err  ) error:e {: parser.report_error( "Invalid variable identifier", null ); :};
 // 1202 | 'c' | true
 Literal ::= (Literal_Int ) int_lit;
 Literal ::= (Literal_Char) char_lit;

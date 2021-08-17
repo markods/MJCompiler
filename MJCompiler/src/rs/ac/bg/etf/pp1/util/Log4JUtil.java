@@ -9,22 +9,42 @@ import java.time.format.DateTimeFormatter;
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 
-public class Log4JUtils
+public class Log4JUtil
 {
-    private static Log4JUtils logs = new Log4JUtils();
+    private Log4JUtil() {}
 
-    public static Log4JUtils instance()
+    public static void load()
     {
-        return logs;
+        DOMConfigurator.configure( findLoggerConfigFile() );
+        prepareLogFile( Logger.getRootLogger() );
     }
 
-    public URL findLoggerConfigFile()
+
+    @FunctionalInterface
+    public interface ILogFunction { void log( Object message ); }
+
+    // logs a multiline message
+    public static void logMultiline( ILogFunction logFunc, String message )
+    {
+        if( logFunc == null || message == null ) return;
+
+        String[] lines = message.split( "\\R", -1 );
+        for( String line: lines )
+        {
+            logFunc.log( line );
+        }
+    }
+
+
+
+    private static URL findLoggerConfigFile()
     {
         return Thread.currentThread().getContextClassLoader().getResource( "log4j.xml" );
     }
 
-    public void prepareLogFile( Logger root )
+    private static void prepareLogFile( Logger root )
     {
         Appender appender = root.getAppender( "LogFileAppender" );
         if( !( appender instanceof FileAppender ) )

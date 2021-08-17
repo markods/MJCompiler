@@ -57,6 +57,8 @@ if( "-help" -in $args -or "--help" -in $args )
 {
     Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-lex file] [-par file] [-o file] file]   [-disasm file] [-run -debug file]";
     Write-Output "";
+    Write-Output "Default:        build -jflex -ast -cup -build";
+    Write-Output "";
     Write-Output "Switches:";
     Write-Output "    --help      shows the help menu";
     Write-Output "    -help       same as --help";
@@ -72,7 +74,6 @@ if( "-help" -in $args -or "--help" -in $args )
     Write-Output "    -compile    compiles the MJ program with the given parameters";
     Write-Output "      -lex      +   generate the lexer output and write to the <output fname>.lex";
     Write-Output "      -par      +   generate the parser output and write to the <output fname>.par";
-    Write-Output "      -cmp      +   compile the program and write to the <output fname>.obj (-cmp is on by default unless -lex or -par is specified)";
     Write-Output "      -o        +   specify the name of the output file (<input fname>.obj by default)";
     Write-Output "";
     Write-Output "    -disasm     disassembles the .obj file";
@@ -87,7 +88,7 @@ if( "-help" -in $args -or "--help" -in $args )
 if( $args.count -eq 0 )
 {
     # leave powershell array constructor ( @() ) even if there is only one argument (otherwise it won't be a powershell array due to unpacking)
-    $args = @( "-build" );
+    $args = @( "-jflex", "-ast", "-cup", "-build" );
 }
 
 # calculate the "MJ compiler", "disassembler" and "run" commands' positions in the argument list
