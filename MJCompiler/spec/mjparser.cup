@@ -24,7 +24,7 @@ parser code {:
 	private boolean fatalErrorDetected = false;
 
     private Symbol currSymbol = null;
-    private ArrayList<Symbol> errorSymbols = new ArrayList<Symbol>();
+    private SymbolList errorSymbols = new SymbolList();
 
 
     // check if there are parse errors
@@ -78,29 +78,23 @@ parser code {:
             // if the error is not fatal
             if( !fatalErrorDetected )
             {
-                int lastIdx = errorSymbols.size() - 1;
-
-                // remove the last n non-error symbols from the error symbols list
+                int errorSymbolCount = error_sync_size() + 1;
+                // remove the last n non-error symbols from the error symbols list until we hit a non-error symbol
                 // +   don't count ignored symbols while removing
-                for( int i = 0; i < error_sync_size() + 1; i++ )
+                // +   the last symbol after this will be a non-error symbol
+                for( int i = 0; i <= errorSymbolCount;   )
                 {
-                    // if the current symbol is an ignored symbol, include it in the removal
-                    if( errorSymbols.get( lastIdx ).isIgnored() )   i--;
+                    // get the last symbol from the list
+                    Symbol lastSymbol = errorSymbols.getLast();
+                    
+                    // if the last symbol is not an ignored symbol, increment the number of error symbols that were removed
+                    if( !lastSymbol.isIgnored() ) i++;
 
-                    // remove the last element from the list
-                    errorSymbols.remove( lastIdx );
-                    lastIdx--;
-                }
-
-                // remove the trailing whitespaces
-                while( true )
-                {
-                    // if the current symbol is not an ignored symbol, break
-                    if( errorSymbols.get( lastIdx ).isIgnored() ) break;
-
-                    // remove the last element from the list
-                    errorSymbols.remove( lastIdx );
-                    lastIdx--;
+                    // if final last symbol is reached or if there is only one element to show, break
+                    if( i == errorSymbolCount + 1 || errorSymbols.size() <= 1 ) break;
+                    
+                    // otherwise, remove the last element from the list
+                    errorSymbols.removeLast();
                 }
             }
 

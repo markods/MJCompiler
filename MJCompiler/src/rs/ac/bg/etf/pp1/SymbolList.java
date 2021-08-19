@@ -14,9 +14,30 @@ public class SymbolList
         return symbolList.add( symbol );
     }
 
+    public void removeLast()
+    {
+        if( symbolList.size() > 0 ) symbolList.remove( symbolList.size() - 1 );
+    }
+
     public void clear()
     {
         symbolList.clear();
+    }
+
+
+    public int size()
+    {
+        return symbolList.size();
+    }
+
+    public Symbol get( int index )
+    {
+        return symbolList.get( index );
+    }
+
+    public Symbol getLast()
+    {
+        return ( symbolList.size() > 0 ) ? symbolList.get( symbolList.size() - 1 ) : null;
     }
 
 }

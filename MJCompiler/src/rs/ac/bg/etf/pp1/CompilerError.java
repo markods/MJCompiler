@@ -6,9 +6,8 @@ public class CompilerError
     public static final int LEXICAL_ERROR   = 1;
     public static final int SYNTAX_ERROR    = 2;
     public static final int SEMANTIC_ERROR  = 3;
-    public static final int RUNTIME_ERROR   = 4;
 
-    public static String getKind( int errType )
+    public static String getKindName( int errType )
     {
         switch( errType )
         {
@@ -16,7 +15,6 @@ public class CompilerError
             case LEXICAL_ERROR:   return "LEX";
             case SYNTAX_ERROR:    return "SYN";
             case SEMANTIC_ERROR:  return "SEM";
-            case RUNTIME_ERROR:   return "RUN";
             default:              return ".";
         }
     }
@@ -42,10 +40,10 @@ public class CompilerError
     @Override
     public String toString()
     {
-        return String.format( "Ln %-4s Col %-4s %-3s     %s",
-            ( line >= 0 ? "#" + line : "." ),
-            ( col  >= 0 ? "#" + col  : "." ),
-            getKind( kind ),
+        return String.format( "Ln %-3s Col %-3s %-3s     %s",
+            ( line >= 0 ? line : "." ),
+            ( col  >= 0 ? col  : "." ),
+            getKindName( kind ),
             message
         );
     }

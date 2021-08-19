@@ -62,6 +62,7 @@ public class SymbolCode implements ISymbolCode
 
     public static boolean isInvalid( int symbolCode )
     {
-        return symbolCode == SymbolCode.invalid;
+        return symbolCode == SymbolCode.error
+            || symbolCode == SymbolCode.invalid;
     }
 }

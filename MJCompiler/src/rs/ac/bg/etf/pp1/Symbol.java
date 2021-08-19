@@ -3,31 +3,27 @@ package rs.ac.bg.etf.pp1;
 
 public class Symbol extends java_cup.runtime.Symbol
 {
+    // java_cup.runtime.Symbol's fields
+ // public int symbolCode;   // === sym
 
-    public Symbol( int symbolCode, int left, int right, Object value )
+ // public int symbolIdx;    // === left
+ // public int line;         // === right
+    public int column;
+ // public Object value;     // === obj
+ 
+ // public int parse_state;
+ // boolean used_by_parser;
+
+
+    public Symbol( int symbolCode, int symbolIdx, int line, int column, Object value )
     {
-        super( symbolCode, left, right, value );
+     // super( sym,        left,      right, obj );
+        super( symbolCode, symbolIdx, line, value );
+        this.column = column;
     }
 
-    public Symbol( int symbolCode, Object value )
-    {
-        super( symbolCode, value );
-    }
-
-    public Symbol( int symbolCode, int left, int right )
-    {
-        super( symbolCode, left, right );
-    }
-
-    public Symbol( int symbolCode )
-    {
-        super( symbolCode );
-    }
-
-    public boolean isIgnored()
-    {
-        return SymbolCode.isIgnored( sym );
-    }
+    public boolean isIgnored() { return SymbolCode.isIgnored( sym ); }
+    public boolean isInvalid() { return SymbolCode.isInvalid( sym ); }
 
     @Override
     public String toString()
@@ -35,7 +31,7 @@ public class Symbol extends java_cup.runtime.Symbol
         String symbolName = SymbolCode.getSymbolName( sym );
         String symbolValue = ( value != null ) ? "`" + value.toString() + "`" : "``";
 
-        return String.format( "Ln #%-3d Col #%-3d   %-15s %s", left, right, symbolName, symbolValue );
+        return String.format( "Ln %-3d Col %-3d Idx %-3d     %-15s %s", right, column, left, symbolName, symbolValue );
     }
 }
 

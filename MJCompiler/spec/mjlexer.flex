@@ -19,29 +19,17 @@ import rs.ac.bg.etf.pp1.util.Log4J;
 
 // methods
 %{
+    private static int symbolIdx = 0;
+
     // create a symbol from the given symbol type
     private Symbol new_symbol( int symbolCode )
     {
-        return new Symbol( symbolCode, yyline+1, yycolumn );
+        return new_symbol( symbolCode, null );
     }
-	
     // create a symbol from the given symbol type and its value
     private Symbol new_symbol( int symbolCode, Object value )
     {
-        return new Symbol( symbolCode, yyline+1, yycolumn, value );
-    }
-
-    // create a lexical error object
-    private void report_error( String message )
-    {
-        Compiler.errors.add( yyline+1, yycolumn, message, CompilerError.LEXICAL_ERROR );
-    }
-
-    // create a lexical error object
-    private void report_error()
-    {
-        String message = String.format( "Invalid token\n```%s```", yytext() );
-        report_error( message );
+        return new Symbol( symbolCode, symbolIdx++, yyline+1, yycolumn, value );
     }
 %}
 
@@ -85,7 +73,7 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 // keywords
 "program"    { return new_symbol( SymbolCode.PROGRAM_K, yytext() ); }
 "class"      { return new_symbol( SymbolCode.CLASS_K, yytext() ); }
-"enum"       { report_error( "Keyword not implemented\n```enum```" ); return new_symbol( SymbolCode.invalid /*SymbolCode.ENUM_K*/, yytext() ); }
+"enum"       { return new_symbol( SymbolCode.invalid /*SymbolCode.ENUM_K*/, yytext() ); }
 "extends"    { return new_symbol( SymbolCode.EXTENDS_K, yytext() ); }
 
 "static"     { return new_symbol( SymbolCode.STATIC_K, yytext() ); }
@@ -96,7 +84,7 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 "else"       { return new_symbol( SymbolCode.ELSE_K, yytext() ); }
 "switch"     { return new_symbol( SymbolCode.SWITCH_K, yytext() ); }
 "case"       { return new_symbol( SymbolCode.CASE_K, yytext() ); }
-"default"    { report_error( "Keyword not implemented\n```default```" ); return new_symbol( SymbolCode.invalid /*SymbolCode.DEFAULT_K*/, yytext() ); }
+"default"    { return new_symbol( SymbolCode.invalid /*SymbolCode.DEFAULT_K*/, yytext() ); }
 "break"      { return new_symbol( SymbolCode.BREAK_K, yytext() ); }
 "continue"   { return new_symbol( SymbolCode.CONTINUE_K, yytext() ); }
 "return"     { return new_symbol( SymbolCode.RETURN_K, yytext() ); }
@@ -152,10 +140,10 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 // identifiers
 {Identifier} 	      { return new_symbol( SymbolCode.ident, yytext() ); }
-{InvalidIdentifier}   { report_error(); return new_symbol( SymbolCode.invalid, yytext() ); }
+{InvalidIdentifier}   { return new_symbol( SymbolCode.invalid, yytext() ); }
 
 // error fallback (for unrecognized token)
-[^]             { report_error(); return new_symbol( SymbolCode.invalid, yytext() ); }
+[^]             { return new_symbol( SymbolCode.invalid, yytext() ); }
 
 
 

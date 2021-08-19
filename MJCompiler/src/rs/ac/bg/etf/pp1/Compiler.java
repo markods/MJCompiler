@@ -268,7 +268,7 @@ public class Compiler
             logger.info( "Lexing input file:" );
 
             Symbol token = null;
-            StringBuilder lex = new StringBuilder( "// MJ lexer output:\n" );
+            StringBuilder lex = new StringBuilder( "========================LEXER OUTPUT===========================\n" );
 
 
             // read file and lex it
@@ -463,8 +463,7 @@ public class Compiler
         }
         catch( IOException ex )
         {
-            CompilerError error = new CompilerError( -1, -1, "Error during conversion of symbol table to string", CompilerError.SEMANTIC_ERROR );
-            logger.error( error.toString(), ex );
+            errors.add( -1, -1, "Error during conversion of symbol table to string", CompilerError.SEMANTIC_ERROR, ex );
         }
         finally
         {

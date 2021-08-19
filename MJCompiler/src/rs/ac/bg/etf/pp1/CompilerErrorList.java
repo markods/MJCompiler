@@ -25,14 +25,25 @@ public class CompilerErrorList
         return errorList.add( error );
     }
 
-    public CompilerError getLast()
-    {
-        return ( errorList.size() > 0 ) ? errorList.get( errorList.size() - 1 ) : null;
-    }
-
     public void clear()
     {
         errorList.clear();
+    }
+
+
+    public int size()
+    {
+        return errorList.size();
+    }
+
+    public CompilerError get( int index )
+    {
+        return errorList.get( index );
+    }
+
+    public CompilerError getLast()
+    {
+        return ( errorList.size() > 0 ) ? errorList.get( errorList.size() - 1 ) : null;
     }
 
     public boolean hasErrors()
@@ -40,6 +51,7 @@ public class CompilerErrorList
         return !errorList.isEmpty();
     }
     
+
     @Override
     public String toString()
     {
