@@ -3,7 +3,6 @@
 package rs.ac.bg.etf.pp1;
 
 import org.apache.log4j.*;
-import java_cup.runtime.Symbol;
 import rs.ac.bg.etf.pp1.util.Log4JUtil;
 
 
@@ -24,15 +23,15 @@ import rs.ac.bg.etf.pp1.util.Log4JUtil;
 	protected static Logger logger = Logger.getLogger( Lexer.class );
 
     // create a symbol from the given symbol type
-    private Symbol new_symbol( int type )
+    private Symbol new_symbol( int symbolCode )
     {
-        return new Symbol( type, yyline+1, yycolumn );
+        return new Symbol( symbolCode, yyline+1, yycolumn );
     }
 	
     // create a symbol from the given symbol type and its value
-    private Symbol new_symbol( int type, Object value )
+    private Symbol new_symbol( int symbolCode, Object value )
     {
-        return new Symbol( type, yyline+1, yycolumn, value );
+        return new Symbol( symbolCode, yyline+1, yycolumn, value );
     }
 
     // create a lexical error object
@@ -83,6 +82,7 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 {Newline}    { return new_symbol( SymbolCode.ignore, yytext() ); }
 {Whitespace} { return new_symbol( SymbolCode.ignore, yytext() ); }
 {Comment}    { return new_symbol( SymbolCode.ignore, yytext() ); }
+<<EOF>>      { return new_symbol( SymbolCode.EOF ); }
 
 
 
@@ -146,7 +146,6 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 "]"          { return new_symbol( SymbolCode.rbracket, yytext() ); }
 // "?"       { return new_symbol( SymbolCode.qmark, yytext() ); }
 ":"          { return new_symbol( SymbolCode.colon, yytext() ); }
-<<EOF>>      { return new_symbol( SymbolCode.EOF ); }
 
 
 

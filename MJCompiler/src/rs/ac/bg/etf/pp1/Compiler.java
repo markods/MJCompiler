@@ -305,21 +305,16 @@ public class Compiler
                     {
                         token = lexer.next_token();
 
-                        lex.append( SymbolCode.symbolToString( token ) ).append( "\n" );
-                        logger.info( SymbolCode.symbolToString( token ) );
+                        lex.append( token.toString() ).append( "\n" );
+                        logger.info( token.toString() );
 
-                        if( token == null )
-                        {
-                            errors.add( -1, -1, "Invalid token", CompilerErrorType.LEXICAL_ERROR );
-                            logger.error( errors.getLast().toString() );
-                        }
-                        else if( token.value instanceof CompilerError )
+                        if( token.value instanceof CompilerError )
                         {
                             errors.add( ( CompilerError )token.value );
                             logger.error( errors.getLast().toString() );
                         }
 
-                        if( token == null || token.sym == SymbolCode.EOF ) break;
+                        if( token.sym == SymbolCode.EOF ) break;
                     }
                 }
                 catch( IOException ex )

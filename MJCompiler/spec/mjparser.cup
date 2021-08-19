@@ -5,7 +5,6 @@ package rs.ac.bg.etf.pp1;
 import java.util.ArrayList;
 import org.apache.log4j.*;
 
-import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.ac.bg.etf.pp1.util.Log4JUtil;
 
@@ -134,7 +133,6 @@ parser code {:
 
     // this function is not designed for advanced error logging
     // +   ignore the <message> and current <symbol/ast node>
-    @Override
     public void unrecovered_syntax_error( Symbol cur_token )
     {
         report_fatal_error( null, cur_token );
@@ -142,7 +140,6 @@ parser code {:
 
     // this function is not designed for advanced error logging
     // +   ignore the <message> and current <symbol/ast node>
-    @Override
     public void syntax_error( Symbol cur_token )
     {
         report_error( null, cur_token );
@@ -154,7 +151,7 @@ scan with {:
     while( true )
     {
         // replace the current symbol with the next symbol from the scanner
-    	currSymbol = getScanner().next_token();
+    	currSymbol = ( Symbol )( getScanner().next_token() );
 
         // if the parser is currently resolving an error, save the symbol
         if( errorSymbols.size() > 0 )
@@ -166,7 +163,7 @@ scan with {:
         if( currSymbol.sym != SymbolCode.ignore )
         {
             // log the current symbol and break
-            Log4JUtil.logMultiline( logger::info, SymbolCode.symbolToString( currSymbol ) );
+            Log4JUtil.logMultiline( logger::info, currSymbol.toString() );
             break;
         }
     }
