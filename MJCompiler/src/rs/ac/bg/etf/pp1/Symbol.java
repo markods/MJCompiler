@@ -1,7 +1,8 @@
 package rs.ac.bg.etf.pp1;
 
 
-public class Symbol extends java_cup.runtime.Symbol {
+public class Symbol extends java_cup.runtime.Symbol
+{
 
     public Symbol( int symbolCode, int left, int right, Object value )
     {
@@ -23,6 +24,10 @@ public class Symbol extends java_cup.runtime.Symbol {
         super( symbolCode );
     }
 
+    public boolean isIgnored()
+    {
+        return SymbolCode.isIgnored( sym );
+    }
 
     @Override
     public String toString()

@@ -51,4 +51,17 @@ public class SymbolCode implements ISymbolCode
         
         return symbolNameList.get( symbolCode );
     }
+
+    public static boolean isIgnored( int symbolCode )
+    {
+        return symbolCode == SymbolCode.newline
+            || symbolCode == SymbolCode.whitespace
+            || symbolCode == SymbolCode.line_comment
+            || symbolCode == SymbolCode.multi_comment;
+    }
+
+    public static boolean isInvalid( int symbolCode )
+    {
+        return symbolCode == SymbolCode.invalid;
+    }
 }

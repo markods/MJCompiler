@@ -10,12 +10,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import org.apache.log4j.Logger;
-
 import java_cup.runtime.Symbol;
 import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
-import rs.ac.bg.etf.pp1.util.Log4JUtil;
+import rs.ac.bg.etf.pp1.util.Log4J;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 
@@ -23,12 +21,12 @@ public class Compiler
 {
     static
     {
-        Log4JUtil.load();
-        logger = Logger.getLogger( Compiler.class );
+        Log4J.configure();
+        logger = Log4J.getLogger( Compiler.class );
         errors = new CompilerErrorList();
     }
     
-    private static Logger logger;
+    private static Log4J logger;
     private static CompilerErrorList errors;
 
     private static boolean verbose = false;
@@ -430,7 +428,7 @@ public class Compiler
                 // initialize global ("universal") scope in the symbol table
                 Tab.init();
                 // create a semantic pass visitor
-                SemanticPass semanticCheck = new SemanticPass();
+                SemanticVisitor semanticCheck = new SemanticVisitor();
 
                 // if the parsing didn't encounter a fatal error
                 if( !parser.hasFatalError() )
@@ -439,11 +437,11 @@ public class Compiler
                     syntaxRoot.traverseBottomUp( semanticCheck );
                     
                     // print the symbol table
-                    Log4JUtil.logMultiline( logger::info, tsdump() );
+                    logger.log( Log4J.INFO, tsdump(), true );
                 }
 
                 // print the syntax tree
-                Log4JUtil.logMultiline( logger::info, syntaxTree( syntaxRoot ) );
+                logger.log( Log4J.INFO, syntaxTree( syntaxRoot ), true );
 
                 // if there are syntax or semantic errors, return
                 if( errors.hasErrors() ) return false;
@@ -454,7 +452,7 @@ public class Compiler
                 logger.info( "Compiling code" );
 
                 // generate code from the abstract syntax tree
-                CodeGenerator codeGenerator = new CodeGenerator();
+                CodeGenVisitor codeGenerator = new CodeGenVisitor();
                 syntaxRoot.traverseBottomUp( codeGenerator );
                 Code.dataSize = semanticCheck.nVars;
                 Code.mainPc = codeGenerator.getMainPc();

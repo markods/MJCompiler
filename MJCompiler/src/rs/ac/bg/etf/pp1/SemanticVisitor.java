@@ -1,13 +1,12 @@
 package rs.ac.bg.etf.pp1;
 
-import org.apache.log4j.Logger;
-
 import rs.ac.bg.etf.pp1.ast.*;
+import rs.ac.bg.etf.pp1.util.Log4J;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
-public class SemanticPass extends VisitorAdaptor
+public class SemanticVisitor extends VisitorAdaptor
 {
     boolean errorDetected = false;
     int printCallCount = 0;
@@ -15,7 +14,7 @@ public class SemanticPass extends VisitorAdaptor
     boolean returnFound = false;
     int nVars;
     
-    Logger log = Logger.getLogger( getClass() );
+    Log4J logger = Log4J.getLogger( getClass() );
 
     public boolean passed()
     {
@@ -29,7 +28,7 @@ public class SemanticPass extends VisitorAdaptor
         int line = (info == null) ? 0 : info.getLine();
         if( line != 0 )
             msg.append( " na liniji " ).append( line );
-        log.error( msg.toString() );
+        logger.error( msg.toString() );
     }
 
     public void report_info( String message, SyntaxNode info )
@@ -38,7 +37,7 @@ public class SemanticPass extends VisitorAdaptor
         int line = (info == null) ? 0 : info.getLine();
         if( line != 0 )
             msg.append( " na liniji " ).append( line );
-        log.info( msg.toString() );
+        logger.info( msg.toString() );
     }
 
     

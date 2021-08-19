@@ -2,8 +2,7 @@
 // import section
 package rs.ac.bg.etf.pp1;
 
-import org.apache.log4j.*;
-import rs.ac.bg.etf.pp1.util.Log4JUtil;
+import rs.ac.bg.etf.pp1.util.Log4J;
 
 
 // ________________________________________________________________________________________________
@@ -11,8 +10,8 @@ import rs.ac.bg.etf.pp1.util.Log4JUtil;
 %%
 
 %class Lexer
-// %unicode
 %cup
+// %unicode
 %line
 %column
 
@@ -20,7 +19,7 @@ import rs.ac.bg.etf.pp1.util.Log4JUtil;
 
 // methods
 %{
-	protected static Logger logger = Logger.getLogger( Lexer.class );
+	protected static Log4J logger = Log4J.getLogger( Lexer.class );
 
     // create a symbol from the given symbol type
     private Symbol new_symbol( int symbolCode )
@@ -38,7 +37,7 @@ import rs.ac.bg.etf.pp1.util.Log4JUtil;
     private void report_error( String message )
     {
         Compiler.errorList().add( new CompilerError( yyline+1, yycolumn, message, CompilerError.CompilerErrorType.LEXICAL_ERROR ) );
-        Log4JUtil.logMultiline( logger::error, Compiler.errorList().getLast().toString() );
+        logger.log( Log4J.ERROR, Compiler.errorList().getLast().toString(), true );
     }
 
     // create a lexical error object
@@ -58,7 +57,6 @@ Whitespace = [ \t\f]+
 
 // different types of comments
 // +   the line comment can be on the last line of the file, therefore not ending with a newline
-Comment          = {LineComment} | {MultilineComment}
 LineComment      = "//" {NotNewline}* {Newline}?
 MultilineComment = "/*" [^*] ~"*/" | "/*" "*"+ "/"
 
@@ -79,10 +77,11 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 // send newlines, whitespaces and comments to the parser
 // +   the parser will filter them out (used for better error reporting)
-{Newline}    { return new_symbol( SymbolCode.ignore, yytext() ); }
-{Whitespace} { return new_symbol( SymbolCode.ignore, yytext() ); }
-{Comment}    { return new_symbol( SymbolCode.ignore, yytext() ); }
-<<EOF>>      { return new_symbol( SymbolCode.EOF ); }
+{Newline}           { return new_symbol( SymbolCode.newline, yytext() ); }
+{Whitespace}        { return new_symbol( SymbolCode.whitespace, yytext() ); }
+{LineComment}       { return new_symbol( SymbolCode.line_comment, yytext() ); }
+{MultilineComment}  { return new_symbol( SymbolCode.multi_comment, yytext() ); }
+<<EOF>>             { return new_symbol( SymbolCode.EOF ); }
 
 
 

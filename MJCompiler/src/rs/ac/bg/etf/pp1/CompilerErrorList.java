@@ -4,47 +4,48 @@ import java.util.ArrayList;
 
 import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 
-public class CompilerErrorList {
-    private ArrayList<CompilerError> errors = new ArrayList<>();
+public class CompilerErrorList
+{
+    private final ArrayList<CompilerError> errorList = new ArrayList<>();
 
     public CompilerErrorList() {}
 
 
     public boolean add( int line, int col, String message, CompilerErrorType type )
     {
-        return errors.add( new CompilerError( line, col, message, type ) );
+        return errorList.add( new CompilerError( line, col, message, type ) );
     }
     
     public boolean add( CompilerError error )
     {
-        return errors.add( error );
+        return errorList.add( error );
     }
 
     public CompilerError getLast()
     {
-        return ( errors.size() > 0 ) ? errors.get( errors.size() - 1 ) : null;
+        return ( errorList.size() > 0 ) ? errorList.get( errorList.size() - 1 ) : null;
     }
 
     public void clear()
     {
-        errors.clear();
+        errorList.clear();
     }
     
     public ArrayList<CompilerError> list()
     {
-        return errors;
+        return errorList;
     }
 
     public boolean hasErrors()
     {
-        return !errors.isEmpty();
+        return !errorList.isEmpty();
     }
     
     @Override
     public String toString()
     {
         StringBuilder builder = new StringBuilder();
-        for( CompilerError error : errors )
+        for( CompilerError error : errorList )
         {
             builder.append( error.toString() ).append( "\n" );
         }

@@ -3,10 +3,9 @@
 package rs.ac.bg.etf.pp1;
 
 import java.util.ArrayList;
-import org.apache.log4j.*;
 
 import rs.ac.bg.etf.pp1.ast.*;
-import rs.ac.bg.etf.pp1.util.Log4JUtil;
+import rs.ac.bg.etf.pp1.util.Log4J;
 
 // TODO: bolja prijava gresaka
 // – definicija globalne promenljive – ignorisati karaktere do prvog znaka ";" ili sledećeg ","
@@ -21,7 +20,7 @@ import rs.ac.bg.etf.pp1.util.Log4JUtil;
 // directive section
 
 parser code {:
-	protected static Logger logger = Logger.getLogger( Parser.class );
+	protected static Log4J logger = Log4J.getLogger( Parser.class );
     
 	private boolean errorDetected = false;
 	private boolean fatalErrorDetected = false;
@@ -88,7 +87,7 @@ parser code {:
                 for( int i = 0; i < error_sync_size() + 1; i++ )
                 {
                     // if the current symbol is an ignored symbol, include it in the removal
-                    if( SymbolCode.ignore == errorSymbols.get( lastIdx ).sym )   i--;
+                    if( errorSymbols.get( lastIdx ).isIgnored() )   i--;
 
                     // remove the last element from the list
                     errorSymbols.remove( lastIdx );
@@ -99,7 +98,7 @@ parser code {:
                 while( true )
                 {
                     // if the current symbol is not an ignored symbol, break
-                    if( SymbolCode.ignore != errorSymbols.get( lastIdx ).sym ) break;
+                    if( errorSymbols.get( lastIdx ).isIgnored() ) break;
 
                     // remove the last element from the list
                     errorSymbols.remove( lastIdx );
@@ -127,7 +126,7 @@ parser code {:
 
         // report the syntax error
         Compiler.errorList().add( line, col, message, CompilerError.CompilerErrorType.SYNTAX_ERROR );
-        Log4JUtil.logMultiline( logger::error, Compiler.errorList().getLast().toString() );
+        logger.log( Log4J.ERROR, Compiler.errorList().getLast().toString(), true );
     }
     
 
@@ -160,10 +159,10 @@ scan with {:
         }
 
         // if the current symbol should not be ignored
-        if( currSymbol.sym != SymbolCode.ignore )
+        if( !currSymbol.isIgnored() )
         {
             // log the current symbol and break
-            Log4JUtil.logMultiline( logger::info, currSymbol.toString() );
+            logger.log( Log4J.INFO, currSymbol.toString(), true );
             break;
         }
     }
@@ -205,9 +204,9 @@ terminal Character char_lit;   // 'a'   '-'
 // identifiers [terminals]
 terminal String ident;         // asdf0_13
 
-// newlines, whitespaces, comments [terminals]
-// +   whitespace does not include newlines!
-terminal ignore;               // // ... newline? | /* ... */
+// ignored symbols [terminals]
+// +   whitespaces do not include newlines!
+terminal newline, whitespace, line_comment, multi_comment;
 // error symbol in lexer [terminals]
 // +   used instead of error, since then the parser doesn't skip reporting it as an error
 terminal invalid;
@@ -235,7 +234,7 @@ nonterminal Assignop, Relop, Addop, Mulop;
 
 
 
-// associativity [terminals]
+// associativity
 precedence left ELSE_K;        // left associative operation => 'else' is paired with the closest left 'if'
 
 // starting non-terminal
