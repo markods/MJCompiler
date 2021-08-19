@@ -2,41 +2,42 @@ package rs.ac.bg.etf.pp1;
 
 public class CompilerError
 {
-    public enum CompilerErrorType
+    public static final int ARGUMENTS_ERROR = 0;
+    public static final int LEXICAL_ERROR   = 1;
+    public static final int SYNTAX_ERROR    = 2;
+    public static final int SEMANTIC_ERROR  = 3;
+    public static final int RUNTIME_ERROR   = 4;
+
+    public static String getKind( int errType )
     {
-        ARGUMENTS_ERROR, LEXICAL_ERROR, SYNTAX_ERROR, SEMANTIC_ERROR, RUNTIME_ERROR;
-        
-        public static String getTypeName( CompilerErrorType errType )
+        switch( errType )
         {
-            switch( errType )
-            {
-                case ARGUMENTS_ERROR: return "ARG";
-                case LEXICAL_ERROR:   return "LEX";
-                case SYNTAX_ERROR:    return "SYN";
-                case SEMANTIC_ERROR:  return "SEM";
-                case RUNTIME_ERROR:   return "RUN";
-                default:              return ".";
-            }
+            case ARGUMENTS_ERROR: return "ARG";
+            case LEXICAL_ERROR:   return "LEX";
+            case SYNTAX_ERROR:    return "SYN";
+            case SEMANTIC_ERROR:  return "SEM";
+            case RUNTIME_ERROR:   return "RUN";
+            default:              return ".";
         }
-    };
+    }
 
     private int line;
     private int col;
     private String message;
-    private CompilerErrorType type;
+    private int kind;
 
-    public CompilerError( int line, int col, String message, CompilerErrorType type )
+    CompilerError( int line, int col, String message, int kind )
     {
         this.line = line;
         this.col = col;
         this.message = message;
-        this.type = type;
+        this.kind = kind;
     }
 
     public int getLine() { return line; }
     public int getCol() { return col; }
     public String getMessage() { return message; }
-    public CompilerErrorType getType() { return type; }
+    public int getKind() { return kind; }
 
     @Override
     public String toString()
@@ -44,7 +45,7 @@ public class CompilerError
         return String.format( "Ln %-4s Col %-4s %-3s     %s",
             ( line >= 0 ? "#" + line : "." ),
             ( col  >= 0 ? "#" + col  : "." ),
-            CompilerErrorType.getTypeName( type ),
+            getKind( kind ),
             message
         );
     }

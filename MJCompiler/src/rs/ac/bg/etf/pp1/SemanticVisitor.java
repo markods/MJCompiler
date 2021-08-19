@@ -14,8 +14,6 @@ public class SemanticVisitor extends VisitorAdaptor
     boolean returnFound = false;
     int nVars;
     
-    Log4J logger = Log4J.getLogger( getClass() );
-
     public boolean passed()
     {
         return !errorDetected;
@@ -28,7 +26,7 @@ public class SemanticVisitor extends VisitorAdaptor
         int line = (info == null) ? 0 : info.getLine();
         if( line != 0 )
             msg.append( " na liniji " ).append( line );
-        logger.error( msg.toString() );
+        Compiler.logger.error( msg.toString() );
     }
 
     public void report_info( String message, SyntaxNode info )
@@ -37,7 +35,7 @@ public class SemanticVisitor extends VisitorAdaptor
         int line = (info == null) ? 0 : info.getLine();
         if( line != 0 )
             msg.append( " na liniji " ).append( line );
-        logger.info( msg.toString() );
+        Compiler.logger.info( msg.toString() );
     }
 
     

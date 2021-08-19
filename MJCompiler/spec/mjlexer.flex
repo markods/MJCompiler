@@ -19,8 +19,6 @@ import rs.ac.bg.etf.pp1.util.Log4J;
 
 // methods
 %{
-	protected static Log4J logger = Log4J.getLogger( Lexer.class );
-
     // create a symbol from the given symbol type
     private Symbol new_symbol( int symbolCode )
     {
@@ -36,8 +34,7 @@ import rs.ac.bg.etf.pp1.util.Log4J;
     // create a lexical error object
     private void report_error( String message )
     {
-        Compiler.errorList().add( new CompilerError( yyline+1, yycolumn, message, CompilerError.CompilerErrorType.LEXICAL_ERROR ) );
-        logger.log( Log4J.ERROR, Compiler.errorList().getLast().toString(), true );
+        Compiler.errors.add( yyline+1, yycolumn, message, CompilerError.LEXICAL_ERROR );
     }
 
     // create a lexical error object

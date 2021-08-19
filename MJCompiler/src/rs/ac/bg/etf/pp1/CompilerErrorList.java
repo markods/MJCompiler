@@ -1,8 +1,8 @@
 package rs.ac.bg.etf.pp1;
 
 import java.util.ArrayList;
+import rs.ac.bg.etf.pp1.util.Log4J;
 
-import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 
 public class CompilerErrorList
 {
@@ -11,13 +11,17 @@ public class CompilerErrorList
     public CompilerErrorList() {}
 
 
-    public boolean add( int line, int col, String message, CompilerErrorType type )
+    public boolean add( int line, int col, String message, int kind )
     {
-        return errorList.add( new CompilerError( line, col, message, type ) );
+        CompilerError error = new CompilerError( line, col, message, kind );
+        Compiler.logger.log( Log4J.ERROR, error.toString(), true );
+        return errorList.add( error );
     }
-    
-    public boolean add( CompilerError error )
+
+    public boolean add( int line, int col, String message, int kind, Throwable throwable )
     {
+        CompilerError error = new CompilerError( line, col, message, kind );
+        Compiler.logger.log( Log4J.ERROR, error.toString(), throwable, true );
         return errorList.add( error );
     }
 
@@ -29,11 +33,6 @@ public class CompilerErrorList
     public void clear()
     {
         errorList.clear();
-    }
-    
-    public ArrayList<CompilerError> list()
-    {
-        return errorList;
     }
 
     public boolean hasErrors()
