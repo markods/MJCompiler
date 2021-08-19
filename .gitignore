@@ -14,9 +14,9 @@ logs/
 
 # generated source files
 ast/
-YYlex.java
-Isym.java
-MJParser.java
+Lexer.java
+Parser.java
+ISymbolCode.java
 
 
 

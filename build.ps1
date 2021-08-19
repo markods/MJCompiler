@@ -55,7 +55,7 @@ function Find-Recursive
 
 if( "-help" -in $args -or "--help" -in $args )
 {
-    Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-lex file] [-par file] [-o file] file]   [-disasm file] [-run -debug file]";
+    Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-verbose] [-lex file] [-par file] [-o file] file]   [-disasm file] [-run -debug file]";
     Write-Output "";
     Write-Output "Default:        build -jflex -ast -cup -build";
     Write-Output "";
@@ -72,6 +72,7 @@ if( "-help" -in $args -or "--help" -in $args )
     Write-Output "    -build      builds the project";
     Write-Output "";
     Write-Output "    -compile    compiles the MJ program with the given parameters";
+    Write-Output "      -verbose  +   enable verbose compiler output";
     Write-Output "      -lex      +   generate the lexer output and write to the <output fname>.lex";
     Write-Output "      -par      +   generate the parser output and write to the <output fname>.par";
     Write-Output "      -o        +   specify the name of the output file (<input fname>.obj by default)";
@@ -140,8 +141,8 @@ if( "-cup" -in $args )
     $BuildCmd = "java",
         "-cp", "'../lib/cup_v10k.jar'", "java_cup.Main",
         "-destdir", "'./rs/ac/bg/etf/pp1'",
-        "-parser", "'MJParser'",
-        "-interface", "-symbols", "'Isym'";
+        "-parser", "'Parser'",
+        "-interface", "-symbols", "'ISymbolCode'";
 
     # build the abstract syntax tree
     if( "-ast" -in $args )

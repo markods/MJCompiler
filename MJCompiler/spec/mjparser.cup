@@ -9,12 +9,20 @@ import java_cup.runtime.*;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.ac.bg.etf.pp1.util.Log4JUtil;
 
+// TODO: bolja prijava gresaka
+// – definicija globalne promenljive – ignorisati karaktere do prvog znaka ";" ili sledećeg ","
+// – konstrukcija iskaza dodele – ignorisati karaktere do ";"
+// – deklaracija formalnog parametra funkcije – ignorisati znakove do znaka "," ili ")"
+// – logički izraz unutar if konstrukcije - ignorisati karaktere do prvog znaka ")"
+// – deklaracija polja unutrašnje klase – ignorisati karaktere do prvog ";" ili "{"
+// – deklaracija proširenja natklase – ignorisati znakove do prvog znaka "{".
+
 
 // ________________________________________________________________________________________________
 // directive section
 
 parser code {:
-	protected static Logger logger = Logger.getLogger( MJParser.class );
+	protected static Logger logger = Logger.getLogger( Parser.class );
     
 	private boolean errorDetected = false;
 	private boolean fatalErrorDetected = false;
@@ -61,6 +69,8 @@ parser code {:
             message = "Fatal error detected, parsing stopped";
         }
 
+        int line = -1;
+        int col  = -1;
         // prepare the error message
         {
             // if the error symbol list is empty, add the first error symbol to the error symbol list
@@ -72,19 +82,35 @@ parser code {:
             // if the error is not fatal
             if( !fatalErrorDetected )
             {
+                int lastIdx = errorSymbols.size() - 1;
+
                 // remove the last n non-error symbols from the error symbols list
                 // +   don't count ignored symbols while removing
                 for( int i = 0; i < error_sync_size() + 1; i++ )
                 {
-                    int lastIdx = errorSymbols.size() - 1;
-
                     // if the current symbol is an ignored symbol, include it in the removal
-                    if( sym.ignore == errorSymbols.get( lastIdx ).sym )   i--;
+                    if( SymbolCode.ignore == errorSymbols.get( lastIdx ).sym )   i--;
 
                     // remove the last element from the list
                     errorSymbols.remove( lastIdx );
+                    lastIdx--;
+                }
+
+                // remove the trailing whitespaces
+                while( true )
+                {
+                    // if the current symbol is not an ignored symbol, break
+                    if( SymbolCode.ignore != errorSymbols.get( lastIdx ).sym ) break;
+
+                    // remove the last element from the list
+                    errorSymbols.remove( lastIdx );
+                    lastIdx--;
                 }
             }
+
+            Symbol firstSymbol = errorSymbols.get( 0 );
+            line = firstSymbol.left;
+            col  = firstSymbol.right;
 
             // build the error message
             StringBuilder messageBuilder = new StringBuilder( message ).append( "\n```" );
@@ -101,18 +127,21 @@ parser code {:
         }
 
         // report the syntax error
-        Compiler.errorList().add( currSymbol.left, currSymbol.right, message, CompilerError.CompilerErrorType.SYNTAX_ERROR );
+        Compiler.errorList().add( line, col, message, CompilerError.CompilerErrorType.SYNTAX_ERROR );
         Log4JUtil.logMultiline( logger::error, Compiler.errorList().getLast().toString() );
     }
     
 
-    // these functions are not designed for advanced error logging, therefore ignore the <message> and current <symbol/ast node>
+    // this function is not designed for advanced error logging
+    // +   ignore the <message> and current <symbol/ast node>
     @Override
     public void unrecovered_syntax_error( Symbol cur_token )
     {
         report_fatal_error( null, cur_token );
     }
 
+    // this function is not designed for advanced error logging
+    // +   ignore the <message> and current <symbol/ast node>
     @Override
     public void syntax_error( Symbol cur_token )
     {
@@ -134,10 +163,10 @@ scan with {:
         }
 
         // if the current symbol should not be ignored
-        if( currSymbol.sym != sym.ignore )
+        if( currSymbol.sym != SymbolCode.ignore )
         {
             // log the current symbol and break
-            Log4JUtil.logMultiline( logger::info, sym.symbolToString( currSymbol ) );
+            Log4JUtil.logMultiline( logger::info, SymbolCode.symbolToString( currSymbol ) );
             break;
         }
     }
@@ -182,6 +211,9 @@ terminal String ident;         // asdf0_13
 // newlines, whitespaces, comments [terminals]
 // +   whitespace does not include newlines!
 terminal ignore;               // // ... newline? | /* ... */
+// error symbol in lexer [terminals]
+// +   used instead of error, since then the parser doesn't skip reporting it as an error
+terminal invalid;
 
 
 
@@ -201,7 +233,7 @@ nonterminal Term, Factor;
 nonterminal Designator, DesignatorNext;
 
 // types, literals, operators [nonterminals]
-nonterminal VarIdent, IdentInit, Literal, ReturnType, Type;
+nonterminal FormParam, IdentInit, VarIdent, Literal, ReturnType, Type;
 nonterminal Assignop, Relop, Addop, Mulop;
 
 
@@ -247,7 +279,7 @@ ClassDecl ::= (ClassDecl_Plain) ClassIdentDecl ClassDeclScope;
 // class A extends B
 ClassIdentDecl ::= (ClassIdentDecl_Plain  ) CLASS_K ident;
 ClassIdentDecl ::= (ClassIdentDecl_Extends) CLASS_K ident EXTENDS_K Type;
-ClassIdentDecl ::= (ClassIdentDecl_Err    ) error:e {: parser.report_error( "Invalid class identifier declaration", null ); :};
+ClassIdentDecl ::= (ClassIdentDecl_Err    ) CLASS_K error:e {: parser.report_error( "Invalid class identifier declaration", null ); :};
 
 // { }
 // { { method method method } }
@@ -292,8 +324,8 @@ MethodDecl ::= (MethodDecl_Plain) ReturnType ident lparen FormPars rparen VarDec
 FormPars ::= (FormPars_List ) FormParsList;
 FormPars ::= (FormPars_Empty) ;
 
-FormParsList ::= (FormParsList_Init) Type VarIdent;
-FormParsList ::= (FormParsList_Tail) Type VarIdent comma FormParsList;
+FormParsList ::= (FormParsList_Init) FormParam;
+FormParsList ::= (FormParsList_Tail) FormParam comma FormParsList;
 
 // <epsilon>
 // vardl vardl vardl vardl
@@ -447,6 +479,11 @@ DesignatorNext ::= (DesignatorNext_Empty    ) ;
 
 
 
+// int ident
+// Node Array[]
+// char c
+FormParam ::= Type VarIdent;
+FormParam ::= error:e {: parser.report_error( "Invalid formal parameter", null ); :};
 // ident = 12430
 IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
 IdentInit ::= (IdentInit_Err  ) error:e {: parser.report_error( "Invalid identifier initialization", null ); :};
@@ -454,6 +491,7 @@ IdentInit ::= (IdentInit_Err  ) error:e {: parser.report_error( "Invalid identif
 VarIdent ::= (VarIdent_Ident) ident;
 VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
 VarIdent ::= (VarIdent_Err  ) error:e {: parser.report_error( "Invalid variable identifier", null ); :};
+
 // 1202 | 'c' | true
 Literal ::= (Literal_Int ) int_lit;
 Literal ::= (Literal_Char) char_lit;
@@ -463,6 +501,7 @@ ReturnType ::= (ReturnType_Void ) VOID_K;
 ReturnType ::= (ReturnType_Ident) ident;
 // int | bool | char | ident
 Type ::= (Type_Ident) ident;
+Type ::= (Type_Err  ) error:e {: parser.report_error( "Invalid type", null ); :};
 
 // =
 Assignop ::= (Assignop_Assign) assign;

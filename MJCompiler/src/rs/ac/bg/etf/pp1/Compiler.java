@@ -25,12 +25,13 @@ public class Compiler
     {
         Log4JUtil.load();
         logger = Logger.getLogger( Compiler.class );
-        errors = new CompilerErrors();
+        errors = new CompilerErrorList();
     }
     
     private static Logger logger;
-    private static CompilerErrors errors;
+    private static CompilerErrorList errors;
 
+    private static boolean verbose = false;
     private static File fInput = null;
     private static File fLex = null;
     private static File fParse = null;
@@ -39,7 +40,7 @@ public class Compiler
     // private constructor
     private Compiler() {}
 
-    public static CompilerErrors errorList() { return errors; }
+    public static CompilerErrorList errorList() { return errors; }
     public static boolean hasErrors() { return errors.hasErrors(); }
 
 
@@ -78,6 +79,12 @@ public class Compiler
         {
             switch( params[ i ] )
             {
+                case "-verbose":
+                {
+                    verbose = true;
+                    break;
+                }
+
                 case "-lex":
                 {
                     if( fnameLex != null )
@@ -255,6 +262,7 @@ public class Compiler
     // reset the compiler parameters
     private static void resetParams()
     {
+        verbose = false;
         fInput = null;
         fLex = null;
         fParse = null;
@@ -288,7 +296,7 @@ public class Compiler
                  BufferedReader brInput = new BufferedReader( frInput );
             )
             {
-                Yylex lexer = new Yylex( brInput );
+                Lexer lexer = new Lexer( brInput );
 
                 // lex the input .mj file
                 try
@@ -297,8 +305,8 @@ public class Compiler
                     {
                         token = lexer.next_token();
 
-                        lex.append( sym.symbolToString( token ) ).append( "\n" );
-                        logger.info( sym.symbolToString( token ) );
+                        lex.append( SymbolCode.symbolToString( token ) ).append( "\n" );
+                        logger.info( SymbolCode.symbolToString( token ) );
 
                         if( token == null )
                         {
@@ -311,7 +319,7 @@ public class Compiler
                             logger.error( errors.getLast().toString() );
                         }
 
-                        if( token == null || token.sym == sym.EOF ) break;
+                        if( token == null || token.sym == SymbolCode.EOF ) break;
                     }
                 }
                 catch( IOException ex )
@@ -352,7 +360,7 @@ public class Compiler
             logger.info( "Parsing input file:" );
 
             SyntaxNode syntaxRoot = null;
-            MJParser parser = null;
+            Parser parser = null;
 
 
             // read file and parse it
@@ -363,11 +371,12 @@ public class Compiler
             {
                 try
                 {
-                    Yylex lexer = new Yylex( brInput );
-                    parser = new MJParser( lexer );
+                    Lexer lexer = new Lexer( brInput );
+                    parser = new Parser( lexer );
                     
                     // parse the input file
-                    Symbol rootSymbol = parser.parse();
+                    Symbol rootSymbol = ( !verbose ) ? parser.parse() : parser.debug_parse();
+
                     if( rootSymbol != null )
                     {
                         syntaxRoot = ( SyntaxNode )( rootSymbol.value );
@@ -376,7 +385,7 @@ public class Compiler
                     // if the syntax tree is missing but no errors are reported (should never happen)
                     if( ( !parser.hasErrors() && syntaxRoot == null ) )
                     {
-                        errors.add( -1, -1, "Error parsing input file", CompilerErrorType.SYNTAX_ERROR );
+                        errors.add( -1, -1, "Syntax tree missing", CompilerErrorType.SYNTAX_ERROR );
                         logger.error( errors.getLast().toString() );
                         return false;
                     }

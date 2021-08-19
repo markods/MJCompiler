@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java_cup.runtime.Symbol;
 
 /** CUP generated class containing symbol constants. */
-public class sym implements Isym
+public class SymbolCode implements ISymbolCode
 {
     private static ArrayList<String> symbolNameList = null;
 
@@ -15,10 +15,10 @@ public class sym implements Isym
     {
         if( symbolNameList == null )
         {
-            Field[] fieldList = sym.class.getFields();
+            Field[] fieldList = SymbolCode.class.getFields();
             symbolNameList = new ArrayList<>( fieldList.length );
 
-            sym symbolInstance = new sym();
+            SymbolCode symbolInstance = new SymbolCode();
             int wantedModifiers = Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
             for( Field field : fieldList )
             {

@@ -4,13 +4,14 @@ package rs.ac.bg.etf.pp1;
 
 import org.apache.log4j.*;
 import java_cup.runtime.Symbol;
+import rs.ac.bg.etf.pp1.util.Log4JUtil;
 
 
 // ________________________________________________________________________________________________
 // directive section
 %%
 
-%class Yylex
+%class Lexer
 // %unicode
 %cup
 %line
@@ -20,7 +21,7 @@ import java_cup.runtime.Symbol;
 
 // methods
 %{
-	protected static Logger logger = Logger.getLogger( Yylex.class );
+	protected static Logger logger = Logger.getLogger( Lexer.class );
 
     // create a symbol from the given symbol type
     private Symbol new_symbol( int type )
@@ -38,7 +39,7 @@ import java_cup.runtime.Symbol;
     private void report_error( String message )
     {
         Compiler.errorList().add( new CompilerError( yyline+1, yycolumn, message, CompilerError.CompilerErrorType.LEXICAL_ERROR ) );
-        logger.error( Compiler.errorList().getLast() );
+        Log4JUtil.logMultiline( logger::error, Compiler.errorList().getLast().toString() );
     }
 
     // create a lexical error object
@@ -79,87 +80,87 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 // send newlines, whitespaces and comments to the parser
 // +   the parser will filter them out (used for better error reporting)
-{Newline}    { return new_symbol( sym.ignore, yytext() ); }
-{Whitespace} { return new_symbol( sym.ignore, yytext() ); }
-{Comment}    { return new_symbol( sym.ignore, yytext() ); }
+{Newline}    { return new_symbol( SymbolCode.ignore, yytext() ); }
+{Whitespace} { return new_symbol( SymbolCode.ignore, yytext() ); }
+{Comment}    { return new_symbol( SymbolCode.ignore, yytext() ); }
 
 
 
 // keywords
-"program"    { return new_symbol( sym.PROGRAM_K, yytext() ); }
-"class"      { return new_symbol( sym.CLASS_K, yytext() ); }
-"enum"       { report_error( "Keyword not implemented\n```enum```" ); return new_symbol( sym.error /*sym.ENUM_K*/, yytext() ); }
-"extends"    { return new_symbol( sym.EXTENDS_K, yytext() ); }
+"program"    { return new_symbol( SymbolCode.PROGRAM_K, yytext() ); }
+"class"      { return new_symbol( SymbolCode.CLASS_K, yytext() ); }
+"enum"       { report_error( "Keyword not implemented\n```enum```" ); return new_symbol( SymbolCode.invalid /*SymbolCode.ENUM_K*/, yytext() ); }
+"extends"    { return new_symbol( SymbolCode.EXTENDS_K, yytext() ); }
 
-"static"     { return new_symbol( sym.STATIC_K, yytext() ); }
-"const"      { return new_symbol( sym.CONST_K, yytext() ); }
-"void"       { return new_symbol( sym.VOID_K, yytext() ); }
+"static"     { return new_symbol( SymbolCode.STATIC_K, yytext() ); }
+"const"      { return new_symbol( SymbolCode.CONST_K, yytext() ); }
+"void"       { return new_symbol( SymbolCode.VOID_K, yytext() ); }
 
-"if"         { return new_symbol( sym.IF_K, yytext() ); }
-"else"       { return new_symbol( sym.ELSE_K, yytext() ); }
-"switch"     { return new_symbol( sym.SWITCH_K, yytext() ); }
-"case"       { return new_symbol( sym.CASE_K, yytext() ); }
-"default"    { report_error( "Keyword not implemented\n```default```" ); return new_symbol( sym.error /*sym.DEFAULT_K*/, yytext() ); }
-"break"      { return new_symbol( sym.BREAK_K, yytext() ); }
-"continue"   { return new_symbol( sym.CONTINUE_K, yytext() ); }
-"return"     { return new_symbol( sym.RETURN_K, yytext() ); }
+"if"         { return new_symbol( SymbolCode.IF_K, yytext() ); }
+"else"       { return new_symbol( SymbolCode.ELSE_K, yytext() ); }
+"switch"     { return new_symbol( SymbolCode.SWITCH_K, yytext() ); }
+"case"       { return new_symbol( SymbolCode.CASE_K, yytext() ); }
+"default"    { report_error( "Keyword not implemented\n```default```" ); return new_symbol( SymbolCode.invalid /*SymbolCode.DEFAULT_K*/, yytext() ); }
+"break"      { return new_symbol( SymbolCode.BREAK_K, yytext() ); }
+"continue"   { return new_symbol( SymbolCode.CONTINUE_K, yytext() ); }
+"return"     { return new_symbol( SymbolCode.RETURN_K, yytext() ); }
 
-"do"         { return new_symbol( sym.DO_K, yytext() ); }
-"while"      { return new_symbol( sym.WHILE_K, yytext() ); }
+"do"         { return new_symbol( SymbolCode.DO_K, yytext() ); }
+"while"      { return new_symbol( SymbolCode.WHILE_K, yytext() ); }
 
-"new"        { return new_symbol( sym.NEW_K, yytext() ); }
-"print"      { return new_symbol( sym.PRINT_K, yytext() ); }
-"read"       { return new_symbol( sym.READ_K, yytext() ); }
+"new"        { return new_symbol( SymbolCode.NEW_K, yytext() ); }
+"print"      { return new_symbol( SymbolCode.PRINT_K, yytext() ); }
+"read"       { return new_symbol( SymbolCode.READ_K, yytext() ); }
 
 
 
 // operators
-"++"         { return new_symbol( sym.plusplus, yytext() ); }
-"--"         { return new_symbol( sym.minusminus, yytext() ); }
+"++"         { return new_symbol( SymbolCode.plusplus, yytext() ); }
+"--"         { return new_symbol( SymbolCode.minusminus, yytext() ); }
 
-"+"          { return new_symbol( sym.plus, yytext() ); }
-"-"          { return new_symbol( sym.minus, yytext() ); }
-"*"          { return new_symbol( sym.mul, yytext() ); }
-"/"          { return new_symbol( sym.div, yytext() ); }
-"%"          { return new_symbol( sym.perc, yytext() ); }
+"+"          { return new_symbol( SymbolCode.plus, yytext() ); }
+"-"          { return new_symbol( SymbolCode.minus, yytext() ); }
+"*"          { return new_symbol( SymbolCode.mul, yytext() ); }
+"/"          { return new_symbol( SymbolCode.div, yytext() ); }
+"%"          { return new_symbol( SymbolCode.perc, yytext() ); }
 
-"=="         { return new_symbol( sym.eq, yytext() ); }
-"!="         { return new_symbol( sym.ne, yytext() ); }
-">"          { return new_symbol( sym.gt, yytext() ); }
-">="         { return new_symbol( sym.ge, yytext() ); }
-"<"          { return new_symbol( sym.lt, yytext() ); }
-"<="         { return new_symbol( sym.le, yytext() ); }
-"&&"         { return new_symbol( sym.and, yytext() ); }
-"||"         { return new_symbol( sym.or, yytext() ); }
+"=="         { return new_symbol( SymbolCode.eq, yytext() ); }
+"!="         { return new_symbol( SymbolCode.ne, yytext() ); }
+">"          { return new_symbol( SymbolCode.gt, yytext() ); }
+">="         { return new_symbol( SymbolCode.ge, yytext() ); }
+"<"          { return new_symbol( SymbolCode.lt, yytext() ); }
+"<="         { return new_symbol( SymbolCode.le, yytext() ); }
+"&&"         { return new_symbol( SymbolCode.and, yytext() ); }
+"||"         { return new_symbol( SymbolCode.or, yytext() ); }
 
-"="          { return new_symbol( sym.assign, yytext() ); }
+"="          { return new_symbol( SymbolCode.assign, yytext() ); }
 
-";"          { return new_symbol( sym.semicol, yytext() ); }
-","          { return new_symbol( sym.comma, yytext() ); }
-"."          { return new_symbol( sym.dot, yytext() ); }
-"{"          { return new_symbol( sym.lbrace, yytext() ); }
-"}"          { return new_symbol( sym.rbrace, yytext() ); }
-"("          { return new_symbol( sym.lparen, yytext() ); }
-")"          { return new_symbol( sym.rparen, yytext() ); }
-"["          { return new_symbol( sym.lbracket, yytext() ); }
-"]"          { return new_symbol( sym.rbracket, yytext() ); }
-// "?"       { return new_symbol( sym.qmark, yytext() ); }
-":"          { return new_symbol( sym.colon, yytext() ); }
-<<EOF>>      { return new_symbol( sym.EOF ); }
+";"          { return new_symbol( SymbolCode.semicol, yytext() ); }
+","          { return new_symbol( SymbolCode.comma, yytext() ); }
+"."          { return new_symbol( SymbolCode.dot, yytext() ); }
+"{"          { return new_symbol( SymbolCode.lbrace, yytext() ); }
+"}"          { return new_symbol( SymbolCode.rbrace, yytext() ); }
+"("          { return new_symbol( SymbolCode.lparen, yytext() ); }
+")"          { return new_symbol( SymbolCode.rparen, yytext() ); }
+"["          { return new_symbol( SymbolCode.lbracket, yytext() ); }
+"]"          { return new_symbol( SymbolCode.rbracket, yytext() ); }
+// "?"       { return new_symbol( SymbolCode.qmark, yytext() ); }
+":"          { return new_symbol( SymbolCode.colon, yytext() ); }
+<<EOF>>      { return new_symbol( SymbolCode.EOF ); }
 
 
 
 // constants
-{IntLiteral}    { return new_symbol( sym.int_lit, Integer.parseInt( yytext() ) ); }
-{BoolLiteral}   { return new_symbol( sym.bool_lit, Boolean.parseBoolean( yytext() ) ); }
-{CharLiteral}   { return new_symbol( sym.char_lit, yytext().charAt( 1 ) ); }
+{IntLiteral}    { return new_symbol( SymbolCode.int_lit, Integer.parseInt( yytext() ) ); }
+{BoolLiteral}   { return new_symbol( SymbolCode.bool_lit, Boolean.parseBoolean( yytext() ) ); }
+{CharLiteral}   { return new_symbol( SymbolCode.char_lit, yytext().charAt( 1 ) ); }
 
 // identifiers
-{Identifier} 	      { return new_symbol( sym.ident, yytext() ); }
-{InvalidIdentifier}   { report_error(); return new_symbol( sym.error, yytext() ); }
+{Identifier} 	      { return new_symbol( SymbolCode.ident, yytext() ); }
+{InvalidIdentifier}   { report_error(); return new_symbol( SymbolCode.invalid, yytext() ); }
 
 // error fallback (for unrecognized token)
-[^]             { report_error(); return new_symbol( sym.error, yytext() ); }
+[^]             { report_error(); return new_symbol( SymbolCode.invalid, yytext() ); }
 
 
 

@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 import rs.ac.bg.etf.pp1.CompilerError.CompilerErrorType;
 
-public class CompilerErrors {
+public class CompilerErrorList {
     private ArrayList<CompilerError> errors = new ArrayList<>();
 
-    public CompilerErrors() {}
+    public CompilerErrorList() {}
 
 
     public boolean add( int line, int col, String message, CompilerErrorType type )

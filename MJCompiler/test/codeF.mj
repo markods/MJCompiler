@@ -2,46 +2,38 @@
 
 program test301
 
-	int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
-	int pet=5-;
-	int sest[6];
-	int 'sedam[7];
-	const int osam=-8;
+    int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
+    int pet=5-;
+    int sest[6];
+    int 123;
 
-	/*
-	class Predmet
-	{
-		 int tezina;
-		 char vrsta = 5, #aslkd = 12, 123;
+    class Predmet extends extends A
+    {
+        int tezina;
+        char vrsta = 5, #aslkd = 12, 123;
+        char 123, a123;
+        {
+            void postaviTezinu(int tezina) {this.tezina = tezina;}  
+        }
+    }
 
-		{
-			 void postaviTezinu(int tezina) {this.tezina = tezina;}  
-			 void ucitajTezinu() { read(tezina); }
-			 int zapremina() { return 0;}
-			 int Q() {return zapremina() * tezina;}
-			 void postaviVrstu(char vrsta) {this.vrsta = vrsta;}
-			 char dohvVrstu() { return vrsta; }
-			 int dohvTezinu() { return tezina; }
-		}
-	}
-	*/
+    int 'sedam[7];
+    const int osam=-8;
 {
-	/*
-	int sumA(1int z)
-	{
-		z = z + # + 1321 + 123;
-		if( z > 0 && z >> 1 ) return -1;
-		return z;
-	}
+    int sumA(1int z)
+    {
+        z = z + # + 1321 + 123;
+        if( z > 0 && z >> 1 ) return -1;
+        return z;
+    }
 
-	int sumB(int z, int2 d, int[] c, int d[])
-	{
-		return z +* d;
-	}
-	*/
+    int sumB(int z, int2 d, int[] c, int d[])
+    {
+        return z +* d;
+    }
 
-	void main()	
-	{}
+    void main()	
+    {}
 }
 
 
