@@ -2,8 +2,6 @@
 // import section
 package rs.ac.bg.etf.pp1;
 
-import rs.ac.bg.etf.pp1.util.Log4J;
-
 
 // ________________________________________________________________________________________________
 // directive section
