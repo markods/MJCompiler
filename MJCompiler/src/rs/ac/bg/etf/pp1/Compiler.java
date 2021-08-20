@@ -12,16 +12,12 @@ import java.io.PrintStream;
 
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.ac.bg.etf.pp1.util.Log4J;
+import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 
 public class Compiler
 {
-    static
-    {
-        Log4J.configure();
-    }
-    
     public static final Log4J logger = Log4J.getLogger( Compiler.class );
 
     public static final CompilerErrorList errors = new CompilerErrorList();
@@ -184,6 +180,7 @@ public class Compiler
 
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ PARSER" );
         logger.info( "Parsing input file:" );
+        logger.info( "========================PARSER OUTPUT===========================" );
 
         SyntaxNode syntaxRoot = null;
         Parser parser = null;
@@ -203,8 +200,20 @@ public class Compiler
                 // parse the input file
                 java_cup.runtime.Symbol rootSymbol = null;
                 
-                if( !verbose ) rootSymbol = parser.parse();
-                else           rootSymbol = parser.debug_parse();
+                if( !verbose )
+                {
+                    rootSymbol = parser.parse();
+                }
+                else
+                {
+                    try( FileOutputStream fsLogger = new FileOutputStream( Log4J.getLogFile(), true );
+                         SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDERR, fsLogger );
+                    )
+                    {
+                        // workaround since debug parse method only outputs to System.out
+                        rootSymbol = parser.debug_parse();
+                    }
+                }
 
                 if( rootSymbol != null )
                 {
@@ -318,27 +327,20 @@ public class Compiler
     // return the compiler's symbol table as string
     private static String tsdump()
     {
-        PrintStream stdout = System.out;
         String output = null;
         
         try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-             PrintStream printStream = new PrintStream( buffer, true );
+             SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDOUT, buffer );
         )
         {
             // workaround since symbol table dump method only outputs to System.out
-            System.setOut( printStream );
             Tab.dump();
-            printStream.flush();
             output = buffer.toString( "UTF-8" );
         }
         catch( IOException ex )
         {
             errors.add( -1, -1, "Error during conversion of symbol table to string", CompilerError.SEMANTIC_ERROR, ex );
-        }
-        finally
-        {
-            // restore the previous print stream
-            System.setOut( stdout );
+            return null;
         }
         
         return output;

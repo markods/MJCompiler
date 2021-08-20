@@ -14,8 +14,9 @@ import org.apache.log4j.xml.DOMConfigurator;
 public class Log4J
 {
     private static boolean configured = false;
+    private static File fLog = null;
 
-    public static void configure()
+    private static void configure()
     {
         if( configured ) return;
         
@@ -42,7 +43,7 @@ public class Log4J
         );
 
         File fTmpLog = new File( fnameTmpLog );
-        File fLog = new File( fnameLog );
+             fLog    = new File( fnameLog );
         File fRenLog = new File( fnameRenLog );
 
         if( fLog.exists() && !fLog.renameTo( fRenLog ) )
@@ -61,6 +62,12 @@ public class Log4J
     {
         if( !configured ) configure();
         return new Log4J( clazz );
+    }
+
+    public static File getLogFile()
+    {
+        if( !configured ) configure();
+        return fLog;
     }
 
 

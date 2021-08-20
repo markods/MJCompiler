@@ -249,7 +249,8 @@ if( "-clean" -in $args -or "-build" -in $args )
 
     if( "-clean" -in $args -and "-build" -in $args )
     {
-        $Action = "rebuild clean jar";
+      # $Action = "rebuild clean jar";
+        $Action = "clean build jar";
     }
     elseif( "-build" -in $args )
     {

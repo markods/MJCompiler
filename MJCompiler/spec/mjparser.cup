@@ -5,14 +5,6 @@ package rs.ac.bg.etf.pp1;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.ac.bg.etf.pp1.util.Log4J;
 
-// TODO: bolja prijava gresaka
-// – definicija globalne promenljive – ignorisati karaktere do prvog znaka ";" ili sledećeg ","
-// – konstrukcija iskaza dodele – ignorisati karaktere do ";"
-// – deklaracija formalnog parametra funkcije – ignorisati znakove do znaka "," ili ")"
-// – logički izraz unutar if konstrukcije - ignorisati karaktere do prvog znaka ")"
-// – deklaracija polja unutrašnje klase – ignorisati karaktere do prvog ";" ili "{"
-// – deklaracija proširenja natklase – ignorisati znakove do prvog znaka "{".
-
 
 // ________________________________________________________________________________________________
 // directive section
