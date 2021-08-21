@@ -4,9 +4,15 @@ import java.util.ArrayList;
 
 public class SymbolList
 {
-    private final ArrayList<Symbol> symbolList = new ArrayList<>();
+    private ArrayList<Symbol> symbolList = new ArrayList<>();
 
     public SymbolList() {}
+
+    public void assign( SymbolList symbols )
+    {
+        this.symbolList = symbols.symbolList;
+    }
+
 
 
     public boolean add( Symbol symbol )
@@ -25,9 +31,15 @@ public class SymbolList
     }
 
 
+
     public int size()
     {
         return symbolList.size();
+    }
+
+    public boolean checkIndex( int index )
+    {
+        return index >= 0 && index < symbolList.size();
     }
 
     public Symbol get( int index )
@@ -35,9 +47,14 @@ public class SymbolList
         return symbolList.get( index );
     }
 
+    public Symbol getFirst()
+    {
+        return symbolList.get( 0 );
+    }
+
     public Symbol getLast()
     {
-        return ( symbolList.size() > 0 ) ? symbolList.get( symbolList.size() - 1 ) : null;
+        return symbolList.get( symbolList.size() - 1 );
     }
 
 }

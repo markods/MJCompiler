@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
 
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.ac.bg.etf.pp1.util.Log4J;
@@ -18,10 +17,10 @@ import rs.etf.pp1.symboltable.Tab;
 
 public class Compiler
 {
-    public static final Log4J logger = Log4J.getLogger( Compiler.class );
+    static final Log4J logger = Log4J.getLogger( Compiler.class );
 
-    public static final CompilerErrorList errors = new CompilerErrorList();
-    public static final SymbolList symbols = new SymbolList();
+    static final CompilerErrorList errors = new CompilerErrorList();
+    static final SymbolList symbols = new SymbolList();
 
     private static boolean verbose = false;
     private static File fInput = null;
@@ -108,7 +107,6 @@ public class Compiler
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ LEXER" );
         logger.info( "Lexing input file:" );
 
-        SymbolList symbols = new SymbolList();
         StringBuilder output = new StringBuilder( "========================LEXER OUTPUT===========================\n" );
 
 
@@ -118,7 +116,11 @@ public class Compiler
              BufferedReader brInput = new BufferedReader( frInput );
         )
         {
-            Lexer lexer = new Lexer( brInput );
+            BufferedLexer lexer = new BufferedLexer( brInput );
+            // HACK: copy the reference to the lexer's symbols over to the global symbols list
+            // +   meaning they are the same object (identical)
+            // +   important for correct error reporting
+            symbols.assign( lexer.getSymbols() );
             Symbol token = null;
 
             // lex the input .mj file
@@ -127,24 +129,32 @@ public class Compiler
                 while( true )
                 {
                     token = ( Symbol )( lexer.next_token() );
-                    symbols.add( token );
 
                     output.append( token.toString() ).append( "\n" );
                     logger.info( token.toString() );
 
-                    if( token.sym == SymbolCode.EOF ) break;
+                    if( token.isEOF() ) break;
+                    
+                    // // if the token is invalid
+                    // if( token.isInvalid() )
+                    // {
+                    //     // append an error to the output file
+                    //     CompilerError error = new CompilerError( CompilerError.LEXICAL_ERROR, "Invalid token", token.getIdx(), token.getIdx()+1 );
+                    //     output.append( error.toString() ).append( "\n" );
+                    // }
                 }
             }
             catch( IOException ex )
             {
-                errors.add( ( token != null ? token.left  : -1 ),
-                            ( token != null ? token.right : -1 ), "Error lexing current token", CompilerError.LEXICAL_ERROR, ex );
+                errors.add( CompilerError.LEXICAL_ERROR, "Error lexing input file", ex );
+                symbols.clear();
                 return null;
             }
         }
         catch( IOException ex )
         {
-            errors.add( -1, -1, "Cannot open input file", CompilerError.LEXICAL_ERROR, ex );
+            errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
+            Compiler.symbols.clear();
             return null;
         }
 
@@ -162,7 +172,7 @@ public class Compiler
             }
             catch( IOException ex )
             {
-                errors.add( -1, -1, "Cannot open/write to output lex file", CompilerError.LEXICAL_ERROR, ex );
+                errors.add( CompilerError.LEXICAL_ERROR, "Cannot open/write to output lex file", ex );
                 return null;
             }
         }
@@ -194,9 +204,33 @@ public class Compiler
         {
             try
             {
-                Lexer lexer = new Lexer( brInput );
+                BufferedLexer lexer;
+
+                // if the lexer hasn't already lexed the entire file
+                if( symbols.size() == 0 )
+                {
+                    // create a lexer on the input file
+                    lexer = new BufferedLexer( brInput );
+
+                    // HACK: copy the reference from the global symbols list over to the lexer's symbols
+                    // +   meaning they are the same object (identical)
+                    // +   important for correct error reporting
+                    symbols.assign( lexer.getSymbols() );
+                }
+                // otherwise,
+                else
+                {
+                    // create a lexer on the (already lexed file's) symbol list
+
+                    // HACK: copy the reference from the global symbols list over to the lexer's symbols
+                    // +   meaning they are the same object (identical)
+                    // +   important for correct error reporting
+                    lexer = new BufferedLexer( symbols );
+                }
+
                 parser = new Parser( lexer );
                 
+
                 // parse the input file
                 java_cup.runtime.Symbol rootSymbol = null;
                 
@@ -223,20 +257,20 @@ public class Compiler
                 // if the syntax tree is missing but no errors are reported (should never happen)
                 if( ( !parser.hasErrors() && syntaxRoot == null ) )
                 {
-                    errors.add( -1, -1, "Syntax tree missing", CompilerError.SYNTAX_ERROR );
+                    errors.add( CompilerError.SYNTAX_ERROR, "Syntax tree missing" );
                     return null;
                 }
 
             }
             catch( Exception ex )
             {
-                errors.add( -1, -1, "Error parsing input file", CompilerError.SYNTAX_ERROR, ex );
+                errors.add( CompilerError.SYNTAX_ERROR, "Error parsing input file", ex );
                 return null;
             }
         }
         catch( IOException ex )
         {
-            errors.add( -1, -1, "Cannot open input file", CompilerError.LEXICAL_ERROR, ex );
+            errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
             return null;
         }
 
@@ -254,7 +288,7 @@ public class Compiler
             }
             catch( IOException ex )
             {
-                errors.add( -1, -1, "Cannot open/write to output parse file", CompilerError.SYNTAX_ERROR, ex );
+                errors.add( CompilerError.SYNTAX_ERROR, "Cannot open/write to output parse file", ex );
             }
         }
 
@@ -293,7 +327,7 @@ public class Compiler
     }
 
     // compile the given syntax tree into microjava code
-    public static boolean generateCode( SyntaxNode syntaxRoot, SemanticVisitor semanticCheck, File fOutput )
+    private static boolean generateCode( SyntaxNode syntaxRoot, SemanticVisitor semanticCheck, File fOutput )
     {
         // if the syntax tree or output file is missing, return
         if( syntaxRoot == null || fOutput == null ) return false;
@@ -314,7 +348,7 @@ public class Compiler
         }
         catch( IOException ex )
         {
-            errors.add( -1, -1, "Cannot open/write to output file", CompilerError.SEMANTIC_ERROR, ex );
+            errors.add( CompilerError.SEMANTIC_ERROR, "Cannot open/write to output file", ex );
             return false;
         }
 
@@ -339,7 +373,7 @@ public class Compiler
         }
         catch( IOException ex )
         {
-            errors.add( -1, -1, "Error during conversion of symbol table to string", CompilerError.SEMANTIC_ERROR, ex );
+            errors.add( CompilerError.SEMANTIC_ERROR, "Error during conversion of symbol table to string", ex );
             return null;
         }
         
@@ -390,12 +424,12 @@ public class Compiler
                 {
                     if( fnameLex != null )
                     {
-                        errors.add( -1, i, "Lexer output file already specified", CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file already specified", CompilerError.NO_INDEX, i );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( -1, i, "Lexer output file not specified after the -lex flag", CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file not specified after the -lex flag", CompilerError.NO_INDEX, i );
                         break;
                     }
 
@@ -410,12 +444,12 @@ public class Compiler
                 {
                     if( fnameParse != null )
                     {
-                        errors.add( -1, i, "Parser output file already specified", CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file already specified", CompilerError.NO_INDEX, i );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( -1, i, "Parser output file not specified after the -par flag", CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file not specified after the -par flag", CompilerError.NO_INDEX, i );
                         break;
                     }
 
@@ -430,12 +464,12 @@ public class Compiler
                 {
                     if( fnameOutput != null )
                     {
-                        errors.add( -1, i, "Output file already specified", CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, "Output file already specified", CompilerError.NO_INDEX, i );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( -1, i, "Output file not specified after the -o flag", CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, "Output file not specified after the -o flag", CompilerError.NO_INDEX, i );
                         break;
                     }
                     
@@ -450,7 +484,7 @@ public class Compiler
                 {
                     if( fnameInput != null )
                     {
-                        errors.add( -1, i, String.format( "Unknown option: '%s'", params[ i ] ), CompilerError.ARGUMENTS_ERROR );
+                        errors.add( CompilerError.ARGUMENTS_ERROR, String.format( "Unknown option: '%s'", params[ i ] ), CompilerError.NO_INDEX, i );
                         break;
                     }
                     
@@ -466,7 +500,7 @@ public class Compiler
         // the input file must be specified
         if( fnameInput == null )
         {
-            errors.add( -1, -1, "Input file not specified", CompilerError.ARGUMENTS_ERROR );
+            errors.add( CompilerError.ARGUMENTS_ERROR, "Input file not specified" );
         }
 
         // if there are errors log them and return
@@ -500,11 +534,11 @@ public class Compiler
         {
             if( !fInput.exists() )
             {
-                errors.add( -1, -1, "Input file does not exist", CompilerError.ARGUMENTS_ERROR );
+                errors.add( CompilerError.ARGUMENTS_ERROR, "Input file does not exist" );
             }
             else if( !fInput.canRead() )
             {
-                errors.add( -1, -1, "Input file is not readable", CompilerError.ARGUMENTS_ERROR );
+                errors.add( CompilerError.ARGUMENTS_ERROR, "Input file is not readable" );
             }
             
             logger.info( "fInput = " + fInput.getAbsolutePath() );
@@ -514,7 +548,7 @@ public class Compiler
         {
             if( fLex.exists() && !fLex.canWrite() )
             {
-                errors.add( -1, -1, "Lexer output file exists and is not writable", CompilerError.ARGUMENTS_ERROR );
+                errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file exists and is not writable" );
             }
             
             logger.info( "fLex = " + fLex.getAbsolutePath() );
@@ -524,7 +558,7 @@ public class Compiler
         {
             if( fParse.exists() && !fParse.canWrite() )
             {
-                errors.add( -1, -1, "Parser output file exists and is not writable", CompilerError.ARGUMENTS_ERROR );
+                errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file exists and is not writable" );
             }
             
             logger.info( "fParse = " + fParse.getAbsolutePath() );
@@ -534,7 +568,7 @@ public class Compiler
         {
             if( fOutput.exists() && !fOutput.canWrite() )
             {
-                errors.add( -1, -1, "Output file exists and is not writable", CompilerError.ARGUMENTS_ERROR );
+                errors.add( CompilerError.ARGUMENTS_ERROR, "Output file exists and is not writable" );
             }
             
             logger.info( "fOutput = " + fOutput.getAbsolutePath() );
@@ -552,3 +586,4 @@ public class Compiler
         return true;
     }
 }
+

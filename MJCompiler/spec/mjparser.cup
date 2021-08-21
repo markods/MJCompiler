@@ -55,72 +55,62 @@ parser code {:
             message = "Fatal error detected, parsing stopped";
         }
 
-        int line = -1;
-        int col  = -1;
-        // prepare the error message
+        // if the error symbol list is empty, add the first error symbol to the error symbol list
+        if( errorSymbols.size() == 0 ) errorSymbols.add( currSymbol );
+
+        // if the message is not ready, don't report yet
+        if( message == null ) return;
+        
+
+        // if the error is not fatal and the error symbol list was not empty beforehand, remove excess non-error tokens
+        // +   ignored symbols are not counted towards the quota while removing
+        // +   the last symbol after this will definitely be an error symbol
+        if( !fatalErrorDetected && errorSymbols.size() > 1 )
         {
-            // if the error symbol list is empty, add the first error symbol to the error symbol list
-            if( errorSymbols.size() == 0 ) errorSymbols.add( currSymbol );
-
-            // if the message is not ready, don't report yet
-            if( message == null ) return;
-            
-            // if the error is not fatal
-            if( !fatalErrorDetected )
+            int errorSymbolCount = error_sync_size() + 1;
+            for( int i = 0; i <= errorSymbolCount;   )
             {
-                int errorSymbolCount = error_sync_size() + 1;
-                // remove the last n non-error symbols from the error symbols list until we hit a non-error symbol
-                // +   don't count ignored symbols while removing
-                // +   the last symbol after this will be a non-error symbol
-                for( int i = 0; i <= errorSymbolCount;   )
-                {
-                    // get the last symbol from the list
-                    Symbol lastSymbol = errorSymbols.getLast();
-                    
-                    // if the last symbol is not an ignored symbol, increment the number of error symbols that were removed
-                    if( !lastSymbol.isIgnored() ) i++;
+                // if the list's last symbol is not an ignored symbol, increment the counter of excess non-error non-ignored symbols
+                if( !errorSymbols.getLast().isIgnored() ) i++;
 
-                    // if final last symbol is reached or if there is only one element to show, break
-                    if( i == errorSymbolCount + 1 || errorSymbols.size() <= 1 ) break;
-                    
-                    // otherwise, remove the last element from the list
-                    errorSymbols.removeLast();
-                }
+                // if this is the first non-excess symbol at the end of the list or if there is only one element to show, break
+                if( i == errorSymbolCount + 1 || errorSymbols.size() <= 1 ) break;
+                
+                // remove the list's last element
+                errorSymbols.removeLast();
             }
+        }
 
-            Symbol firstSymbol = errorSymbols.get( 0 );
-            line = firstSymbol.left;
-            col  = firstSymbol.right;
+        // calculate the from and to error symbols' indexes
+        int symbolFromIdx = CompilerError.NO_INDEX;
+        int symbolToIdx = CompilerError.NO_INDEX;
 
-            // build the error message
-            StringBuilder messageBuilder = new StringBuilder( message ).append( "\n```" );
-            for( int i = 0; i < errorSymbols.size(); i++ )
-            {
-                Symbol token = errorSymbols.get( i );
-                messageBuilder.append( token.value );
-            }
-            messageBuilder.append( "```" );
-            message = messageBuilder.toString();
+        if( errorSymbols.size() > 0 )
+        {
+            symbolFromIdx = ( ( Symbol )errorSymbols.getFirst() ).getIdx();
+            if( !fatalErrorDetected ) symbolToIdx = ( ( Symbol )errorSymbols.getLast() ).getIdx() + 1;
+            else                      symbolToIdx = symbolFromIdx + 1;
 
             // clear all error symbols in the current syntax error
             errorSymbols.clear();
         }
 
+
         // report the syntax error
-        Compiler.errors.add( line, col, message, CompilerError.SYNTAX_ERROR );
+        Compiler.errors.add( CompilerError.SYNTAX_ERROR, message, symbolFromIdx, symbolToIdx );
     }
     
 
     // this function is not designed for advanced error logging
     // +   ignore the <message> and current <symbol/ast node>
-    public void unrecovered_syntax_error( Symbol cur_token )
+    protected void unrecovered_syntax_error( Symbol cur_token )
     {
         report_fatal_error( null, cur_token );
     }
 
     // this function is not designed for advanced error logging
     // +   ignore the <message> and current <symbol/ast node>
-    public void syntax_error( Symbol cur_token )
+    protected void syntax_error( Symbol cur_token )
     {
         report_error( null, cur_token );
     }
@@ -146,6 +136,13 @@ scan with {:
             Compiler.logger.log( Log4J.INFO, currSymbol.toString(), true );
             break;
         }
+    }
+
+    // if the current symbol is invalid
+    if( currSymbol.isInvalid() )
+    {
+        // report it as a lexer error
+        Compiler.errors.add( CompilerError.LEXICAL_ERROR, "Invalid token", currSymbol.getIdx(), currSymbol.getIdx()+1  );
     }
 
     // return the current symbol

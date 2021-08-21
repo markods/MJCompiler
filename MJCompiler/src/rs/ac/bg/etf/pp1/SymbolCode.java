@@ -3,6 +3,8 @@ package rs.ac.bg.etf.pp1;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class SymbolCode implements ISymbolCode
@@ -65,4 +67,30 @@ public class SymbolCode implements ISymbolCode
         return symbolCode == SymbolCode.error
             || symbolCode == SymbolCode.invalid;
     }
+
+    public static boolean containsNewline( Symbol symbol )
+    {
+        if( symbol == null ) return false;
+        int symbolCode = symbol.getCode();
+        
+        if( symbolCode == SymbolCode.newline ) return true;
+
+        if( symbolCode == SymbolCode.line_comment    // possibly at the end of file, so not containing newline
+         || symbolCode == SymbolCode.multi_comment   // possibly inline
+        )
+        {
+            String value = ( String )symbol.getValue();
+            // find if there is at least one newline in the symbol
+            boolean newlineFound = Pattern.compile( "\r|\n|\r\n" ).matcher( value ).find();
+            return newlineFound;
+        }
+
+        return false;
+    }
+
+    public static boolean isEOF( int symbolCode )
+    {
+        return symbolCode == SymbolCode.EOF;
+    }
+
 }

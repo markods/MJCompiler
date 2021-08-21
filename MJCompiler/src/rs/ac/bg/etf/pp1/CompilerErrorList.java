@@ -6,21 +6,37 @@ import rs.ac.bg.etf.pp1.util.Log4J;
 
 public class CompilerErrorList
 {
-    private final ArrayList<CompilerError> errorList = new ArrayList<>();
+    private ArrayList<CompilerError> errorList = new ArrayList<>();
 
     public CompilerErrorList() {}
 
-
-    public boolean add( int line, int col, String message, int kind )
+    public void assign( CompilerErrorList errors )
     {
-        CompilerError error = new CompilerError( line, col, message, kind );
+        this.errorList = errors.errorList;
+    }
+
+
+
+    public boolean add( int kind, String message )
+    {
+        return add( kind, message, CompilerError.NO_INDEX, CompilerError.NO_INDEX );
+    }
+
+    public boolean add( int kind, String message, Throwable throwable )
+    {
+        return add( kind, message, CompilerError.NO_INDEX, CompilerError.NO_INDEX, throwable );
+    }
+
+    public boolean add( int kind, String message, int symbolFromIdx, int symbolToIdx )
+    {
+        CompilerError error = new CompilerError( kind, message, symbolFromIdx, symbolToIdx );
         Compiler.logger.log( Log4J.ERROR, error.toString(), true );
         return errorList.add( error );
     }
 
-    public boolean add( int line, int col, String message, int kind, Throwable throwable )
+    public boolean add( int kind, String message, int symbolFromIdx, int symbolToIdx, Throwable throwable )
     {
-        CompilerError error = new CompilerError( line, col, message, kind );
+        CompilerError error = new CompilerError( kind, message, symbolFromIdx, symbolToIdx );
         Compiler.logger.log( Log4J.ERROR, error.toString(), throwable, true );
         return errorList.add( error );
     }
@@ -31,9 +47,15 @@ public class CompilerErrorList
     }
 
 
+
     public int size()
     {
         return errorList.size();
+    }
+
+    public boolean checkIndex( int index )
+    {
+        return index >= 0 && index < errorList.size();
     }
 
     public CompilerError get( int index )
@@ -50,6 +72,7 @@ public class CompilerErrorList
     {
         return !errorList.isEmpty();
     }
+    
     
 
     @Override

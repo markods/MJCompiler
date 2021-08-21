@@ -8,6 +8,7 @@ package rs.ac.bg.etf.pp1;
 %%
 
 %class Lexer
+%apiprivate
 %cup
 // %unicode
 %line
@@ -17,7 +18,7 @@ package rs.ac.bg.etf.pp1;
 
 // methods
 %{
-    private static int symbolIdx = 0;
+    private int symbolIdx = 0;
 
     // create a symbol from the given symbol type
     private Symbol new_symbol( int symbolCode )

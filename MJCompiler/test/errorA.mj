@@ -5,7 +5,8 @@ program test301
     int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
     int pet=5-;
     int sest[6];
-    int 123;
+    int 123;   // FIXME: error reporting issue on this line
+    int a, b, c;
 
     class Predmet extends extends A
     {
@@ -23,13 +24,16 @@ program test301
     int sumA(1int z)
     {
         z = z + # + 1321 + 123;
-        if( z > 0 && z >> 1 ) return -1;
+        if( z > 0 && z >> 1 ) return -1;   // FIXME: error reporting issue on this line
         return z;
     }
 
     int sumB(int z, int2 d, int[] c, int d[])
     {
-        return z +* d;
+        sumA( 15, c, # );
+        sumA( , );
+        sumA( , , );
+        return z +* d + e;
     }
 
     void main()	
