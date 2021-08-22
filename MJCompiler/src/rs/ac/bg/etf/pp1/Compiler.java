@@ -2,7 +2,6 @@ package rs.ac.bg.etf.pp1;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -12,15 +11,17 @@ import java.io.IOException;
 import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.ac.bg.etf.pp1.util.Log4J;
 import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
+import rs.ac.bg.etf.pp1.visitors.CodeGenVisitor;
+import rs.ac.bg.etf.pp1.visitors.SemanticVisitor;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 
 public class Compiler
 {
-    static final Log4J logger = Log4J.getLogger( Compiler.class );
+    public static final Log4J logger = Log4J.getLogger( Compiler.class );
 
-    static final CompilerErrorList errors = new CompilerErrorList();
-    static final SymbolList symbols = new SymbolList();
+    public static final CompilerErrorList errors = new CompilerErrorList();
+    public static final SymbolList symbols = new SymbolList();
 
     private static boolean verbose = false;
     private static File fInput = null;
@@ -81,7 +82,7 @@ public class Compiler
             if( fOutput != null )
             {
                 // do the semantic pass
-                SemanticVisitor semanticCheck = checkSemantics( syntaxRoot );
+                SemanticVisitor semanticCheck = semanticAnalysis( syntaxRoot );
                 // if there is a semantic problem in the syntax tree, return
                 if( semanticCheck == null ) return false;
 
@@ -300,7 +301,7 @@ public class Compiler
     }
 
     // semantic check the the syntax tree
-    private static SemanticVisitor checkSemantics( SyntaxNode syntaxRoot )
+    private static SemanticVisitor semanticAnalysis( SyntaxNode syntaxRoot )
     {
         // if the syntax tree is missing, return
         if( syntaxRoot == null ) return null;
@@ -361,23 +362,7 @@ public class Compiler
     // return the compiler's symbol table as string
     private static String tsdump()
     {
-        String output = null;
-        
-        try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-             SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDOUT, buffer );
-        )
-        {
-            // workaround since symbol table dump method only outputs to System.out
-            Tab.dump();
-            output = buffer.toString( "UTF-8" );
-        }
-        catch( IOException ex )
-        {
-            errors.add( CompilerError.SEMANTIC_ERROR, "Error during conversion of symbol table to string", ex );
-            return null;
-        }
-        
-        return output;
+        return SymbolTable.dump();
     }
 
     // return the syntax tree as a string
