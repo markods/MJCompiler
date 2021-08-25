@@ -10,14 +10,15 @@ import rs.etf.pp1.symboltable.concepts.*;
 public class SemanticVisitor extends VisitorAdaptor
 {
     private boolean errorDetected = false;
-    public int nVars;   // TODO
+    private int varCount = 0;
     
     public boolean hasErrors() { return errorDetected; }
+    public int getVarCount() { return varCount; }
 
     private void report_error( SyntaxNode node, String message )
     {
         errorDetected = true;
-        SyntaxVisitor syntaxVisitor = new SyntaxVisitor();
+        ScopeVisitor syntaxVisitor = new ScopeVisitor();
         node.accept( syntaxVisitor );
         Compiler.errors.add( CompilerError.SEMANTIC_ERROR, message, syntaxVisitor.getSymbolFromIdx(), syntaxVisitor.getSymbolToIdx() );
     }
@@ -27,109 +28,103 @@ public class SemanticVisitor extends VisitorAdaptor
     // ________________________________________________________________________________________________
     // visitor methods
 
-
-    //////// program ident { }
-    //////// program ident { method method method }
-    //////// program ident constdl constdl vardl vardl classdl { }
-    //////// program ident constdl constdl vardl vardl classdl { method method method }
-    // Program ::= (Program_Plain) PROGRAM_K ident GlobalDeclList MethodDeclScope;
+    ////// program ident { }
+    ////// program ident { method method method }
+    ////// program ident constdl constdl vardl vardl classdl { }
+    ////// program ident constdl constdl vardl vardl classdl { method method method }
+    // Program ::= (Program_Plain) ProgramType GlobalDeclList lbrace MethodDeclList rbrace;
     @Override
     public void visit( Program_Plain node )
     {
     }
 
-    //////// <epsilon>
-    //////// constdl constdl vardl vardl classdl
-    // GlobalDeclList ::= (GlobalDeclList_Tail ) GlobalDecl GlobalDeclList;
+    ////// program my_program
+    // ProgramType ::= (ProgramType_Plain) PROGRAM_K ident;
+    @Override
+    public void visit( ProgramType_Plain node )
+    {
+    }
+
+    ////// <epsilon>
+    ////// constdl constdl vardl vardl classdl
+    // GlobalDeclList ::= (GlobalDeclList_Tail ) GlobalDeclList GlobalDecl;
+    @Override
+    public void visit( GlobalDeclList_Tail node )
+    {
+    }
     // GlobalDeclList ::= (GlobalDeclList_Empty) ;
+    @Override
+    public void visit( GlobalDeclList_Empty node )
+    {
+    }
 
+    ////// constdl
+    ////// vardl
+    ////// classdl
     // GlobalDecl ::= (GlobalDecl_Const) ConstDecl;
+    @Override
+    public void visit( GlobalDecl_Const node )
+    {
+    }
     // GlobalDecl ::= (GlobalDecl_Var  ) VarDecl;
+    @Override
+    public void visit( GlobalDecl_Var node )
+    {
+    }
     // GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
+    @Override
+    public void visit( GlobalDecl_Class node )
+    {
+    }
 
 
 
-    // ____________________________________
-    //////// class A { }
-    //////// class A { { method method method } }
-    //////// class A extends B { vardl vardl vardl vardl }
-    //////// class A extends B { vardl vardl vardl vardl { method method method } }
-    // ClassDecl ::= (ClassDecl_Plain) ClassIdentDecl ClassDeclScope;
+    ////// class A { }
+    ////// class A { { method method method } }
+    ////// class A extends B { vardl vardl vardl vardl }
+    ////// class A extends B { vardl vardl vardl vardl { method method method } }
+    // ClassDecl ::= (ClassDecl_Plain) ClassDeclType lbrace OpenScope ClassDeclBody rbrace;
     @Override
     public void visit( ClassDecl_Plain node )
     {
     }
 
-    //////// class A
-    //////// class A extends B
-    // ClassIdentDecl ::= (ClassIdentDecl_Plain  ) CLASS_K ident;
+    ////// class A
+    ////// class A extends B
+    // ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident;
     @Override
-    public void visit( ClassIdentDecl_Plain node )
+    public void visit( ClassDeclType_Plain node )
     {
     }
-    // ClassIdentDecl ::= (ClassIdentDecl_Extends) CLASS_K ident EXTENDS_K Type;
+    // ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident EXTENDS_K Type;
     @Override
-    public void visit( ClassIdentDecl_Extends node )
+    public void visit( ClassDeclType_Extends node )
     {
     }
-    // ClassIdentDecl ::= (ClassIdentDecl_Err    ) CLASS_K error:e {: parser.report_error( "Invalid class identifier declaration", null ); :};
+    // ClassDeclType ::= (ClassDeclType_Err    ) CLASS_K error {: parser.report_error( "Bad class declaration", null ); :};
     @Override
-    public void visit( ClassIdentDecl_Err node )
-    {
-    }
-
-    //////// { }
-    //////// { { method method method } }
-    //////// { vardl vardl vardl vardl }
-    //////// { vardl vardl vardl vardl { method method method } }
-    // ClassDeclScope ::= (ClassDeclScope_Vars       ) lbrace ClassVarDeclList                 rbrace;
-    @Override
-    public void visit( ClassDeclScope_Vars node )
-    {
-    }
-    // ClassDeclScope ::= (ClassDeclScope_VarsMethods) lbrace ClassVarDeclList MethodDeclScope rbrace;
-    @Override
-    public void visit( ClassDeclScope_VarsMethods node )
+    public void visit( ClassDeclType_Err node )
     {
     }
 
-    //////// <epsilon>
-    //////// clsvardl clsvardl clsvardl clsvardl
-    // ClassVarDeclList ::= (ClassVarDeclList_VarDecl) ClassVarDecl ClassVarDeclList;
+    ////// <epsilon>
+    ////// { method method method }
+    ////// vardl vardl vardl vardl
+    ////// vardl vardl vardl vardl { method method method }
+    // ClassDeclBody ::= (ClassDeclBody_Vars       ) VarDeclList;
     @Override
-    public void visit( ClassVarDeclList_VarDecl node )
+    public void visit( ClassDeclBody_Vars node )
     {
     }
-    // ClassVarDeclList ::= (ClassVarDeclList_Empty  ) ;
+    // ClassDeclBody ::= (ClassDeclBody_VarsMethods) VarDeclList lbrace OpenScope MethodDeclList rbrace;
     @Override
-    public void visit( ClassVarDeclList_Empty node )
-    {
-    }
-
-    //////// int a, b[], c;
-    //////// A a1, a2;
-    //////// static int a, b[], c;
-    //////// static A a1, a2;
-    // ClassVarDecl ::= (ClassVarDecl_Plain )          Type VarIdentList semicol;
-    @Override
-    public void visit( ClassVarDecl_Plain node )
-    {
-    }
-    // ClassVarDecl ::= (ClassVarDecl_Static) STATIC_K Type VarIdentList semicol;
-    @Override
-    public void visit( ClassVarDecl_Static node )
+    public void visit( ClassDeclBody_VarsMethods node )
     {
     }
 
-    //////// { }
-    //////// { method method method }
-    // MethodDeclScope ::= (MethodDeclScope_Plain) lbrace MethodDeclList rbrace;
-    @Override
-    public void visit( MethodDeclScope_Plain node )
-    {
-    }
-
-    // MethodDeclList ::= (MethodDeclList_Tail ) MethodDecl MethodDeclList;
+    ////// <epsilon>
+    ////// method method method
+    // MethodDeclList ::= (MethodDeclList_Tail ) MethodDeclList MethodDecl;
     @Override
     public void visit( MethodDeclList_Tail node )
     {
@@ -142,23 +137,30 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
 
-    // ____________________________________
-    //////// void foo() { }
-    //////// void foo() { statement statement }
-    //////// void foo() vardl vardl { }
-    //////// void foo() vardl vardl { statement statement }
-    //////// void foo( int a, char c, Node Array[] ) { }
-    //////// void foo( int a, char c, Node Array[] ) { statement statement }
-    //////// void foo( int a, char c, Node Array[] ) vardl vardl { }
-    //////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-    // MethodDecl ::= (MethodDecl_Plain) ReturnType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
+    ////// void foo() { }
+    ////// void foo() { statement statement }
+    ////// void foo() vardl vardl { }
+    ////// void foo() vardl vardl { statement statement }
+    ////// void foo( int a, char c, Node Array[] ) { }
+    ////// void foo( int a, char c, Node Array[] ) { statement statement }
+    ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
+    ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
+    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen OpenScope FormPars rparen OpenScope VarDeclList lbrace StatementList rbrace;
     @Override
     public void visit( MethodDecl_Plain node )
     {
     }
 
-    //////// <epsilon>
-    //////// int ident, Node Array[], char c
+    ////// void foo
+    ////// A foo
+    // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident;
+    @Override
+    public void visit( MethodDeclType_Plain node )
+    {
+    }
+
+    ////// <epsilon>
+    ////// int ident, Node Array[], char c
     // FormPars ::= (FormPars_List ) FormParsList;
     @Override
     public void visit( FormPars_List node )
@@ -170,20 +172,33 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    // FormParsList ::= (FormParsList_Init) FormParam;
+    ////// int a, char c, Node Array[]
+    // FormParsList ::= (FormParsList_Init)                    FormParam;
     @Override
     public void visit( FormParsList_Init node )
     {
     }
-    // FormParsList ::= (FormParsList_Tail) FormParam comma FormParsList;
+    // FormParsList ::= (FormParsList_Tail) FormParsList comma FormParam;
     @Override
     public void visit( FormParsList_Tail node )
     {
     }
 
-    //////// <epsilon>
-    //////// vardl vardl vardl vardl
-    // VarDeclList ::= (VarDeclList_VarDecl) VarDecl VarDeclList;
+    ////// int a, char c, Node Array[]
+    // FormParam ::= (FormParam_Plain) Type VarIdent;
+    @Override
+    public void visit( FormParam_Plain node )
+    {
+    }
+    // FormParam ::= (FormParam_Err  ) error {: parser.report_error( "Bad formal parameter", null ); :};
+    @Override
+    public void visit( FormParam_Err node )
+    {
+    }
+
+    ////// <epsilon>
+    ////// vardl vardl vardl vardl
+    // VarDeclList ::= (VarDeclList_VarDecl) VarDeclList VarDecl;
     @Override
     public void visit( VarDeclList_VarDecl node )
     {
@@ -196,71 +211,136 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
 
-    // ____________________________________
-    //////// int a, b[], c;
-    //////// A a1, a2;
-    // VarDecl ::= (VarDecl_Plain) Type VarIdentList semicol;
+    ////// int a, b[], c;
+    ////// A a1, a2;
+    ////// static int a, b[], c;   // the static keyword is only allowed inside a class declaration!
+    ////// static A a1, a2;
+    // VarDecl ::= (VarDecl_Plain) VarDeclType VarIdentList semicol;
     @Override
     public void visit( VarDecl_Plain node )
     {
     }
 
-    // VarIdentList ::= (VarIdentList_VarIdent) VarIdent;
+    ////// int
+    ////// static A
+    // VarDeclType ::= (VarDeclType_Plain )          Type;
+    @Override
+    public void visit( VarDeclType_Plain node )
+    {
+    }
+    // VarDeclType ::= (VarDeclType_Static) STATIC_K Type;
+    @Override
+    public void visit( VarDeclType_Static node )
+    {
+    }
+    // VarDeclType ::= (VarDeclType_Err   ) error {: parser.report_error( "Bad class declaration", null ); :};
+    @Override
+    public void visit( VarDeclType_Err node )
+    {
+    }
+
+    ////// a
+    ////// a, b[], c
+    // VarIdentList ::= (VarIdentList_VarIdent)                    VarIdent;
     @Override
     public void visit( VarIdentList_VarIdent node )
     {
     }
-    // VarIdentList ::= (VarIdentList_Tail    ) VarIdent comma VarIdentList;
+    // VarIdentList ::= (VarIdentList_Tail    ) VarIdentList comma VarIdent;
     @Override
     public void visit( VarIdentList_Tail node )
     {
     }
 
+    ////// a
+    ////// b[]
+    // VarIdent ::= (VarIdent_Ident) ident;
+    @Override
+    public void visit( VarIdent_Ident node )
+    {
+    }
+    // VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
+    @Override
+    public void visit( VarIdent_Array node )
+    {
+    }
+    // VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
+    @Override
+    public void visit( VarIdent_Err node )
+    {
+    }
 
 
-    // ____________________________________
-    //////// const int a = 5, b = 6, c = 11;
-    // ConstDecl ::= (ConstDecl_Plain) CONST_K Type IdentInitList semicol;
+
+    ////// const int a = 5, b = 6, c = 11;
+    // ConstDecl ::= (ConstDecl_Plain) ConstDeclType IdentInitList semicol;
     @Override
     public void visit( ConstDecl_Plain node )
     {
     }
 
-    // IdentInitList ::= (IdentInitList_Init) IdentInit;
+    ////// const int
+    // ConstDeclType ::= (ConstDeclType_Plain) CONST_K Type;
+    @Override
+    public void visit( ConstDeclType_Plain node )
+    {
+    }
+    // ConstDeclType ::= (ConstDeclType_Err  ) CONST_K error {: parser.report_error( "Bad constant type", null ); :};
+    @Override
+    public void visit( ConstDeclType_Err node )
+    {
+    }
+
+    ////// a = 5, b = 6, c = 11
+    // IdentInitList ::= (IdentInitList_Init)                     IdentInit;
     @Override
     public void visit( IdentInitList_Init node )
     {
     }
-    // IdentInitList ::= (IdentInitList_Tail) IdentInit comma IdentInitList;
+    // IdentInitList ::= (IdentInitList_Tail) IdentInitList comma IdentInit;
     @Override
     public void visit( IdentInitList_Tail node )
     {
     }
 
+    ////// a = 5
+    // IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
+    @Override
+    public void visit( IdentInit_Plain node )
+    {
+    }
+    // IdentInit ::= (IdentInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
+    @Override
+    public void visit( IdentInit_Err node )
+    {
+    }
 
 
-    // ____________________________________
-    //////// ident.ident[ expr ] = expr;
-    //////// ident.ident[ expr ]( );
-    //////// ident.ident[ expr ]( expr, expr, expr );
-    //////// ident.ident[ expr ]++;
-    //////// ident.ident[ expr ]--;
-    ////////
-    //////// if( condition ) statement
-    //////// if( condition ) statement else statement
-    //////// do statement while( condition );
-    //////// switch( expr ) { }
-    //////// switch( expr ) { case 1: statement statement statement   case 2: statement statement }
-    //////// break;
-    //////// continue;
-    //////// return;
-    //////// return expr;
-    ////////
-    //////// read( ident.ident[ expr ] );
-    //////// print( ident.ident[ expr ], 2 );
-    ////////
-    //////// {}
-    //////// { statement statement statement }
+
+
+
+
+    ////// ident.ident[ expr ] = expr;
+    ////// ident.ident[ expr ]( );
+    ////// ident.ident[ expr ]( expr, expr, expr );
+    ////// ident.ident[ expr ]++;
+    ////// ident.ident[ expr ]--;
+    //
+    ////// if( condition ) statement
+    ////// if( condition ) statement else statement
+    ////// do statement while( condition );
+    ////// switch( expr ) { }
+    ////// switch( expr ) { case 1: statement statement statement   case 2: statement statement }
+    ////// break;
+    ////// continue;
+    ////// return;
+    ////// return expr;
+    //
+    ////// read( ident.ident[ expr ] );
+    ////// print( ident.ident[ expr ], 2 );
+    //
+    ////// {}
+    ////// { statement statement statement }
     // Statement ::= (Statement_Designator ) DesignatorStatement semicol;
     @Override
     public void visit( Statement_Designator node )
@@ -286,17 +366,17 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Statement_Switch node )
     {
     }
-    // Statement ::= (Statement_Break      ) BREAK_K semicol;
+    // Statement ::= (Statement_Break      ) BREAK_K       semicol;
     @Override
     public void visit( Statement_Break node )
     {
     }
-    // Statement ::= (Statement_Continue   ) CONTINUE_K semicol;
+    // Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
     @Override
     public void visit( Statement_Continue node )
     {
     }
-    // Statement ::= (Statement_Return     ) RETURN_K semicol;
+    // Statement ::= (Statement_Return     ) RETURN_K      semicol;
     @Override
     public void visit( Statement_Return node )
     {
@@ -311,7 +391,7 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Statement_Read node )
     {
     }
-    // Statement ::= (Statement_Print      ) PRINT_K lparen Expr rparen semicol;
+    // Statement ::= (Statement_Print      ) PRINT_K lparen Expr               rparen semicol;
     @Override
     public void visit( Statement_Print node )
     {
@@ -321,7 +401,7 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Statement_PrintFormat node )
     {
     }
-    // Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
+    // Statement ::= (Statement_Scope      ) lbrace OpenScope StatementList rbrace;
     @Override
     public void visit( Statement_Scope node )
     {
@@ -331,17 +411,17 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Statement_Semicolon node )
     {
     }
-    // Statement ::= (Statement_Err        ) error:e semicol {: parser.report_error( "Invalid statement", null ); :};
+    // Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
     @Override
     public void visit( Statement_Err node )
     {
     }
 
-    //////// ident.ident[ expr ] = expr
-    //////// ident.ident[ expr ]( )
-    //////// ident.ident[ expr ]( expr, expr, expr )
-    //////// ident.ident[ expr ]++
-    //////// ident.ident[ expr ]--
+    ////// ident.ident[ expr ] = expr
+    ////// ident.ident[ expr ]( )
+    ////// ident.ident[ expr ]( expr, expr, expr )
+    ////// ident.ident[ expr ]++
+    ////// ident.ident[ expr ]--
     // DesignatorStatement ::= (DesignatorStatement_Assign    ) Designator Assignop Expr;
     @Override
     public void visit( DesignatorStatement_Assign node )
@@ -363,12 +443,9 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-
-
-    // ____________________________________
-    //////// <epsilon>
-    //////// statement statement statement statement
-    // StatementList ::= (StatementList_Tail ) Statement StatementList;
+    ////// <epsilon>
+    ////// statement statement statement statement
+    // StatementList ::= (StatementList_Tail ) StatementList Statement;
     @Override
     public void visit( StatementList_Tail node )
     {
@@ -379,9 +456,9 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    //////// <epsilon>
-    //////// case 1: statement statement statement   case 2: statement statement
-    // CaseList ::= (CaseList_Tail ) CASE_K int_lit colon StatementList CaseList;
+    ////// <epsilon>
+    ////// case 1: statement statement statement   case 2: statement statement
+    // CaseList ::= (CaseList_Tail ) CaseList Case;
     @Override
     public void visit( CaseList_Tail node )
     {
@@ -392,12 +469,22 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    //////// <epsilon>
-    //////// expr
-    //////// expr, expr, expr
-    // ActPars ::= (ActPars_Tail ) ActParsList;
+    ////// case 1: statement statement statement
+    ////// case 2: 
+    // Case ::= (Case_Plain) CASE_K int_lit colon StatementList;
     @Override
-    public void visit( ActPars_Tail node )
+    public void visit( Case_Plain node )
+    {
+    }
+
+
+
+    ////// <epsilon>
+    ////// expr
+    ////// expr, expr, expr
+    // ActPars ::= (ActPars_Plain) ActParsList;
+    @Override
+    public void visit( ActPars_Plain node )
     {
     }
     // ActPars ::= (ActPars_Empty) ;
@@ -406,40 +493,44 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    // ActParsList ::= (ActParsList_Expr) Expr;
+    ////// expr
+    ////// expr, expr, expr
+    // ActParsList ::= (ActParsList_Expr)                   Expr;
     @Override
     public void visit( ActParsList_Expr node )
     {
     }
-    // ActParsList ::= (ActParsList_Tail) Expr comma ActParsList;
+    // ActParsList ::= (ActParsList_Tail) ActParsList comma Expr;
     @Override
     public void visit( ActParsList_Tail node )
     {
     }
 
-    //////// expr   or   expr < expr and expr >= expr  or  expr != expr   //////// 'and' has greater priority than 'or'!
-    // Condition ::= (Condition_Term) CondTerm;
+    ////// expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
+    // Condition ::= (Condition_Term)              CondTerm;
     @Override
     public void visit( Condition_Term node )
     {
     }
-    // Condition ::= (Condition_Tail) CondTerm or Condition;
+    // Condition ::= (Condition_Tail) Condition or CondTerm;
     @Override
     public void visit( Condition_Tail node )
     {
     }
 
-    // CondTerm ::= (CondTerm_Fact) CondFact;
+    ////// expr < expr and expr >= expr
+    // CondTerm ::= (CondTerm_Fact)              CondFact;
     @Override
     public void visit( CondTerm_Fact node )
     {
     }
-    // CondTerm ::= (CondTerm_Tail) CondFact and CondTerm;
+    // CondTerm ::= (CondTerm_Tail) CondTerm and CondFact;
     @Override
     public void visit( CondTerm_Tail node )
     {
     }
 
+    ////// expr < expr and expr >= expr
     // CondFact ::= (CondFact_Expr) Expr;
     @Override
     public void visit( CondFact_Expr node )
@@ -451,73 +542,62 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    //////// term
-    //////// +term
-    //////// -term
-    //////// term + term - term + term
-    //////// -term + term - term + term
-    //////// +term + term + term + term
+    ////// +term - term + term + term
     // Expr ::= (Expr_Addition) Addition;
     @Override
     public void visit( Expr_Addition node )
     {
     }
-    // Expr ::= (Expr_Err     ) error:e {: parser.report_error( "Invalid expression", null ); :};
+    // Expr ::= (Expr_Err     ) error {: parser.report_error( "Bad expression", null ); :};
     @Override
     public void visit( Expr_Err node )
     {
     }
 
-    // Addition ::= (Addition_Term    ) Term;
+    ////// term
+    ////// +term
+    ////// -term
+    ////// term + term - term + term
+    ////// -term + term - term + term
+    ////// +term + term + term + term
+    // Addition ::= (Addition_Term )                Term;
     @Override
     public void visit( Addition_Term node )
     {
     }
-    // Addition ::= (Addition_Tail    )      SignedAddition;
+    // Addition ::= (Addition_STerm)          Addop Term;
+    @Override
+    public void visit( Addition_STerm node )
+    {
+    }
+    // Addition ::= (Addition_Tail ) Addition Addop Term;
     @Override
     public void visit( Addition_Tail node )
     {
     }
-    // Addition ::= (Addition_TermTail) Term SignedAddition;
-    @Override
-    public void visit( Addition_TermTail node )
-    {
-    }
 
-    // SignedAddition ::= (SignedAddition_Term) Addop Term;
-    @Override
-    public void visit( SignedAddition_Term node )
-    {
-    }
-    // SignedAddition ::= (SignedAddition_Tail) Addop Term SignedAddition;
-    @Override
-    public void visit( SignedAddition_Tail node )
-    {
-    }
-
-
-
-    // ____________________________________
-    //////// factor
-    //////// factor*factor*factor
-    // Term ::= (Term_Factor) Factor;
+    ////// factor
+    ////// factor*factor*factor
+    // Term ::= (Term_Factor)            Factor;
     @Override
     public void visit( Term_Factor node )
     {
     }
-    // Term ::= (Term_Tail  ) Factor Mulop Term;
+    // Term ::= (Term_Tail  ) Term Mulop Factor;
     @Override
     public void visit( Term_Tail node )
     {
     }
 
-    //////// ident.ident[ expr ]
-    //////// ident.ident[ expr ]( )
-    //////// ident.ident[ expr ]( expr, expr, expr )
-    //////// 1202 | 'c' | true
-    //////// new Object
-    //////// new Array[ expr ]
-    //////// ( expr )
+
+
+    ////// ident.ident[ expr ]
+    ////// ident.ident[ expr ]( )
+    ////// ident.ident[ expr ]( expr, expr, expr )
+    ////// 1202 | 'c' | true
+    ////// new Object
+    ////// new Array[ expr ]
+    ////// ( expr )
     // Factor ::= (Factor_Designator    ) Designator;
     @Override
     public void visit( Factor_Designator node )
@@ -549,83 +629,77 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    //////// ident
-    //////// ident.ident
-    //////// ident[ expr ]
-    //////// ident.ident.ident[ expr ].ident
-    //////// ident.ident.ident[ expr ].ident[ expr ]
-    // Designator ::= (Designator_Plain) ident DesignatorNext;
+    ////// ident
+    ////// ident.ident
+    ////// ident[ expr ]
+    ////// ident.ident.ident[ expr ].ident
+    ////// ident.ident.ident[ expr ].ident[ expr ]
+    // Designator ::= (Designator_Plain) DesignatorBase DesignatorTail;
     @Override
     public void visit( Designator_Plain node )
     {
     }
 
-    // DesignatorNext ::= (DesignatorNext_FieldTail) dot ident              DesignatorNext;
+    // DesignatorBase ::= (DesignatorBase_Plain) ident;
     @Override
-    public void visit( DesignatorNext_FieldTail node )
-    {
-    }
-    // DesignatorNext ::= (DesignatorNext_ElemTail ) lbracket Expr rbracket DesignatorNext;
-    @Override
-    public void visit( DesignatorNext_ElemTail node )
-    {
-    }
-    // DesignatorNext ::= (DesignatorNext_Empty    ) ;
-    @Override
-    public void visit( DesignatorNext_Empty node )
+    public void visit( DesignatorBase_Plain node )
     {
     }
 
+    // DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident;
+    @Override
+    public void visit( DesignatorTail_Field node )
+    {
+    }
+    // DesignatorTail ::= (DesignatorTail_Elem ) DesignatorTail lbracket Expr rbracket;
+    @Override
+    public void visit( DesignatorTail_Elem node )
+    {
+    }
+    // DesignatorTail ::= (DesignatorTail_Empty) ;
+    @Override
+    public void visit( DesignatorTail_Empty node )
+    {
+    }
 
 
-    // ____________________________________
-    //////// int ident
-    //////// Node Array[]
-    //////// char c
-    // FormParam ::= Type VarIdent;
-    // FormParam ::= error:e {: parser.report_error( "Invalid formal parameter", null ); :};
-    //////// ident = 12430
-    // IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
-    // IdentInit ::= (IdentInit_Err  ) error:e {: parser.report_error( "Invalid identifier initialization", null ); :};
-    //////// ident | array[]
-    // VarIdent ::= (VarIdent_Ident) ident;
-    // VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
-    // VarIdent ::= (VarIdent_Err  ) error:e {: parser.report_error( "Invalid variable identifier", null ); :};
 
-    //////// 1202 | 'c' | true
+
+
+
+    ////// action symbol for opening a new scope
+    // OpenScope ::= (OpenScope_Plain) ;
+    @Override
+    public void visit( OpenScope_Plain node )
+    {
+    }
+
+    ////// void | type
+    // ReturnType ::= (ReturnType_Void ) VOID_K;
+    // ReturnType ::= (ReturnType_Ident) ident;
+    ////// int | bool | char | ident
+    // Type ::= (Type_Ident) ident;
+    ////// 1202 | 'c' | true
     // Literal ::= (Literal_Int ) int_lit;
     // Literal ::= (Literal_Char) char_lit;
     // Literal ::= (Literal_Bool) bool_lit;
-    //////// void | type
-    // ReturnType ::= (ReturnType_Void ) VOID_K;
-    // ReturnType ::= (ReturnType_Ident) ident;
-    //////// int | bool | char | ident
-    // Type ::= (Type_Ident) ident;
-    // Type ::= (Type_Err  ) error:e {: parser.report_error( "Invalid type", null ); :};
 
-    //////// =
+    ////// =
     // Assignop ::= (Assignop_Assign) assign;
-    //////// ==  |  !=  |  >  |  >=  |  <  |  <=
+    ////// ==  |  !=  |  >  |  >=  |  <  |  <=
     // Relop ::= (Relop_Eq ) eq;
     // Relop ::= (Relop_Neq) ne;
     // Relop ::= (Relop_Gt ) gt;
     // Relop ::= (Relop_Geq) ge;
     // Relop ::= (Relop_Lt ) lt;
     // Relop ::= (Relop_Leq) le;
-    //////// +  |  -
+    ////// +  |  -
     // Addop ::= (Addop_Plus ) plus;
     // Addop ::= (Addop_Minus) minus;
-    //////// *  |  /  |  %
+    ////// *  |  /  |  %
     // Mulop ::= (Mulop_Mul ) mul;
     // Mulop ::= (Mulop_Div ) div;
     // Mulop ::= (Mulop_Perc) perc;
-
-
-
-
-
-
-
 
 
 

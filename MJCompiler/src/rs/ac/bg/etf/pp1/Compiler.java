@@ -339,7 +339,7 @@ public class Compiler
         // generate code from the abstract syntax tree
         CodeGenVisitor codeGenerator = new CodeGenVisitor();
         syntaxRoot.traverseBottomUp( codeGenerator );
-        Code.dataSize = semanticCheck.nVars;
+        Code.dataSize = semanticCheck.getVarCount();
         Code.mainPc = codeGenerator.getMainPc();
         
         // write compiler results to output file

@@ -142,7 +142,7 @@ scan with {:
     if( currSymbol.isInvalid() )
     {
         // report it as a lexer error
-        Compiler.errors.add( CompilerError.LEXICAL_ERROR, "Invalid token", currSymbol.getIdx(), currSymbol.getIdx()+1  );
+        Compiler.errors.add( CompilerError.LEXICAL_ERROR, "Bad token", currSymbol.getIdx(), currSymbol.getIdx()+1  );
     }
 
     // return the current symbol
@@ -192,23 +192,72 @@ terminal invalid;
 
 
 // declarations [nonterminals]
-nonterminal Program, GlobalDeclList, GlobalDecl;
-nonterminal ClassDecl, ClassIdentDecl, ClassDeclScope, ClassVarDeclList, ClassVarDecl, MethodDeclScope, MethodDeclList;
-nonterminal MethodDecl, FormPars, FormParsList, VarDeclList;
-nonterminal VarDecl, VarIdentList;
-nonterminal ConstDecl, IdentInitList;
+nonterminal Program;
+nonterminal ProgramType;
+nonterminal GlobalDeclList;
+nonterminal GlobalDecl;
 
-// statement parts [nonterminals]
-nonterminal Statement, DesignatorStatement;
-nonterminal StatementList, CaseList, ActPars, ActParsList;
-nonterminal Condition, CondTerm, CondFact;
-nonterminal Expr, Addition, SignedAddition;
-nonterminal Term, Factor;
-nonterminal Designator, DesignatorNext;
+nonterminal ClassDecl;
+nonterminal ClassDeclType;
+nonterminal ClassDeclBody;
+nonterminal MethodDeclList;
 
-// types, literals, operators [nonterminals]
-nonterminal FormParam, IdentInit, VarIdent, Literal, ReturnType, Type;
-nonterminal Assignop, Relop, Addop, Mulop;
+nonterminal MethodDecl;
+nonterminal MethodDeclType;
+nonterminal FormPars;
+nonterminal FormParsList;
+nonterminal FormParam;
+nonterminal VarDeclList;
+
+nonterminal VarDecl;
+nonterminal VarDeclType;
+nonterminal VarIdentList;
+nonterminal VarIdent;
+
+nonterminal ConstDecl;
+nonterminal ConstDeclType;
+nonterminal IdentInitList;
+nonterminal IdentInit;
+
+
+
+// statements [nonterminals]
+nonterminal Statement;
+nonterminal DesignatorStatement;
+nonterminal StatementList;
+
+nonterminal CaseList;
+nonterminal Case;
+
+nonterminal ActPars;
+nonterminal ActParsList;
+
+nonterminal Condition;
+nonterminal CondTerm;
+nonterminal CondFact;
+
+nonterminal Expr;
+nonterminal Addition;
+nonterminal Term;
+
+nonterminal Factor;
+nonterminal Designator;
+nonterminal DesignatorBase;
+nonterminal DesignatorTail;
+
+
+
+// miscellaneous [nonterminals]
+nonterminal OpenScope;
+
+nonterminal ReturnType;
+nonterminal Type;
+nonterminal Literal;
+
+nonterminal Assignop;
+nonterminal Relop;
+nonterminal Addop;
+nonterminal Mulop;
 
 
 
@@ -230,13 +279,19 @@ start with Program;
 // program ident { method method method }
 // program ident constdl constdl vardl vardl classdl { }
 // program ident constdl constdl vardl vardl classdl { method method method }
-Program ::= (Program_Plain) PROGRAM_K ident GlobalDeclList MethodDeclScope;
+Program ::= (Program_Plain) ProgramType GlobalDeclList lbrace MethodDeclList rbrace;
+
+// program my_program
+ProgramType ::= (ProgramType_Plain) PROGRAM_K ident;
 
 // <epsilon>
 // constdl constdl vardl vardl classdl
-GlobalDeclList ::= (GlobalDeclList_Tail ) GlobalDecl GlobalDeclList;
+GlobalDeclList ::= (GlobalDeclList_Tail ) GlobalDeclList GlobalDecl;
 GlobalDeclList ::= (GlobalDeclList_Empty) ;
 
+// constdl
+// vardl
+// classdl
 GlobalDecl ::= (GlobalDecl_Const) ConstDecl;
 GlobalDecl ::= (GlobalDecl_Var  ) VarDecl;
 GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
@@ -247,38 +302,24 @@ GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
 // class A { { method method method } }
 // class A extends B { vardl vardl vardl vardl }
 // class A extends B { vardl vardl vardl vardl { method method method } }
-ClassDecl ::= (ClassDecl_Plain) ClassIdentDecl ClassDeclScope;
+ClassDecl ::= (ClassDecl_Plain) ClassDeclType lbrace OpenScope ClassDeclBody rbrace;
 
 // class A
 // class A extends B
-ClassIdentDecl ::= (ClassIdentDecl_Plain  ) CLASS_K ident;
-ClassIdentDecl ::= (ClassIdentDecl_Extends) CLASS_K ident EXTENDS_K Type;
-ClassIdentDecl ::= (ClassIdentDecl_Err    ) CLASS_K error:e {: parser.report_error( "Invalid class identifier declaration", null ); :};
-
-// { }
-// { { method method method } }
-// { vardl vardl vardl vardl }
-// { vardl vardl vardl vardl { method method method } }
-ClassDeclScope ::= (ClassDeclScope_Vars       ) lbrace ClassVarDeclList                 rbrace;
-ClassDeclScope ::= (ClassDeclScope_VarsMethods) lbrace ClassVarDeclList MethodDeclScope rbrace;
+ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident;
+ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident EXTENDS_K Type;
+ClassDeclType ::= (ClassDeclType_Err    ) CLASS_K error {: parser.report_error( "Bad class declaration", null ); :};
 
 // <epsilon>
-// clsvardl clsvardl clsvardl clsvardl
-ClassVarDeclList ::= (ClassVarDeclList_VarDecl) ClassVarDecl ClassVarDeclList;
-ClassVarDeclList ::= (ClassVarDeclList_Empty  ) ;
-
-// int a, b[], c;
-// A a1, a2;
-// static int a, b[], c;
-// static A a1, a2;
-ClassVarDecl ::= (ClassVarDecl_Plain )          Type VarIdentList semicol;
-ClassVarDecl ::= (ClassVarDecl_Static) STATIC_K Type VarIdentList semicol;
-
-// { }
 // { method method method }
-MethodDeclScope ::= (MethodDeclScope_Plain) lbrace MethodDeclList rbrace;
+// vardl vardl vardl vardl
+// vardl vardl vardl vardl { method method method }
+ClassDeclBody ::= (ClassDeclBody_Vars       ) VarDeclList;
+ClassDeclBody ::= (ClassDeclBody_VarsMethods) VarDeclList lbrace OpenScope MethodDeclList rbrace;
 
-MethodDeclList ::= (MethodDeclList_Tail ) MethodDecl MethodDeclList;
+// <epsilon>
+// method method method
+MethodDeclList ::= (MethodDeclList_Tail ) MethodDeclList MethodDecl;
 MethodDeclList ::= (MethodDeclList_Empty) ;
 
 
@@ -291,37 +332,74 @@ MethodDeclList ::= (MethodDeclList_Empty) ;
 // void foo( int a, char c, Node Array[] ) { statement statement }
 // void foo( int a, char c, Node Array[] ) vardl vardl { }
 // void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-MethodDecl ::= (MethodDecl_Plain) ReturnType ident lparen FormPars rparen VarDeclList lbrace StatementList rbrace;
+MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen OpenScope FormPars rparen OpenScope VarDeclList lbrace StatementList rbrace;
+
+// void foo
+// A foo
+MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident;
 
 // <epsilon>
 // int ident, Node Array[], char c
 FormPars ::= (FormPars_List ) FormParsList;
 FormPars ::= (FormPars_Empty) ;
 
-FormParsList ::= (FormParsList_Init) FormParam;
-FormParsList ::= (FormParsList_Tail) FormParam comma FormParsList;
+// int a, char c, Node Array[]
+FormParsList ::= (FormParsList_Init)                    FormParam;
+FormParsList ::= (FormParsList_Tail) FormParsList comma FormParam;
+
+// int a, char c, Node Array[]
+FormParam ::= (FormParam_Plain) Type VarIdent;
+FormParam ::= (FormParam_Err  ) error {: parser.report_error( "Bad formal parameter", null ); :};
 
 // <epsilon>
 // vardl vardl vardl vardl
-VarDeclList ::= (VarDeclList_VarDecl) VarDecl VarDeclList;
+VarDeclList ::= (VarDeclList_VarDecl) VarDeclList VarDecl;
 VarDeclList ::= (VarDeclList_Empty  ) ;
 
 
 
 // int a, b[], c;
 // A a1, a2;
-VarDecl ::= (VarDecl_Plain) Type VarIdentList semicol;
+// static int a, b[], c;   // the static keyword is only allowed inside a class declaration!
+// static A a1, a2;
+VarDecl ::= (VarDecl_Plain) VarDeclType VarIdentList semicol;
 
-VarIdentList ::= (VarIdentList_VarIdent) VarIdent;
-VarIdentList ::= (VarIdentList_Tail    ) VarIdent comma VarIdentList;
+// int
+// static A
+VarDeclType ::= (VarDeclType_Plain )          Type;
+VarDeclType ::= (VarDeclType_Static) STATIC_K Type;
+VarDeclType ::= (VarDeclType_Err   ) error {: parser.report_error( "Bad class declaration", null ); :};
+
+// a
+// a, b[], c
+VarIdentList ::= (VarIdentList_VarIdent)                    VarIdent;
+VarIdentList ::= (VarIdentList_Tail    ) VarIdentList comma VarIdent;
+
+// a
+// b[]
+VarIdent ::= (VarIdent_Ident) ident;
+VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
+VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
 
 
 
 // const int a = 5, b = 6, c = 11;
-ConstDecl ::= (ConstDecl_Plain) CONST_K Type IdentInitList semicol;
+ConstDecl ::= (ConstDecl_Plain) ConstDeclType IdentInitList semicol;
 
-IdentInitList ::= (IdentInitList_Init) IdentInit;
-IdentInitList ::= (IdentInitList_Tail) IdentInit comma IdentInitList;
+// const int
+ConstDeclType ::= (ConstDeclType_Plain) CONST_K Type;
+ConstDeclType ::= (ConstDeclType_Err  ) CONST_K error {: parser.report_error( "Bad constant type", null ); :};
+
+// a = 5, b = 6, c = 11
+IdentInitList ::= (IdentInitList_Init)                     IdentInit;
+IdentInitList ::= (IdentInitList_Tail) IdentInitList comma IdentInit;
+
+// a = 5
+IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
+IdentInit ::= (IdentInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
+
+
+
 
 
 
@@ -351,16 +429,16 @@ Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
 Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
 Statement ::= (Statement_DoWhile    ) DO_K Statement WHILE_K lparen Condition rparen semicol;
 Statement ::= (Statement_Switch     ) SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
-Statement ::= (Statement_Break      ) BREAK_K semicol;
-Statement ::= (Statement_Continue   ) CONTINUE_K semicol;
-Statement ::= (Statement_Return     ) RETURN_K semicol;
+Statement ::= (Statement_Break      ) BREAK_K       semicol;
+Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
+Statement ::= (Statement_Return     ) RETURN_K      semicol;
 Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
 Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
-Statement ::= (Statement_Print      ) PRINT_K lparen Expr rparen semicol;
+Statement ::= (Statement_Print      ) PRINT_K lparen Expr               rparen semicol;
 Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
-Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
+Statement ::= (Statement_Scope      ) lbrace OpenScope StatementList rbrace;
 Statement ::= (Statement_Semicolon  ) semicol;
-Statement ::= (Statement_Err        ) error:e semicol {: parser.report_error( "Invalid statement", null ); :};
+Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
 
 // ident.ident[ expr ] = expr
 // ident.ident[ expr ]( )
@@ -372,36 +450,48 @@ DesignatorStatement ::= (DesignatorStatement_Call      ) Designator lparen ActPa
 DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
 DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
 
-
-
 // <epsilon>
 // statement statement statement statement
-StatementList ::= (StatementList_Tail ) Statement StatementList;
+StatementList ::= (StatementList_Tail ) StatementList Statement;
 StatementList ::= (StatementList_Empty) ;
 
 // <epsilon>
 // case 1: statement statement statement   case 2: statement statement
-CaseList ::= (CaseList_Tail ) CASE_K int_lit colon StatementList CaseList;
+CaseList ::= (CaseList_Tail ) CaseList Case;
 CaseList ::= (CaseList_Empty) ;
+
+// case 1: statement statement statement
+// case 2: 
+Case ::= (Case_Plain) CASE_K int_lit colon StatementList;
+
+
 
 // <epsilon>
 // expr
 // expr, expr, expr
-ActPars ::= (ActPars_Tail ) ActParsList;
+ActPars ::= (ActPars_Plain) ActParsList;
 ActPars ::= (ActPars_Empty) ;
 
-ActParsList ::= (ActParsList_Expr) Expr;
-ActParsList ::= (ActParsList_Tail) Expr comma ActParsList;
+// expr
+// expr, expr, expr
+ActParsList ::= (ActParsList_Expr)                   Expr;
+ActParsList ::= (ActParsList_Tail) ActParsList comma Expr;
 
 // expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
-Condition ::= (Condition_Term) CondTerm;
-Condition ::= (Condition_Tail) CondTerm or Condition;
+Condition ::= (Condition_Term)              CondTerm;
+Condition ::= (Condition_Tail) Condition or CondTerm;
 
-CondTerm ::= (CondTerm_Fact) CondFact;
-CondTerm ::= (CondTerm_Tail) CondFact and CondTerm;
+// expr < expr and expr >= expr
+CondTerm ::= (CondTerm_Fact)              CondFact;
+CondTerm ::= (CondTerm_Tail) CondTerm and CondFact;
 
+// expr < expr and expr >= expr
 CondFact ::= (CondFact_Expr) Expr;
 CondFact ::= (CondFact_Tail) Expr Relop Expr;
+
+// +term - term + term + term
+Expr ::= (Expr_Addition) Addition;
+Expr ::= (Expr_Err     ) error {: parser.report_error( "Bad expression", null ); :};
 
 // term
 // +term
@@ -409,22 +499,16 @@ CondFact ::= (CondFact_Tail) Expr Relop Expr;
 // term + term - term + term
 // -term + term - term + term
 // +term + term + term + term
-Expr ::= (Expr_Addition) Addition;
-Expr ::= (Expr_Err     ) error:e {: parser.report_error( "Invalid expression", null ); :};
-
-Addition ::= (Addition_Term    ) Term;
-Addition ::= (Addition_Tail    )      SignedAddition;
-Addition ::= (Addition_TermTail) Term SignedAddition;
-
-SignedAddition ::= (SignedAddition_Term) Addop Term;
-SignedAddition ::= (SignedAddition_Tail) Addop Term SignedAddition;
-
-
+Addition ::= (Addition_Term )                Term;
+Addition ::= (Addition_STerm)          Addop Term;
+Addition ::= (Addition_Tail ) Addition Addop Term;
 
 // factor
 // factor*factor*factor
-Term ::= (Term_Factor) Factor;
-Term ::= (Term_Tail  ) Factor Mulop Term;
+Term ::= (Term_Factor)            Factor;
+Term ::= (Term_Tail  ) Term Mulop Factor;
+
+
 
 // ident.ident[ expr ]
 // ident.ident[ expr ]( )
@@ -445,37 +529,31 @@ Factor ::= (Factor_Expr          ) lparen Expr rparen;
 // ident[ expr ]
 // ident.ident.ident[ expr ].ident
 // ident.ident.ident[ expr ].ident[ expr ]
-Designator ::= (Designator_Plain) ident DesignatorNext;
+Designator ::= (Designator_Plain) DesignatorBase DesignatorTail;
 
-DesignatorNext ::= (DesignatorNext_FieldTail) dot ident              DesignatorNext;
-DesignatorNext ::= (DesignatorNext_ElemTail ) lbracket Expr rbracket DesignatorNext;
-DesignatorNext ::= (DesignatorNext_Empty    ) ;
+DesignatorBase ::= (DesignatorBase_Plain) ident;
+
+DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident;
+DesignatorTail ::= (DesignatorTail_Elem ) DesignatorTail lbracket Expr rbracket;
+DesignatorTail ::= (DesignatorTail_Empty) ;
 
 
 
-// int ident
-// Node Array[]
-// char c
-FormParam ::= Type VarIdent;
-FormParam ::= error:e {: parser.report_error( "Invalid formal parameter", null ); :};
-// ident = 12430
-IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
-IdentInit ::= (IdentInit_Err  ) error:e {: parser.report_error( "Invalid identifier initialization", null ); :};
-// ident | array[]
-VarIdent ::= (VarIdent_Ident) ident;
-VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
-VarIdent ::= (VarIdent_Err  ) error:e {: parser.report_error( "Invalid variable identifier", null ); :};
 
-// 1202 | 'c' | true
-Literal ::= (Literal_Int ) int_lit;
-Literal ::= (Literal_Char) char_lit;
-Literal ::= (Literal_Bool) bool_lit;
+
+
+// action symbol for opening a new scope
+OpenScope ::= (OpenScope_Plain) ;
+
 // void | type
 ReturnType ::= (ReturnType_Void ) VOID_K;
 ReturnType ::= (ReturnType_Ident) ident;
 // int | bool | char | ident
 Type ::= (Type_Ident) ident;
-Type ::= (Type_Err  ) error:e {: parser.report_error( "Invalid type", null ); :};
+// 1202 | 'c' | true
+Literal ::= (Literal_Int ) int_lit;
+Literal ::= (Literal_Char) char_lit;
+Literal ::= (Literal_Bool) bool_lit;
 
 // =
 Assignop ::= (Assignop_Assign) assign;

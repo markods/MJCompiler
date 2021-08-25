@@ -4,7 +4,7 @@ import rs.ac.bg.etf.pp1.CompilerError;
 import rs.ac.bg.etf.pp1.ast.*;
 
 
-public class SyntaxVisitor implements Visitor
+public class ScopeVisitor implements Visitor
 {
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
@@ -23,47 +23,50 @@ public class SyntaxVisitor implements Visitor
     public void visit( ReturnType                     node ) { updateScope( node ); }
     public void visit( Mulop                          node ) { updateScope( node ); }
     public void visit( MethodDecl                     node ) { updateScope( node ); }
+    public void visit( ConstDeclType                  node ) { updateScope( node ); }
     public void visit( VarIdent                       node ) { updateScope( node ); }
     public void visit( Literal                        node ) { updateScope( node ); }
     public void visit( Relop                          node ) { updateScope( node ); }
     public void visit( Assignop                       node ) { updateScope( node ); }
     public void visit( IdentInitList                  node ) { updateScope( node ); }
+    public void visit( VarDeclType                    node ) { updateScope( node ); }
     public void visit( StatementList                  node ) { updateScope( node ); }
-    public void visit( ClassDeclScope                 node ) { updateScope( node ); }
-    public void visit( ClassVarDecl                   node ) { updateScope( node ); }
     public void visit( Addop                          node ) { updateScope( node ); }
+    public void visit( DesignatorTail                 node ) { updateScope( node ); }
     public void visit( Addition                       node ) { updateScope( node ); }
     public void visit( Factor                         node ) { updateScope( node ); }
+    public void visit( ProgramType                    node ) { updateScope( node ); }
     public void visit( CondTerm                       node ) { updateScope( node ); }
-    public void visit( DesignatorNext                 node ) { updateScope( node ); }
-    public void visit( ClassVarDeclList               node ) { updateScope( node ); }
+    public void visit( ClassDeclType                  node ) { updateScope( node ); }
     public void visit( Designator                     node ) { updateScope( node ); }
     public void visit( Term                           node ) { updateScope( node ); }
     public void visit( FormParsList                   node ) { updateScope( node ); }
     public void visit( Condition                      node ) { updateScope( node ); }
+    public void visit( MethodDeclType                 node ) { updateScope( node ); }
     public void visit( CaseList                       node ) { updateScope( node ); }
     public void visit( ActParsList                    node ) { updateScope( node ); }
-    public void visit( SignedAddition                 node ) { updateScope( node ); }
     public void visit( GlobalDeclList                 node ) { updateScope( node ); }
-    public void visit( MethodDeclScope                node ) { updateScope( node ); }
     public void visit( VarDeclList                    node ) { updateScope( node ); }
+    public void visit( Case                           node ) { updateScope( node ); }
     public void visit( Expr                           node ) { updateScope( node ); }
+    public void visit( DesignatorBase                 node ) { updateScope( node ); }
     public void visit( ActPars                        node ) { updateScope( node ); }
     public void visit( DesignatorStatement            node ) { updateScope( node ); }
     public void visit( Statement                      node ) { updateScope( node ); }
+    public void visit( ClassDeclBody                  node ) { updateScope( node ); }
     public void visit( VarDecl                        node ) { updateScope( node ); }
     public void visit( Type                           node ) { updateScope( node ); }
     public void visit( VarIdentList                   node ) { updateScope( node ); }
     public void visit( ClassDecl                      node ) { updateScope( node ); }
     public void visit( ConstDecl                      node ) { updateScope( node ); }
     public void visit( CondFact                       node ) { updateScope( node ); }
+    public void visit( OpenScope                      node ) { updateScope( node ); }
     public void visit( MethodDeclList                 node ) { updateScope( node ); }
-    public void visit( ClassIdentDecl                 node ) { updateScope( node ); }
-    public void visit( IdentInit                      node ) { updateScope( node ); }
     public void visit( Program                        node ) { updateScope( node ); }
-    public void visit( FormParam                      node ) { updateScope( node ); }
+    public void visit( IdentInit                      node ) { updateScope( node ); }
     public void visit( GlobalDecl                     node ) { updateScope( node ); }
     public void visit( FormPars                       node ) { updateScope( node ); }
+    public void visit( FormParam                      node ) { updateScope( node ); }
     public void visit( Mulop_Perc                     node ) { updateScope( node ); }
     public void visit( Mulop_Div                      node ) { updateScope( node ); }
     public void visit( Mulop_Mul                      node ) { updateScope( node ); }
@@ -76,23 +79,17 @@ public class SyntaxVisitor implements Visitor
     public void visit( Relop_Neq                      node ) { updateScope( node ); }
     public void visit( Relop_Eq                       node ) { updateScope( node ); }
     public void visit( Assignop_Assign                node ) { updateScope( node ); }
-    public void visit( Type_Err                       node ) { updateScope( node ); }
-    public void visit( Type_Ident                     node ) { updateScope( node ); }
-    public void visit( ReturnType_Ident               node ) { updateScope( node ); }
-    public void visit( ReturnType_Void                node ) { updateScope( node ); }
     public void visit( Literal_Bool                   node ) { updateScope( node ); }
     public void visit( Literal_Char                   node ) { updateScope( node ); }
     public void visit( Literal_Int                    node ) { updateScope( node ); }
-    public void visit( VarIdent_Err                   node ) { updateScope( node ); }
-    public void visit( VarIdent_Array                 node ) { updateScope( node ); }
-    public void visit( VarIdent_Ident                 node ) { updateScope( node ); }
-    public void visit( IdentInit_Err                  node ) { updateScope( node ); }
-    public void visit( IdentInit_Plain                node ) { updateScope( node ); }
-    public void visit( FormParamDerived2              node ) { updateScope( node ); }
-    public void visit( FormParamDerived1              node ) { updateScope( node ); }
-    public void visit( DesignatorNext_Empty           node ) { updateScope( node ); }
-    public void visit( DesignatorNext_ElemTail        node ) { updateScope( node ); }
-    public void visit( DesignatorNext_FieldTail       node ) { updateScope( node ); }
+    public void visit( Type_Ident                     node ) { updateScope( node ); }
+    public void visit( ReturnType_Ident               node ) { updateScope( node ); }
+    public void visit( ReturnType_Void                node ) { updateScope( node ); }
+    public void visit( OpenScope_Plain                node ) { updateScope( node ); }
+    public void visit( DesignatorTail_Empty           node ) { updateScope( node ); }
+    public void visit( DesignatorTail_Elem            node ) { updateScope( node ); }
+    public void visit( DesignatorTail_Field           node ) { updateScope( node ); }
+    public void visit( DesignatorBase_Plain           node ) { updateScope( node ); }
     public void visit( Designator_Plain               node ) { updateScope( node ); }
     public void visit( Factor_Expr                    node ) { updateScope( node ); }
     public void visit( Factor_NewArray                node ) { updateScope( node ); }
@@ -102,10 +99,8 @@ public class SyntaxVisitor implements Visitor
     public void visit( Factor_Designator              node ) { updateScope( node ); }
     public void visit( Term_Tail                      node ) { updateScope( node ); }
     public void visit( Term_Factor                    node ) { updateScope( node ); }
-    public void visit( SignedAddition_Tail            node ) { updateScope( node ); }
-    public void visit( SignedAddition_Term            node ) { updateScope( node ); }
-    public void visit( Addition_TermTail              node ) { updateScope( node ); }
     public void visit( Addition_Tail                  node ) { updateScope( node ); }
+    public void visit( Addition_STerm                 node ) { updateScope( node ); }
     public void visit( Addition_Term                  node ) { updateScope( node ); }
     public void visit( Expr_Err                       node ) { updateScope( node ); }
     public void visit( Expr_Addition                  node ) { updateScope( node ); }
@@ -118,7 +113,8 @@ public class SyntaxVisitor implements Visitor
     public void visit( ActParsList_Tail               node ) { updateScope( node ); }
     public void visit( ActParsList_Expr               node ) { updateScope( node ); }
     public void visit( ActPars_Empty                  node ) { updateScope( node ); }
-    public void visit( ActPars_Tail                   node ) { updateScope( node ); }
+    public void visit( ActPars_Plain                  node ) { updateScope( node ); }
+    public void visit( Case_Plain                     node ) { updateScope( node ); }
     public void visit( CaseList_Empty                 node ) { updateScope( node ); }
     public void visit( CaseList_Tail                  node ) { updateScope( node ); }
     public void visit( StatementList_Empty            node ) { updateScope( node ); }
@@ -142,36 +138,46 @@ public class SyntaxVisitor implements Visitor
     public void visit( Statement_IfElse               node ) { updateScope( node ); }
     public void visit( Statement_If                   node ) { updateScope( node ); }
     public void visit( Statement_Designator           node ) { updateScope( node ); }
+    public void visit( IdentInit_Err                  node ) { updateScope( node ); }
+    public void visit( IdentInit_Plain                node ) { updateScope( node ); }
     public void visit( IdentInitList_Tail             node ) { updateScope( node ); }
     public void visit( IdentInitList_Init             node ) { updateScope( node ); }
+    public void visit( ConstDeclType_Plain            node ) { updateScope( node ); }
+    public void visit( ConstDeclType_Err              node ) { updateScope( node ); }
     public void visit( ConstDecl_Plain                node ) { updateScope( node ); }
+    public void visit( VarIdent_Err                   node ) { updateScope( node ); }
+    public void visit( VarIdent_Array                 node ) { updateScope( node ); }
+    public void visit( VarIdent_Ident                 node ) { updateScope( node ); }
     public void visit( VarIdentList_Tail              node ) { updateScope( node ); }
     public void visit( VarIdentList_VarIdent          node ) { updateScope( node ); }
+    public void visit( VarDeclType_Err                node ) { updateScope( node ); }
+    public void visit( VarDeclType_Static             node ) { updateScope( node ); }
+    public void visit( VarDeclType_Plain              node ) { updateScope( node ); }
     public void visit( VarDecl_Plain                  node ) { updateScope( node ); }
     public void visit( VarDeclList_Empty              node ) { updateScope( node ); }
     public void visit( VarDeclList_VarDecl            node ) { updateScope( node ); }
+    public void visit( FormParam_Err                  node ) { updateScope( node ); }
+    public void visit( FormParam_Plain                node ) { updateScope( node ); }
     public void visit( FormParsList_Tail              node ) { updateScope( node ); }
     public void visit( FormParsList_Init              node ) { updateScope( node ); }
     public void visit( FormPars_Empty                 node ) { updateScope( node ); }
     public void visit( FormPars_List                  node ) { updateScope( node ); }
+    public void visit( MethodDeclType_Plain           node ) { updateScope( node ); }
     public void visit( MethodDecl_Plain               node ) { updateScope( node ); }
     public void visit( MethodDeclList_Empty           node ) { updateScope( node ); }
     public void visit( MethodDeclList_Tail            node ) { updateScope( node ); }
-    public void visit( MethodDeclScope_Plain          node ) { updateScope( node ); }
-    public void visit( ClassVarDecl_Static            node ) { updateScope( node ); }
-    public void visit( ClassVarDecl_Plain             node ) { updateScope( node ); }
-    public void visit( ClassVarDeclList_Empty         node ) { updateScope( node ); }
-    public void visit( ClassVarDeclList_VarDecl       node ) { updateScope( node ); }
-    public void visit( ClassDeclScope_VarsMethods     node ) { updateScope( node ); }
-    public void visit( ClassDeclScope_Vars            node ) { updateScope( node ); }
-    public void visit( ClassIdentDecl_Err             node ) { updateScope( node ); }
-    public void visit( ClassIdentDecl_Extends         node ) { updateScope( node ); }
-    public void visit( ClassIdentDecl_Plain           node ) { updateScope( node ); }
+    public void visit( ClassDeclBody_VarsMethods      node ) { updateScope( node ); }
+    public void visit( ClassDeclBody_Vars             node ) { updateScope( node ); }
+    public void visit( ClassDeclType_Err              node ) { updateScope( node ); }
+    public void visit( ClassDeclType_Extends          node ) { updateScope( node ); }
+    public void visit( ClassDeclType_Plain            node ) { updateScope( node ); }
     public void visit( ClassDecl_Plain                node ) { updateScope( node ); }
     public void visit( GlobalDecl_Class               node ) { updateScope( node ); }
     public void visit( GlobalDecl_Var                 node ) { updateScope( node ); }
     public void visit( GlobalDecl_Const               node ) { updateScope( node ); }
     public void visit( GlobalDeclList_Empty           node ) { updateScope( node ); }
     public void visit( GlobalDeclList_Tail            node ) { updateScope( node ); }
+    public void visit( ProgramType_Plain              node ) { updateScope( node ); }
     public void visit( Program_Plain                  node ) { updateScope( node ); }
+
 }

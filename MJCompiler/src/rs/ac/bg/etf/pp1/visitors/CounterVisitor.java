@@ -3,7 +3,7 @@ package rs.ac.bg.etf.pp1.visitors;
 import rs.ac.bg.etf.pp1.ast.*;
 
 
-public class CounterVisitor extends VisitorAdaptor
+public abstract class CounterVisitor extends VisitorAdaptor
 {
     protected int count;
     protected CounterVisitor() {}
