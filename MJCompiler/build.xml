@@ -70,4 +70,7 @@
     nbproject/build-impl.xml file. 
 
     -->
+    <target depends="init" if="false" name="-javadoc-build">
+    </target>
+
 </project>

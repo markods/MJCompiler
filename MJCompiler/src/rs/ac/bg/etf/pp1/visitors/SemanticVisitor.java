@@ -15,12 +15,23 @@ public class SemanticVisitor extends VisitorAdaptor
     public boolean hasErrors() { return errorDetected; }
     public int getVarCount() { return varCount; }
 
+
     private void report_error( SyntaxNode node, String message )
     {
+        report_error( node, message, true );
+    }
+
+    private void report_error( SyntaxNode node, String message, boolean entireScope )
+    {
         errorDetected = true;
-        ScopeVisitor syntaxVisitor = new ScopeVisitor();
-        node.accept( syntaxVisitor );
-        Compiler.errors.add( CompilerError.SEMANTIC_ERROR, message, syntaxVisitor.getSymbolFromIdx(), syntaxVisitor.getSymbolToIdx() );
+
+        ScopeVisitor scopeVisitor = new ScopeVisitor();
+        node.accept( scopeVisitor );
+
+        int symbolFromIdx = scopeVisitor.getSymbolFromIdx();
+        int symbolToIdx = ( entireScope ) ? scopeVisitor.getSymbolToIdx() : symbolFromIdx + 1;
+
+        Compiler.errors.add( CompilerError.SEMANTIC_ERROR, message, symbolFromIdx, symbolToIdx );
     }
 
     

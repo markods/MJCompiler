@@ -2,7 +2,7 @@
 
 program test_303
 
-const int cinilac = 4, delilac = 3;
+const int delilac = 3;
 
 class Predmet
 {
@@ -22,10 +22,13 @@ class Predmet
 
 class Sfera extends Predmet
 {
-     int r;
+    int r;
+    static int cinilac;
     {
         void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 's';}
         void postaviPoluprecnik(int r) {this.r = r; postaviVrstu('s');}
+        void postaviCinilac(int c) {cinilac = c;}
+        
         int zapremina()
             int z;
         {
@@ -63,7 +66,7 @@ int tezinaK, tezinaS;
         print(p.dohvTezinu());
     }
         
-    void main() Predmet predmeti[]; int i, j; Sfera s1, s2, s3; Kvadar k1, k2, k3; int t;
+    void main() Predmet predmeti[]; int i; Sfera s1, s2, s3; Kvadar k1, k2, k3; int t;
     {	
         predmeti = new Predmet[6];
         s1 = new Sfera;
@@ -73,10 +76,14 @@ int tezinaK, tezinaS;
         k1 = new Kvadar;
         k2 = new Kvadar;
         k3 = new Kvadar;
+        
+        Sfera.cinilac = 4;
 
         s1.postaviPoluprecnik(1);
         s2.postaviPoluprecnik(2);
         s3.postaviPoluprecnik(3);
+        
+        print(Sfera.cinilac);
 
         k1.postaviStranice(1,2,3);
         k2.postaviStranice(2,3,4);
@@ -132,24 +139,24 @@ int tezinaK, tezinaS;
         
         i = 0;
         do{
-            j =	10;
-            switch(i+1)
-            {
+            switch(i+1){
                 case 1:
                     print(1);
-                    j = 1;
+                    break;
                 case 3:
                     print(3);
                 case 2:
                     print(2);
-                    j = 2;
+                    break;
                 case 5:
                     print(5);
-                    i = i + 3;
-                    j = 7;
-            };
-            print(eol);
-            print(j);
+                    i = i + 2;
+                    continue;
+                case 6:
+                    print(6);
+                case 9:
+                    print(9);
+            }
             print(eol);
             i++;
         }while(i<10);
