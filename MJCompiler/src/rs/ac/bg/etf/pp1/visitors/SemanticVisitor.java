@@ -50,7 +50,7 @@ public class SemanticVisitor extends VisitorAdaptor
     }
 
     ////// program my_program
-    // ProgramType ::= (ProgramType_Plain) PROGRAM_K ident;
+    // ProgramType ::= (ProgramType_Plain) PROGRAM_K ident:ProgramName;
     @Override
     public void visit( ProgramType_Plain node )
     {
@@ -59,34 +59,14 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// <epsilon>
     ////// constdl constdl vardl vardl classdl
     // GlobalDeclList ::= (GlobalDeclList_Tail ) GlobalDeclList GlobalDecl;
-    @Override
-    public void visit( GlobalDeclList_Tail node )
-    {
-    }
     // GlobalDeclList ::= (GlobalDeclList_Empty) ;
-    @Override
-    public void visit( GlobalDeclList_Empty node )
-    {
-    }
 
     ////// constdl
     ////// vardl
     ////// classdl
     // GlobalDecl ::= (GlobalDecl_Const) ConstDecl;
-    @Override
-    public void visit( GlobalDecl_Const node )
-    {
-    }
     // GlobalDecl ::= (GlobalDecl_Var  ) VarDecl;
-    @Override
-    public void visit( GlobalDecl_Var node )
-    {
-    }
     // GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
-    @Override
-    public void visit( GlobalDecl_Class node )
-    {
-    }
 
 
 
@@ -102,12 +82,12 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// class A
     ////// class A extends B
-    // ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident;
+    // ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident:ClassName;
     @Override
     public void visit( ClassDeclType_Plain node )
     {
     }
-    // ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident EXTENDS_K Type;
+    // ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident:ClassName EXTENDS_K Type;
     @Override
     public void visit( ClassDeclType_Extends node )
     {
@@ -164,7 +144,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// void foo
     ////// A foo
-    // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident;
+    // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
     @Override
     public void visit( MethodDeclType_Plain node )
     {
@@ -265,12 +245,12 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// a
     ////// b[]
-    // VarIdent ::= (VarIdent_Ident) ident;
+    // VarIdent ::= (VarIdent_Ident) ident:VarName;
     @Override
     public void visit( VarIdent_Ident node )
     {
     }
-    // VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
+    // VarIdent ::= (VarIdent_Array) ident:VarName lbracket rbracket;
     @Override
     public void visit( VarIdent_Array node )
     {
@@ -315,7 +295,7 @@ public class SemanticVisitor extends VisitorAdaptor
     }
 
     ////// a = 5
-    // IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
+    // IdentInit ::= (IdentInit_Plain) ident:IdentName Assignop Literal;
     @Override
     public void visit( IdentInit_Plain node )
     {
@@ -402,12 +382,12 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Statement_Read node )
     {
     }
-    // Statement ::= (Statement_Print      ) PRINT_K lparen Expr               rparen semicol;
+    // Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
     @Override
     public void visit( Statement_Print node )
     {
     }
-    // Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
+    // Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
     @Override
     public void visit( Statement_PrintFormat node )
     {
@@ -482,7 +462,8 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// case 1: statement statement statement
     ////// case 2: 
-    // Case ::= (Case_Plain) CASE_K int_lit colon StatementList;
+    ////// case 3: {}
+    // Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
     @Override
     public void visit( Case_Plain node )
     {
@@ -651,13 +632,13 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
 
-    // DesignatorBase ::= (DesignatorBase_Plain) ident;
+    // DesignatorBase ::= (DesignatorBase_Plain) ident:Name;
     @Override
     public void visit( DesignatorBase_Plain node )
     {
     }
 
-    // DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident;
+    // DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident:Name;
     @Override
     public void visit( DesignatorTail_Field node )
     {
@@ -668,10 +649,6 @@ public class SemanticVisitor extends VisitorAdaptor
     {
     }
     // DesignatorTail ::= (DesignatorTail_Empty) ;
-    @Override
-    public void visit( DesignatorTail_Empty node )
-    {
-    }
 
 
 
@@ -683,34 +660,35 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( OpenScope_Plain node )
     {
+        SymbolTable.openScope();
     }
 
     ////// void | type
-    // ReturnType ::= (ReturnType_Void ) VOID_K;
-    // ReturnType ::= (ReturnType_Ident) ident;
+    // ReturnType ::= (ReturnType_Void ) VOID_K:ReturnType;
+    // ReturnType ::= (ReturnType_Ident) ident :ReturnType;
     ////// int | bool | char | ident
-    // Type ::= (Type_Ident) ident;
+    // Type ::= (Type_Ident) ident:Type;
     ////// 1202 | 'c' | true
-    // Literal ::= (Literal_Int ) int_lit;
-    // Literal ::= (Literal_Char) char_lit;
-    // Literal ::= (Literal_Bool) bool_lit;
+    // Literal ::= (Literal_Int ) int_lit :Literal;
+    // Literal ::= (Literal_Char) char_lit:Literal;
+    // Literal ::= (Literal_Bool) bool_lit:Literal;
 
     ////// =
-    // Assignop ::= (Assignop_Assign) assign;
+    // Assignop ::= (Assignop_Assign) assign:Assignop;
     ////// ==  |  !=  |  >  |  >=  |  <  |  <=
-    // Relop ::= (Relop_Eq ) eq;
-    // Relop ::= (Relop_Neq) ne;
-    // Relop ::= (Relop_Gt ) gt;
-    // Relop ::= (Relop_Geq) ge;
-    // Relop ::= (Relop_Lt ) lt;
-    // Relop ::= (Relop_Leq) le;
+    // Relop ::= (Relop_Eq ) eq:Relop;
+    // Relop ::= (Relop_Neq) ne:Relop;
+    // Relop ::= (Relop_Gt ) gt:Relop;
+    // Relop ::= (Relop_Geq) ge:Relop;
+    // Relop ::= (Relop_Lt ) lt:Relop;
+    // Relop ::= (Relop_Leq) le:Relop;
     ////// +  |  -
-    // Addop ::= (Addop_Plus ) plus;
-    // Addop ::= (Addop_Minus) minus;
+    // Addop ::= (Addop_Plus ) plus :Addop;
+    // Addop ::= (Addop_Minus) minus:Addop;
     ////// *  |  /  |  %
-    // Mulop ::= (Mulop_Mul ) mul;
-    // Mulop ::= (Mulop_Div ) div;
-    // Mulop ::= (Mulop_Perc) perc;
+    // Mulop ::= (Mulop_Mul ) mul :Mulop;
+    // Mulop ::= (Mulop_Div ) div :Mulop;
+    // Mulop ::= (Mulop_Perc) perc:Mulop;
 
 
 

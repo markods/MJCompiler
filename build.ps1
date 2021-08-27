@@ -232,7 +232,7 @@ if( "-clean" -in $args -or "-build" -in $args )
         if( Test-Path "./MJCompiler/dist"  -PathType "Container" ) { Remove-Item "./MJCompiler/dist"  -Recurse; }
 
         # remove 'logs' directory
-        if( Test-Path "./MJCompiler/logs" -PathType "Container" ) { Remove-Item "./MJCompiler/logs" -Recurse; }
+        if( Test-Path "./MJCompiler/logs"      -PathType "Container" ) { Remove-Item "./MJCompiler/logs"      -Recurse; }
         if( Test-Path "./MJCompiler/test/logs" -PathType "Container" ) { Remove-Item "./MJCompiler/test/logs" -Recurse; }
 
         # remove the generated cup specification files from the 'spec' directory

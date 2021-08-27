@@ -158,7 +158,7 @@ scan with {:
 
 
 // keywords [terminals]
-terminal PROGRAM_K, CLASS_K, /*ENUM_K,*/ EXTENDS_K;   // enum currently not used
+terminal PROGRAM_K, CLASS_K, /*ENUM_K,*/ EXTENDS_K;   // enum currently not supported
 terminal STATIC_K, CONST_K, VOID_K;
 terminal IF_K, ELSE_K, SWITCH_K, CASE_K, BREAK_K, CONTINUE_K, RETURN_K;
 terminal DO_K, WHILE_K;
@@ -250,9 +250,9 @@ nonterminal DesignatorTail;
 // miscellaneous [nonterminals]
 nonterminal OpenScope;
 
-nonterminal ReturnType;
-nonterminal Type;
-nonterminal Literal;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct ReturnType;
+nonterminal rs.etf.pp1.symboltable.concepts.Struct Type;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Literal;
 
 nonterminal Assignop;
 nonterminal Relop;
@@ -282,7 +282,7 @@ start with Program;
 Program ::= (Program_Plain) ProgramType GlobalDeclList lbrace MethodDeclList rbrace;
 
 // program my_program
-ProgramType ::= (ProgramType_Plain) PROGRAM_K ident;
+ProgramType ::= (ProgramType_Plain) PROGRAM_K ident:ProgramName;
 
 // <epsilon>
 // constdl constdl vardl vardl classdl
@@ -306,8 +306,8 @@ ClassDecl ::= (ClassDecl_Plain) ClassDeclType lbrace OpenScope ClassDeclBody rbr
 
 // class A
 // class A extends B
-ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident;
-ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident EXTENDS_K Type;
+ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident:ClassName;
+ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident:ClassName EXTENDS_K Type;
 ClassDeclType ::= (ClassDeclType_Err    ) CLASS_K error {: parser.report_error( "Bad class declaration", null ); :};
 
 // <epsilon>
@@ -336,7 +336,7 @@ MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen OpenScope FormPars rpare
 
 // void foo
 // A foo
-MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident;
+MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
 
 // <epsilon>
 // int ident, Node Array[], char c
@@ -377,8 +377,8 @@ VarIdentList ::= (VarIdentList_Tail    ) VarIdentList comma VarIdent;
 
 // a
 // b[]
-VarIdent ::= (VarIdent_Ident) ident;
-VarIdent ::= (VarIdent_Array) ident lbracket rbracket;
+VarIdent ::= (VarIdent_Ident) ident:VarName;
+VarIdent ::= (VarIdent_Array) ident:VarName lbracket rbracket;
 VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
 
 
@@ -395,7 +395,7 @@ IdentInitList ::= (IdentInitList_Init)                     IdentInit;
 IdentInitList ::= (IdentInitList_Tail) IdentInitList comma IdentInit;
 
 // a = 5
-IdentInit ::= (IdentInit_Plain) ident Assignop Literal;
+IdentInit ::= (IdentInit_Plain) ident:IdentName Assignop Literal;
 IdentInit ::= (IdentInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
 
 
@@ -434,8 +434,8 @@ Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
 Statement ::= (Statement_Return     ) RETURN_K      semicol;
 Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
 Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
-Statement ::= (Statement_Print      ) PRINT_K lparen Expr               rparen semicol;
-Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit rparen semicol;
+Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
+Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
 Statement ::= (Statement_Scope      ) lbrace OpenScope StatementList rbrace;
 Statement ::= (Statement_Semicolon  ) semicol;
 Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
@@ -462,7 +462,8 @@ CaseList ::= (CaseList_Empty) ;
 
 // case 1: statement statement statement
 // case 2: 
-Case ::= (Case_Plain) CASE_K int_lit colon StatementList;
+// case 3: {}
+Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
 
 
 
@@ -531,9 +532,9 @@ Factor ::= (Factor_Expr          ) lparen Expr rparen;
 // ident.ident.ident[ expr ].ident[ expr ]
 Designator ::= (Designator_Plain) DesignatorBase DesignatorTail;
 
-DesignatorBase ::= (DesignatorBase_Plain) ident;
+DesignatorBase ::= (DesignatorBase_Plain) ident:Name;
 
-DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident;
+DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident:Name;
 DesignatorTail ::= (DesignatorTail_Elem ) DesignatorTail lbracket Expr rbracket;
 DesignatorTail ::= (DesignatorTail_Empty) ;
 
@@ -546,31 +547,31 @@ DesignatorTail ::= (DesignatorTail_Empty) ;
 OpenScope ::= (OpenScope_Plain) ;
 
 // void | type
-ReturnType ::= (ReturnType_Void ) VOID_K;
-ReturnType ::= (ReturnType_Ident) ident;
+ReturnType ::= (ReturnType_Void ) VOID_K:ReturnType;
+ReturnType ::= (ReturnType_Ident) ident :ReturnType;
 // int | bool | char | ident
-Type ::= (Type_Ident) ident;
+Type ::= (Type_Ident) ident:Type;
 // 1202 | 'c' | true
-Literal ::= (Literal_Int ) int_lit;
-Literal ::= (Literal_Char) char_lit;
-Literal ::= (Literal_Bool) bool_lit;
+Literal ::= (Literal_Int ) int_lit :Literal;
+Literal ::= (Literal_Char) char_lit:Literal;
+Literal ::= (Literal_Bool) bool_lit:Literal;
 
 // =
-Assignop ::= (Assignop_Assign) assign;
+Assignop ::= (Assignop_Assign) assign:Assignop;
 // ==  |  !=  |  >  |  >=  |  <  |  <=
-Relop ::= (Relop_Eq ) eq;
-Relop ::= (Relop_Neq) ne;
-Relop ::= (Relop_Gt ) gt;
-Relop ::= (Relop_Geq) ge;
-Relop ::= (Relop_Lt ) lt;
-Relop ::= (Relop_Leq) le;
+Relop ::= (Relop_Eq ) eq:Relop;
+Relop ::= (Relop_Neq) ne:Relop;
+Relop ::= (Relop_Gt ) gt:Relop;
+Relop ::= (Relop_Geq) ge:Relop;
+Relop ::= (Relop_Lt ) lt:Relop;
+Relop ::= (Relop_Leq) le:Relop;
 // +  |  -
-Addop ::= (Addop_Plus ) plus;
-Addop ::= (Addop_Minus) minus;
+Addop ::= (Addop_Plus ) plus :Addop;
+Addop ::= (Addop_Minus) minus:Addop;
 // *  |  /  |  %
-Mulop ::= (Mulop_Mul ) mul;
-Mulop ::= (Mulop_Div ) div;
-Mulop ::= (Mulop_Perc) perc;
+Mulop ::= (Mulop_Mul ) mul :Mulop;
+Mulop ::= (Mulop_Div ) div :Mulop;
+Mulop ::= (Mulop_Perc) perc:Mulop;
 
 
 
