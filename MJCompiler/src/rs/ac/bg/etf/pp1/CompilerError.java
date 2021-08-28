@@ -23,8 +23,8 @@ public class CompilerError
 
     private int kind;
     private String message;
-    private int symbolFromIdx;
-    private int symbolToIdx;
+    private int tokenFromIdx;
+    private int tokenToIdx;
     private String additionalInfo;
 
     CompilerError( int kind, String message )
@@ -32,19 +32,19 @@ public class CompilerError
         this( kind, message, NO_INDEX, NO_INDEX );
     }
 
-    CompilerError( int kind, String message, int symbolFromIdx, int symbolToIdx )
+    CompilerError( int kind, String message, int tokenFromIdx, int tokenToIdx )
     {
         this.kind = kind;
         this.message = message;
-        this.symbolFromIdx = symbolFromIdx;
-        this.symbolToIdx = symbolToIdx;
+        this.tokenFromIdx = tokenFromIdx;
+        this.tokenToIdx = tokenToIdx;
         this.additionalInfo = null;
     }
 
     public int getKind() { return kind; }
     public String getMessage() { return message; }
-    public int getSymbolFromIdx() { return symbolFromIdx; }
-    public int getSymbolToIdx() { return symbolToIdx; }
+    public int getTokenFromIdx() { return tokenFromIdx; }
+    public int getTokenToIdx() { return tokenToIdx; }
     public String getAdditionalInfo()
     {
         // if additional info should be calculated
@@ -52,12 +52,12 @@ public class CompilerError
         {
             additionalInfo = "";
 
-            if( Compiler.symbols.checkIndex( symbolFromIdx ) && Compiler.symbols.checkIndex( symbolToIdx ) )
+            if( Compiler.tokens.checkIndex( tokenFromIdx ) && Compiler.tokens.checkIndex( tokenToIdx ) )
             {
                 StringBuilder builder = new StringBuilder( "```" );
-                for( int i = symbolFromIdx; i < symbolToIdx; i++ )
+                for( int i = tokenFromIdx; i < tokenToIdx; i++ )
                 {
-                    Symbol token = Compiler.symbols.get( i );
+                    Token token = Compiler.tokens.get( i );
                     builder.append( token.getValue() );
                 }
                 builder.append( "```" );
@@ -78,16 +78,16 @@ public class CompilerError
         int line = NO_INDEX;
         int col = NO_INDEX;
 
-        if( Compiler.symbols.checkIndex( symbolFromIdx ) )
+        if( Compiler.tokens.checkIndex( tokenFromIdx ) )
         {
-            Symbol symbolFrom = Compiler.symbols.get( symbolFromIdx );
-            line = symbolFrom.getLine();
-            col = symbolFrom.getCol();
+            Token tokenFrom = Compiler.tokens.get( tokenFromIdx );
+            line = tokenFrom.getLine();
+            col = tokenFrom.getCol();
         }
-        else if( symbolToIdx >= 0 )
+        else if( tokenToIdx >= 0 )
         {
             // special case for arguments errors; they don't have a line, but they do have a column
-            col = symbolToIdx;
+            col = tokenToIdx;
         }
 
         return String.format( "Ln %-3s Col %-3s %-3s     %s%s",

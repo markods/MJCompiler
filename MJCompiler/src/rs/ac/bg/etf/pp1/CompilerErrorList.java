@@ -27,16 +27,16 @@ public class CompilerErrorList
         return add( kind, message, CompilerError.NO_INDEX, CompilerError.NO_INDEX, throwable );
     }
 
-    public boolean add( int kind, String message, int symbolFromIdx, int symbolToIdx )
+    public boolean add( int kind, String message, int tokenFromIdx, int tokenToIdx )
     {
-        CompilerError error = new CompilerError( kind, message, symbolFromIdx, symbolToIdx );
+        CompilerError error = new CompilerError( kind, message, tokenFromIdx, tokenToIdx );
         Compiler.logger.log( Log4J.ERROR, error.toString(), true );
         return errorList.add( error );
     }
 
-    public boolean add( int kind, String message, int symbolFromIdx, int symbolToIdx, Throwable throwable )
+    public boolean add( int kind, String message, int tokenFromIdx, int tokenToIdx, Throwable throwable )
     {
-        CompilerError error = new CompilerError( kind, message, symbolFromIdx, symbolToIdx );
+        CompilerError error = new CompilerError( kind, message, tokenFromIdx, tokenToIdx );
         Compiler.logger.log( Log4J.ERROR, error.toString(), throwable, true );
         return errorList.add( error );
     }

@@ -1,9 +1,5 @@
 package rs.ac.bg.etf.pp1.visitors;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
-import java_cup.runtime.Symbol;
 import rs.ac.bg.etf.pp1.Compiler;
 import rs.ac.bg.etf.pp1.CompilerError;
 import rs.ac.bg.etf.pp1.ast.*;
@@ -14,8 +10,6 @@ import rs.etf.pp1.symboltable.concepts.*;
 public class SemanticVisitor extends VisitorAdaptor
 {
     private boolean errorDetected = false;
-
-    private ArrayList<Obj> declStack = new ArrayList<>();
     private int varCount = 0;
     
     public boolean hasErrors() { return errorDetected; }
@@ -34,10 +28,10 @@ public class SemanticVisitor extends VisitorAdaptor
         ScopeVisitor scopeVisitor = new ScopeVisitor();
         node.accept( scopeVisitor );
 
-        int symbolFromIdx = scopeVisitor.getSymbolFromIdx();
-        int symbolToIdx = ( entireScope ) ? scopeVisitor.getSymbolToIdx() : symbolFromIdx + 1;
+        int tokenFromIdx = scopeVisitor.getTokenFromIdx();
+        int tokenToIdx = ( entireScope ) ? scopeVisitor.getTokenToIdx() : tokenFromIdx + 1;
 
-        Compiler.errors.add( CompilerError.SEMANTIC_ERROR, message, symbolFromIdx, symbolToIdx );
+        Compiler.errors.add( CompilerError.SEMANTIC_ERROR, message, tokenFromIdx, tokenToIdx );
     }
 
     
@@ -689,7 +683,7 @@ public class SemanticVisitor extends VisitorAdaptor
                 // // clone the current object and save it as the 
                 // curr.obj = new Object(  );
                 // // TODO: clone the object
-                
+
                 // stop the search
                 break;
             }
@@ -747,7 +741,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
 
-    ////// action symbol for opening a new scope
+    ////// action rule for opening a new scope
     // OpenScope ::= (OpenScope_Plain) ;
     @Override
     public void visit( OpenScope_Plain curr )

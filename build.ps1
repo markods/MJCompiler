@@ -142,7 +142,7 @@ if( "-cup" -in $args )
         "-cp", "'../lib/cup_v10k.jar'", "java_cup.Main",
         "-destdir", "'./rs/ac/bg/etf/pp1'",
         "-parser", "'Parser'",
-        "-interface", "-symbols", "'ISymbolCode'";
+        "-interface", "-symbols", "'ITokenCode'";
 
     # build the abstract syntax tree
     if( "-ast" -in $args )
@@ -190,7 +190,7 @@ if( "-cup" -in $args )
 
 
 # jflex tool
-# +   jflex should be run after cup, since its output depends on cup output (more precisely on the cup-generated symbol class)
+# +   jflex should be run after cup, since its output depends on cup output (more precisely on the cup-generated token class)
 if( "-jflex" -in $args )
 {
     Write-Output "---------------------------------------------------------------------------------------------------------------- <<< JFlex";

@@ -9,12 +9,12 @@ public class ScopeVisitor implements Visitor
     private int min = Integer.MAX_VALUE;
     private int max = Integer.MIN_VALUE;
 
-    public int getSymbolFromIdx() { return ( min != Integer.MIN_VALUE ) ? min     : CompilerError.NO_INDEX; }
-    public int getSymbolToIdx()   { return ( max != Integer.MIN_VALUE ) ? max + 1 : CompilerError.NO_INDEX; }
+    public int getTokenFromIdx() { return ( min != Integer.MIN_VALUE ) ? min     : CompilerError.NO_INDEX; }
+    public int getTokenToIdx()   { return ( max != Integer.MIN_VALUE ) ? max + 1 : CompilerError.NO_INDEX; }
 
     private void updateScope( SyntaxNode node )
     {
-        int line = node.getLine();   // symbolFromIdx for current symbol
+        int line = node.getLine();   // tokenFromIdx for current token
         if( min > line ) min = line;
         if( max < line ) max = line;
     }

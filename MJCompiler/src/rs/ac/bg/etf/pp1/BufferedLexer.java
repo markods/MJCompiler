@@ -9,48 +9,48 @@ public class BufferedLexer implements java_cup.runtime.Scanner
     private static final int prefetch_max = 100;
 
     private final Lexer lexer;
-    private final SymbolList symbols;
-    private int lastSymbolIdx = 0;
+    private final TokenList tokens;
+    private int lastTokenIdx = 0;
     private boolean isEOF = false;
 
 
     public BufferedLexer( Reader in )
     {
         this.lexer = new Lexer( in );
-        this.symbols = new SymbolList();
+        this.tokens = new TokenList();
     }
     
-    public BufferedLexer( SymbolList symbols )
+    public BufferedLexer( TokenList tokens )
     {
         this.lexer = null;
-        this.symbols = symbols;
+        this.tokens = tokens;
     }
 
 
-    public SymbolList getSymbols() { return symbols; }
+    public TokenList getTokens() { return tokens; }
 
     @Override
-    public Symbol next_token() throws IOException
+    public Token next_token() throws IOException
     {
-        if( lexer != null && lastSymbolIdx >= symbols.size() && !isEOF )
+        if( lexer != null && lastTokenIdx >= tokens.size() && !isEOF )
         {
             for( int i = 0; i < prefetch_max; i++ )
             {
-                Symbol symbol = ( Symbol )lexer.next_token();
-                symbols.add( symbol );
+                Token token = ( Token )lexer.next_token();
+                tokens.add( token );
 
-                if( symbol.containsNewline() ) break;
-                if( symbol.isEOF() ) { isEOF = true; break; }
+                if( token.containsNewline() ) break;
+                if( token.isEOF() ) { isEOF = true; break; }
             }
         }
 
-        if( lastSymbolIdx >= symbols.size() )
+        if( lastTokenIdx >= tokens.size() )
         {
-            Symbol lastSymbol = symbols.getLast();
-            symbols.add( new Symbol( SymbolCode.EOF, lastSymbol.getIdx() + 1, lastSymbol.getLine(), lastSymbol.getCol(), lastSymbol.getValue() ) );
+            Token lastToken = tokens.getLast();
+            tokens.add( new Token( TokenCode.EOF, lastToken.getIdx() + 1, lastToken.getLine(), lastToken.getCol(), lastToken.getValue() ) );
         }
 
-        return symbols.get( lastSymbolIdx++ );
+        return tokens.get( lastTokenIdx++ );
     }
     
 }

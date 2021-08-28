@@ -16,7 +16,7 @@ logs/
 ast/
 Lexer.java
 Parser.java
-ISymbolCode.java
+ITokenCode.java
 
 
 

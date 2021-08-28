@@ -14,14 +14,13 @@ import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.ac.bg.etf.pp1.visitors.CodeGenVisitor;
 import rs.ac.bg.etf.pp1.visitors.SemanticVisitor;
 import rs.etf.pp1.mj.runtime.Code;
-import rs.etf.pp1.symboltable.Tab;
 
 public class Compiler
 {
     public static final Log4J logger = Log4J.getLogger( Compiler.class );
 
     public static final CompilerErrorList errors = new CompilerErrorList();
-    public static final SymbolList symbols = new SymbolList();
+    public static final TokenList tokens = new TokenList();
 
     private static boolean verbose = false;
     private static File fInput = null;
@@ -65,9 +64,9 @@ public class Compiler
         if( fLex != null )
         {
             // save the lex results to the output file
-            SymbolList symbols = lex( fInput, fLex );
+            TokenList tokens = lex( fInput, fLex );
             // if the lexer could not lex the input file, return
-            if( symbols == null ) return false;
+            if( tokens == null ) return false;
         }
 
         // if parse output file or the object file is specified
@@ -100,7 +99,7 @@ public class Compiler
     // lex the input file
     // +   write the results to the given lex file
     // +   only used to show the lexer results, the parser already does lexing on its own using the same lexer class
-    private static SymbolList lex( File fInput, File fLex )
+    private static TokenList lex( File fInput, File fLex )
     {
         // if the input file is missing, return
         if( fInput == null ) return null;
@@ -118,18 +117,18 @@ public class Compiler
         )
         {
             BufferedLexer lexer = new BufferedLexer( brInput );
-            // HACK: copy the reference to the lexer's symbols over to the global symbols list
+            // HACK: copy the reference to the lexer's tokens over to the global tokens list
             // +   meaning they are the same object (identical)
             // +   important for correct error reporting
-            symbols.assign( lexer.getSymbols() );
-            Symbol token = null;
+            tokens.assign( lexer.getTokens() );
+            Token token = null;
 
             // lex the input .mj file
             try
             {
                 while( true )
                 {
-                    token = ( Symbol )( lexer.next_token() );
+                    token = ( Token )( lexer.next_token() );
 
                     output.append( token.toString() ).append( "\n" );
                     logger.info( token.toString() );
@@ -148,14 +147,14 @@ public class Compiler
             catch( IOException ex )
             {
                 errors.add( CompilerError.LEXICAL_ERROR, "Error lexing input file", ex );
-                symbols.clear();
+                tokens.clear();
                 return null;
             }
         }
         catch( IOException ex )
         {
             errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
-            Compiler.symbols.clear();
+            Compiler.tokens.clear();
             return null;
         }
 
@@ -178,8 +177,8 @@ public class Compiler
             }
         }
 
-        // return the lexed symbols
-        return symbols;
+        // return the lexed tokens
+        return tokens;
     }
 
     // parse the input file
@@ -208,25 +207,25 @@ public class Compiler
                 BufferedLexer lexer;
 
                 // if the lexer hasn't already lexed the entire file
-                if( symbols.size() == 0 )
+                if( tokens.size() == 0 )
                 {
                     // create a lexer on the input file
                     lexer = new BufferedLexer( brInput );
 
-                    // HACK: copy the reference from the global symbols list over to the lexer's symbols
+                    // HACK: copy the reference from the global tokens list over to the lexer's tokens
                     // +   meaning they are the same object (identical)
                     // +   important for correct error reporting
-                    symbols.assign( lexer.getSymbols() );
+                    tokens.assign( lexer.getTokens() );
                 }
                 // otherwise,
                 else
                 {
-                    // create a lexer on the (already lexed file's) symbol list
+                    // create a lexer on the (already lexed file's) token list
 
-                    // HACK: copy the reference from the global symbols list over to the lexer's symbols
+                    // HACK: copy the reference from the global tokens list over to the lexer's tokens
                     // +   meaning they are the same object (identical)
                     // +   important for correct error reporting
-                    lexer = new BufferedLexer( symbols );
+                    lexer = new BufferedLexer( tokens );
                 }
 
                 parser = new Parser( lexer );
@@ -250,7 +249,7 @@ public class Compiler
                     }
                 }
 
-                if( rootSymbol != null )
+                if( rootSymbol != null && rootSymbol.value instanceof SyntaxNode )
                 {
                     syntaxRoot = ( SyntaxNode )( rootSymbol.value );
                 }
@@ -309,8 +308,6 @@ public class Compiler
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ SEMANTIC" );
         logger.info( "Semantic checking" );
         
-        // initialize global ("universal") scope in the symbol table
-        Tab.init();
         // create a semantic check visitor
         SemanticVisitor semanticVisitor = new SemanticVisitor();
 
