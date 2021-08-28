@@ -1,5 +1,9 @@
 package rs.ac.bg.etf.pp1.visitors;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
+import java_cup.runtime.Symbol;
 import rs.ac.bg.etf.pp1.Compiler;
 import rs.ac.bg.etf.pp1.CompilerError;
 import rs.ac.bg.etf.pp1.ast.*;
@@ -10,6 +14,8 @@ import rs.etf.pp1.symboltable.concepts.*;
 public class SemanticVisitor extends VisitorAdaptor
 {
     private boolean errorDetected = false;
+
+    private ArrayList<Obj> declStack = new ArrayList<>();
     private int varCount = 0;
     
     public boolean hasErrors() { return errorDetected; }
@@ -264,7 +270,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
     ////// const int a = 5, b = 6, c = 11;
-    // ConstDecl ::= (ConstDecl_Plain) ConstDeclType IdentInitList semicol;
+    // ConstDecl ::= (ConstDecl_Plain) ConstDeclType ConstInitList semicol;
     @Override
     public void visit( ConstDecl_Plain node )
     {
@@ -283,26 +289,26 @@ public class SemanticVisitor extends VisitorAdaptor
     }
 
     ////// a = 5, b = 6, c = 11
-    // IdentInitList ::= (IdentInitList_Init)                     IdentInit;
+    // ConstInitList ::= (ConstInitList_Init)                     ConstInit;
     @Override
-    public void visit( IdentInitList_Init node )
+    public void visit( ConstInitList_Init node )
     {
     }
-    // IdentInitList ::= (IdentInitList_Tail) IdentInitList comma IdentInit;
+    // ConstInitList ::= (ConstInitList_Tail) ConstInitList comma ConstInit;
     @Override
-    public void visit( IdentInitList_Tail node )
+    public void visit( ConstInitList_Tail node )
     {
     }
 
     ////// a = 5
-    // IdentInit ::= (IdentInit_Plain) ident:IdentName Assignop Literal;
+    // ConstInit ::= (ConstInit_Plain) ident:IdentName Assignop Literal;
     @Override
-    public void visit( IdentInit_Plain node )
+    public void visit( ConstInit_Plain node )
     {
     }
-    // IdentInit ::= (IdentInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
+    // ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
     @Override
-    public void visit( IdentInit_Err node )
+    public void visit( ConstInit_Err node )
     {
     }
 
@@ -626,29 +632,115 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// ident[ expr ]
     ////// ident.ident.ident[ expr ].ident
     ////// ident.ident.ident[ expr ].ident[ expr ]
-    // Designator ::= (Designator_Plain) DesignatorBase DesignatorTail;
+    // Designator ::= (Designator_Ident  ) ident:Name;
     @Override
-    public void visit( Designator_Plain node )
+    public void visit( Designator_Ident curr )
     {
-    }
+        // try to find the variable in the symbol table
+        curr.obj = SymbolTable.findObj( curr.getName() );
 
-    // DesignatorBase ::= (DesignatorBase_Plain) ident:Name;
-    @Override
-    public void visit( DesignatorBase_Plain node )
-    {
+        // if the variable does not exist in the current scopes
+        if( curr.obj == SymbolTable.noObj )
+        {
+            // then it has not been declared, return
+            report_error( curr, "This variable has not been declared", false );
+            return;
+        }
     }
+    // Designator ::= (Designator_Field  ) Designator dot ident:Name;
+    @Override
+    public void visit( Designator_Field curr )
+    {
+        // set the current designator to the default value
+        curr.obj = SymbolTable.noObj;
 
-    // DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident:Name;
-    @Override
-    public void visit( DesignatorTail_Field node )
-    {
+        // if the previous designator segment does not exist
+        Designator prev = curr.getDesignator();
+        if( prev.obj == SymbolTable.noObj )
+        {
+            // an error must have been reported somewhere in the previous segments, return
+            return;
+        }
+
+        // if the previous variable is not a class (doesn't have inner methods)
+        Struct prevType = prev.obj.getType();
+        if( prevType.getKind() != Struct.Class )
+        {
+            // report an error and return
+            report_error( curr, "Cannot access inner members since the variable is not a class", false );
+            return;
+        }
+
+        // go through the fields and members of the previous designator
+        for( Obj member : prevType.getMembers() )
+        {
+            // if the previous variable (designator segment) contains the current field/member
+            if( curr.getName().equals( member.getName() ) )
+            {
+                // if the member is not a variable or method
+                int memberKind = member.getKind();
+                if( memberKind != Obj.Var && memberKind != Obj.Meth )
+                {
+                    // report an error and return
+                    report_error( curr, "Cannot access the requested member since it is not a variable or method", false );
+                    return;
+                }
+                
+                // // clone the current object and save it as the 
+                // curr.obj = new Object(  );
+                // // TODO: clone the object
+                
+                // stop the search
+                break;
+            }
+        }
+
+        // if the previous variable doesn't contain the current field/member
+        if( curr.obj == SymbolTable.noObj )
+        {
+            // report an error and return
+            report_error( curr, "The requested member does not exist inside the variable", false );
+            return;
+        }
     }
-    // DesignatorTail ::= (DesignatorTail_Elem ) DesignatorTail lbracket Expr rbracket;
+    // Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
     @Override
-    public void visit( DesignatorTail_Elem node )
+    public void visit( Designator_ArrElem curr )
     {
+        // set the current designator to the default value
+        curr.obj = SymbolTable.noObj;
+
+        // if the previous designator segment does not exist
+        Designator prev = curr.getDesignator();
+        if( prev.obj == SymbolTable.noObj )
+        {
+            // an error must have been reported somewhere in the previous segments, return
+            return;
+        }
+
+        Struct prevType = prev.obj.getType();
+        // if the previous variable is not an array
+        if( prevType.getKind() != Struct.Array )
+        {
+            // report an error and return
+            report_error( curr, "Cannot access the requested array element, since the variable is not an array", false );
+            return;
+        }
+        // // if the expression inside the angle brackets does not result in an int
+        // if( curr.getExpr().obj )
+        // {
+        //     // report an error and return
+        //     report_error( curr, "Cannot access the requested array element, since the variable is not an array", false );
+        //     return;
+        // }
+
+        // // get the type of array element from the array type
+        // Struct currType = prevType.getElemType();
+
+        // // create a new object
+        // curr.obj = new Obj( kind, name, type );
+        // prevType.getElemType().get;
     }
-    // DesignatorTail ::= (DesignatorTail_Empty) ;
 
 
 
@@ -658,8 +750,9 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// action symbol for opening a new scope
     // OpenScope ::= (OpenScope_Plain) ;
     @Override
-    public void visit( OpenScope_Plain node )
+    public void visit( OpenScope_Plain curr )
     {
+        // open a scope (some other top-level rule will close it)
         SymbolTable.openScope();
     }
 
@@ -707,30 +800,30 @@ public class SemanticVisitor extends VisitorAdaptor
 
     // public void visit( Program program )
     // {
-    //     nVars = Tab.currentScope.getnVars();
-    //     Tab.chainLocalSymbols( program.getProgName().obj );
-    //     Tab.closeScope();
+    //     nVars = SymbolTable.currentScope.getnVars();
+    //     SymbolTable.chainLocalSymbols( program.getProgName().obj );
+    //     SymbolTable.closeScope();
     // }
 
     // public void visit( ProgName progName )
     // {
-    //     progName.obj = Tab.insert( Obj.Prog, progName.getPName(), Tab.noType );
-    //     Tab.openScope();
+    //     progName.obj = SymbolTable.insert( Obj.Prog, progName.getPName(), SymbolTable.noType );
+    //     SymbolTable.openScope();
     // }
 
     // public void visit( VarDecl varDecl )
     // {
     //     report_info( "Deklarisana promenljiva " + varDecl.getVarName(), varDecl );
-    //     Obj varNode = Tab.insert( Obj.Var, varDecl.getVarName(), varDecl.getType().struct );
+    //     Obj varNode = SymbolTable.insert( Obj.Var, varDecl.getVarName(), varDecl.getType().struct );
     // }
 
     // public void visit( Type type )
     // {
-    //     Obj typeNode = Tab.find( type.getTypeName() );
-    //     if( typeNode == Tab.noObj )
+    //     Obj typeNode = SymbolTable.find( type.getTypeName() );
+    //     if( typeNode == SymbolTable.noObj )
     //     {
     //         report_error( "Nije pronadjen tip " + type.getTypeName() + " u tabeli simbola", null );
-    //         type.struct = Tab.noType;
+    //         type.struct = SymbolTable.noType;
     //     }
     //     else
     //     {
@@ -741,20 +834,20 @@ public class SemanticVisitor extends VisitorAdaptor
     //         else
     //         {
     //             report_error( "Greska: Ime " + type.getTypeName() + " ne predstavlja tip ", type );
-    //             type.struct = Tab.noType;
+    //             type.struct = SymbolTable.noType;
     //         }
     //     }
     // }
 
     // public void visit( MethodDecl methodDecl )
     // {
-    //     if( !returnFound && currentMethod.getType() != Tab.noType )
+    //     if( !returnFound && currentMethod.getType() != SymbolTable.noType )
     //     {
     //         report_error( "Semanticka greska na liniji " + methodDecl.getLine() + ": funcija " + currentMethod.getName() + " nema return iskaz!", null );
     //     }
 
-    //     Tab.chainLocalSymbols( currentMethod );
-    //     Tab.closeScope();
+    //     SymbolTable.chainLocalSymbols( currentMethod );
+    //     SymbolTable.closeScope();
 
     //     returnFound = false;
     //     currentMethod = null;
@@ -762,9 +855,9 @@ public class SemanticVisitor extends VisitorAdaptor
 
     // public void visit( MethodTypeName methodTypeName )
     // {
-    //     currentMethod = Tab.insert( Obj.Meth, methodTypeName.getMethName(), methodTypeName.getType().struct );
+    //     currentMethod = SymbolTable.insert( Obj.Meth, methodTypeName.getMethName(), methodTypeName.getType().struct );
     //     methodTypeName.obj = currentMethod;
-    //     Tab.openScope();
+    //     SymbolTable.openScope();
     //     report_info( "Obradjuje se funkcija " + methodTypeName.getMethName(), methodTypeName );
     // }
 
@@ -800,7 +893,7 @@ public class SemanticVisitor extends VisitorAdaptor
     //     else
     //     {
     //         report_error( "Greska na liniji " + procCall.getLine() + " : ime " + func.getName() + " nije funkcija!", null );
-    //         ////////RESULT = Tab.noType;
+    //         ////////RESULT = SymbolTable.noType;
     //     }
     // }
 
@@ -808,12 +901,12 @@ public class SemanticVisitor extends VisitorAdaptor
     // {
     //     Struct te = addExpr.getExpr().struct;
     //     Struct t = addExpr.getTerm().struct;
-    //     if( te.equals( t ) && te == Tab.intType )
+    //     if( te.equals( t ) && te == SymbolTable.intType )
     //         addExpr.struct = te;
     //     else
     //     {
     //         report_error( "Greska na liniji " + addExpr.getLine() + " : nekompatibilni tipovi u izrazu za sabiranje.", null );
-    //         addExpr.struct = Tab.noType;
+    //         addExpr.struct = SymbolTable.noType;
     //     }
     // }
 
@@ -829,7 +922,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
     // public void visit( Const cnst )
     // {
-    //     cnst.struct = Tab.intType;
+    //     cnst.struct = SymbolTable.intType;
     // }
 
     // public void visit( Var var )
@@ -848,15 +941,15 @@ public class SemanticVisitor extends VisitorAdaptor
     //     else
     //     {
     //         report_error( "Greska na liniji " + funcCall.getLine() + " : ime " + func.getName() + " nije funkcija!", null );
-    //         funcCall.struct = Tab.noType;
+    //         funcCall.struct = SymbolTable.noType;
     //     }
 
     // }
 
     // public void visit( Designator designator )
     // {
-    //     Obj obj = Tab.find( designator.getName() );
-    //     if( obj == Tab.noObj )
+    //     Obj obj = SymbolTable.find( designator.getName() );
+    //     if( obj == SymbolTable.noObj )
     //     {
     //         report_error( "Greska na liniji " + designator.getLine() + " : ime " + designator.getName() + " nije deklarisano! ", null );
     //     }

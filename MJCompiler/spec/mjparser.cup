@@ -193,31 +193,31 @@ terminal invalid;
 
 // declarations [nonterminals]
 nonterminal Program;
-nonterminal ProgramType;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ProgramType;
 nonterminal GlobalDeclList;
 nonterminal GlobalDecl;
 
 nonterminal ClassDecl;
-nonterminal ClassDeclType;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ClassDeclType;
 nonterminal ClassDeclBody;
 nonterminal MethodDeclList;
 
 nonterminal MethodDecl;
-nonterminal MethodDeclType;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodDeclType;
 nonterminal FormPars;
 nonterminal FormParsList;
-nonterminal FormParam;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj FormParam;
 nonterminal VarDeclList;
 
 nonterminal VarDecl;
-nonterminal VarDeclType;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj VarDeclType;
 nonterminal VarIdentList;
-nonterminal VarIdent;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj VarIdent;
 
 nonterminal ConstDecl;
-nonterminal ConstDeclType;
-nonterminal IdentInitList;
-nonterminal IdentInit;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ConstDeclType;
+nonterminal ConstInitList;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ConstInit;
 
 
 
@@ -229,30 +229,28 @@ nonterminal StatementList;
 nonterminal CaseList;
 nonterminal Case;
 
-nonterminal ActPars;
-nonterminal ActParsList;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ActPars;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ActParsList;
 
-nonterminal Condition;
-nonterminal CondTerm;
-nonterminal CondFact;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Condition;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj CondTerm;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj CondFact;
 
-nonterminal Expr;
-nonterminal Addition;
-nonterminal Term;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Expr;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Addition;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Term;
 
-nonterminal Factor;
-nonterminal Designator;
-nonterminal DesignatorBase;
-nonterminal DesignatorTail;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Factor;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
 
 
 
 // miscellaneous [nonterminals]
 nonterminal OpenScope;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Struct ReturnType;
-nonterminal rs.etf.pp1.symboltable.concepts.Struct Type;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Literal;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ReturnType;  // value, type
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Type;        // value, type
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Literal;     // value, type
 
 nonterminal Assignop;
 nonterminal Relop;
@@ -384,19 +382,19 @@ VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declar
 
 
 // const int a = 5, b = 6, c = 11;
-ConstDecl ::= (ConstDecl_Plain) ConstDeclType IdentInitList semicol;
+ConstDecl ::= (ConstDecl_Plain) ConstDeclType ConstInitList semicol;
 
 // const int
 ConstDeclType ::= (ConstDeclType_Plain) CONST_K Type;
 ConstDeclType ::= (ConstDeclType_Err  ) CONST_K error {: parser.report_error( "Bad constant type", null ); :};
 
 // a = 5, b = 6, c = 11
-IdentInitList ::= (IdentInitList_Init)                     IdentInit;
-IdentInitList ::= (IdentInitList_Tail) IdentInitList comma IdentInit;
+ConstInitList ::= (ConstInitList_Init)                     ConstInit;
+ConstInitList ::= (ConstInitList_Tail) ConstInitList comma ConstInit;
 
 // a = 5
-IdentInit ::= (IdentInit_Plain) ident:IdentName Assignop Literal;
-IdentInit ::= (IdentInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
+ConstInit ::= (ConstInit_Plain) ident:IdentName Assignop Literal;
+ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
 
 
 
@@ -530,13 +528,9 @@ Factor ::= (Factor_Expr          ) lparen Expr rparen;
 // ident[ expr ]
 // ident.ident.ident[ expr ].ident
 // ident.ident.ident[ expr ].ident[ expr ]
-Designator ::= (Designator_Plain) DesignatorBase DesignatorTail;
-
-DesignatorBase ::= (DesignatorBase_Plain) ident:Name;
-
-DesignatorTail ::= (DesignatorTail_Field) DesignatorTail dot ident:Name;
-DesignatorTail ::= (DesignatorTail_Elem ) DesignatorTail lbracket Expr rbracket;
-DesignatorTail ::= (DesignatorTail_Empty) ;
+Designator ::= (Designator_Ident  ) ident:Name;
+Designator ::= (Designator_Field  ) Designator dot ident:Name;
+Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
 
 
 
