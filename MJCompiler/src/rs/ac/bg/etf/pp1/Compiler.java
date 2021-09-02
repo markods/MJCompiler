@@ -64,9 +64,9 @@ public class Compiler
         if( fLex != null )
         {
             // save the lex results to the output file
-            TokenList tokens = lex( fInput, fLex );
+            TokenList tokenList = lex( fInput, fLex );
             // if the lexer could not lex the input file, return
-            if( tokens == null ) return false;
+            if( tokenList == null ) return false;
         }
 
         // if parse output file or the object file is specified
@@ -485,7 +485,7 @@ public class Compiler
             errors.add( CompilerError.ARGUMENTS_ERROR, "Input file not specified" );
         }
 
-        // if there are errors log them and return
+        // if there are errors, log them and return
         if( errors.hasErrors() )
         {
             resetParams();

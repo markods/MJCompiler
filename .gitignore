@@ -17,6 +17,7 @@ ast/
 Lexer.java
 Parser.java
 ITokenCode.java
+__main__.mj
 
 
 

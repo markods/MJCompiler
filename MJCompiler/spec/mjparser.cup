@@ -193,31 +193,31 @@ terminal invalid;
 
 // declarations [nonterminals]
 nonterminal Program;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ProgramType;
+nonterminal rs.ac.bg.etf.pp1.Symbol ProgramType;
 nonterminal GlobalDeclList;
 nonterminal GlobalDecl;
 
 nonterminal ClassDecl;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ClassDeclType;
+nonterminal rs.ac.bg.etf.pp1.Symbol ClassDeclType;
 nonterminal ClassDeclBody;
 nonterminal MethodDeclList;
 
 nonterminal MethodDecl;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodDeclType;
+nonterminal rs.ac.bg.etf.pp1.Symbol MethodDeclType;
 nonterminal FormPars;
 nonterminal FormParsList;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj FormParam;
+nonterminal rs.ac.bg.etf.pp1.Symbol FormParam;
 nonterminal VarDeclList;
 
 nonterminal VarDecl;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj VarDeclType;
+nonterminal rs.ac.bg.etf.pp1.Symbol VarDeclType;
 nonterminal VarIdentList;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj VarIdent;
+nonterminal rs.ac.bg.etf.pp1.Symbol VarIdent;
 
 nonterminal ConstDecl;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ConstDeclType;
+nonterminal rs.ac.bg.etf.pp1.Symbol ConstDeclType;
 nonterminal ConstInitList;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ConstInit;
+nonterminal rs.ac.bg.etf.pp1.Symbol ConstInit;
 
 
 
@@ -229,28 +229,28 @@ nonterminal StatementList;
 nonterminal CaseList;
 nonterminal Case;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ActPars;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ActParsList;
+nonterminal rs.ac.bg.etf.pp1.Symbol ActPars;
+nonterminal rs.ac.bg.etf.pp1.Symbol ActParsList;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Condition;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj CondTerm;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj CondFact;
+nonterminal rs.ac.bg.etf.pp1.Symbol Condition;
+nonterminal rs.ac.bg.etf.pp1.Symbol CondTerm;
+nonterminal rs.ac.bg.etf.pp1.Symbol CondFact;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Expr;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Addition;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Term;
+nonterminal rs.ac.bg.etf.pp1.Symbol Expr;
+nonterminal rs.ac.bg.etf.pp1.Symbol Addition;
+nonterminal rs.ac.bg.etf.pp1.Symbol Term;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Factor;
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
+nonterminal rs.ac.bg.etf.pp1.Symbol Factor;
+nonterminal rs.ac.bg.etf.pp1.Symbol Designator;
 
 
 
 // miscellaneous [nonterminals]
 nonterminal OpenScope;
 
-nonterminal rs.etf.pp1.symboltable.concepts.Obj ReturnType;  // value, type
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Type;        // value, type
-nonterminal rs.etf.pp1.symboltable.concepts.Obj Literal;     // value, type
+nonterminal rs.ac.bg.etf.pp1.Symbol ReturnType;  // value, type
+nonterminal rs.ac.bg.etf.pp1.Symbol Type;        // value, type
+nonterminal rs.ac.bg.etf.pp1.Symbol Literal;     // value, type
 
 nonterminal Assignop;
 nonterminal Relop;

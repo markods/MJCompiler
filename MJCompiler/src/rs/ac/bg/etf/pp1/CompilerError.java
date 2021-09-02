@@ -73,7 +73,7 @@ public class CompilerError
     public String toString()
     {
         String info = getAdditionalInfo();
-        if( info != "" ) info = "\n" + info;
+        if( !"".equals( info ) ) info = "\n" + info;
 
         int line = NO_INDEX;
         int col = NO_INDEX;

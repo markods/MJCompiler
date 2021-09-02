@@ -631,10 +631,10 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Designator_Ident curr )
     {
         // try to find the variable in the symbol table
-        curr.obj = SymbolTable.findObj( curr.getName() );
+        curr.symbol = SymbolTable.findSymbol( curr.getName() );
 
         // if the variable does not exist in the current scopes
-        if( curr.obj == SymbolTable.noObj )
+        if( curr.symbol == SymbolTable.noSym )
         {
             // then it has not been declared, return
             report_error( curr, "This variable has not been declared", false );
@@ -646,18 +646,18 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Designator_Field curr )
     {
         // set the current designator to the default value
-        curr.obj = SymbolTable.noObj;
+        curr.symbol = SymbolTable.noSym;
 
         // if the previous designator segment does not exist
         Designator prev = curr.getDesignator();
-        if( prev.obj == SymbolTable.noObj )
+        if( prev.symbol == SymbolTable.noSym )
         {
             // an error must have been reported somewhere in the previous segments, return
             return;
         }
 
         // if the previous variable is not a class (doesn't have inner methods)
-        Struct prevType = prev.obj.getType();
+        Struct prevType = prev.symbol.getType();
         if( prevType.getKind() != Struct.Class )
         {
             // report an error and return
@@ -690,7 +690,7 @@ public class SemanticVisitor extends VisitorAdaptor
         }
 
         // if the previous variable doesn't contain the current field/member
-        if( curr.obj == SymbolTable.noObj )
+        if( curr.symbol == SymbolTable.noSym )
         {
             // report an error and return
             report_error( curr, "The requested member does not exist inside the variable", false );
@@ -702,17 +702,17 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Designator_ArrElem curr )
     {
         // set the current designator to the default value
-        curr.obj = SymbolTable.noObj;
+        curr.symbol = SymbolTable.noSym;
 
         // if the previous designator segment does not exist
         Designator prev = curr.getDesignator();
-        if( prev.obj == SymbolTable.noObj )
+        if( prev.symbol == SymbolTable.noSym )
         {
             // an error must have been reported somewhere in the previous segments, return
             return;
         }
 
-        Struct prevType = prev.obj.getType();
+        Struct prevType = prev.symbol.getType();
         // if the previous variable is not an array
         if( prevType.getKind() != Struct.Array )
         {

@@ -84,8 +84,8 @@ public class Log4J
     private interface ILogFuncB { void log( Object msg, Throwable t ); }
     
     private final Logger logger;
-    private ILogFuncA[] logFuncA;
-    private ILogFuncB[] logFuncB;
+    private final ILogFuncA[] logFuncA;
+    private final ILogFuncB[] logFuncB;
 
 
     private Log4J( Class clazz )

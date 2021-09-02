@@ -3,16 +3,33 @@ package rs.ac.bg.etf.pp1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import rs.ac.bg.etf.pp1.util.ScopeGuard;
 import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.etf.pp1.symboltable.Tab;
-import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Scope;
-import rs.etf.pp1.symboltable.concepts.Struct;
+import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 
 public class SymbolTable
 {
+    // IMPORTANT: don't use the Tab's types and symbols! (for compatibility with Symbol and SymbolType classes)
+    // +   actually, don't use the Tab class at all (it's deprecated), use the SymbolTable class instead
+    public static final SymbolType noType   = SymbolType.newPrimitive( SymbolType.NO_TYPE );
+    public static final SymbolType intType  = SymbolType.newPrimitive( SymbolType.INT     );
+    public static final SymbolType charType = SymbolType.newPrimitive( SymbolType.CHAR    );
+    public static final SymbolType boolType = SymbolType.newPrimitive( SymbolType.BOOL    );
+    public static final SymbolType nullType = SymbolType.newPrimitive( SymbolType.CLASS   );
+    public static final Symbol noSym = Symbol.newConst( "@noObj", noType, 0 );
+
+    // this value is copied over from the Tab.init() method
+    private static int currScopeLevel = -1;
+
     static
+    {
+        init();
+    }
+
+    private static void init()
     {
         // initialize the universal scope (the first scope in the symbol table)
         // +   that way, chrObj, ordObj and lenObj can be final
@@ -21,87 +38,117 @@ public class SymbolTable
         //     +   constants [obj]: eol, null
         //     +   methods [obj]:   chr( i ), ord( ch ), len( arr )
         Tab.init();
+        // throw away what was initialized, but keep the scope level as -2
+        closeScope();
+        // initialize the global scope (-1st scope)
+        Scope global = openScope();
 
-        noType   = Tab.noType;
-        intType  = Tab.intType;
-        charType = Tab.charType;
-        nullType = Tab.nullType;
-
-        noObj  = Tab.noObj;
-        chrObj = Tab.chrObj;
-        ordObj = Tab.ordObj;
-        lenObj = Tab.lenObj;
+        // add the global types to the global scope
+        global.addToLocals( Symbol.newType( "@noType", noType   ) );
+        global.addToLocals( Symbol.newType( "int",     intType  ) );
+        global.addToLocals( Symbol.newType( "char",    charType ) );
+        global.addToLocals( Symbol.newType( "bool",    boolType ) );
+        global.addToLocals( Symbol.newType( "null",    nullType ) );
+        global.addToLocals( noSym );
     
+        // char chr( int i );
+        try( ScopeGuard guard = new ScopeGuard(); )
+        {
+            _scope().addToLocals( Symbol.newFormalParam( "i", intType, 0, _scopeLevel() ) );
+            
+            // IMPORTANT: set the method's formal parameters after all locals have been added to the current scope!
+            // +   the method's formal parameters aren't automatically updated due to the way the _params function is implemented)
+            global.addToLocals( Symbol.newMethod( "chr", charType, Symbol.NO_VALUE, _locals() ) );
+        }
+
+        // int ord( char c );
+        try( ScopeGuard guard = new ScopeGuard(); )
+        {
+            _scope().addToLocals( Symbol.newFormalParam( "c", charType, 0, _scopeLevel() ) );
+            global.addToLocals( Symbol.newMethod( "ord", intType, Symbol.NO_VALUE, _locals() ) );
+        }
+
+        // int len( noType arr[] );
+        try( ScopeGuard guard = new ScopeGuard(); )
+        {
+            _scope().addToLocals( Symbol.newFormalParam( "arr", SymbolType.newArray( noType ), 0, _scopeLevel() ) );
+            global.addToLocals( Symbol.newMethod( "len", intType, Symbol.NO_VALUE, _locals() ) );
+        }
+
+        // '\n'
+        try( ScopeGuard guard = new ScopeGuard(); )
+        {
+            global.addToLocals( Symbol.newConst( "eol", charType, '\n' ) );
+        }
     }
-
-	public static final Struct noType;
-	public static final Struct intType;
-    public static final Struct charType;
-    public static final Struct nullType;
-    
-	public static final Obj noObj;
-	public static final Obj chrObj;
-    public static final Obj ordObj;
-    public static final Obj lenObj;
 
     private SymbolTable() {}
 
 
 
-    // sets the object's local variables to the ones in the inner scope
-    // +   important: the object must not be in the innermost scope! (otherwise the object will contain itself as a local variable!!!)
-	public static void chainLocalSymbols( Obj objectt )
-    {
-        Tab.chainLocalSymbols( objectt );
-	}
-
-    // sets the structure's local variables to the ones in the inner scope
-    // +   important: the structure must not be in the innermost scope! (otherwise the object will contain itself as a local variable!!!)
-	public static void chainLocalSymbols( Struct clazz )
-    {
-        Tab.chainLocalSymbols( clazz );
-	}
-	
+    // get the current scope
+    public static Scope _scope() { return Tab.currentScope(); }
+    // get the current scope's local symbols
+    public static SymbolDataStructure _locals() { return _scope().getLocals(); }
+    // get the current scope's level
+    public static int _scopeLevel() { return currScopeLevel; }
+    
     // open a new scope
-	public static void openScope()
+    public static Scope openScope()
     {
         Tab.openScope();
-	}
+        currScopeLevel++;
 
+        return _scope();
+    }
     // close the most recent scope
-	public static void closeScope()
+    public static void closeScope()
     {
+        if( _scope() == null ) return;
+
         Tab.closeScope();
-	}
+        currScopeLevel--;
+    }
 
-    // return the current scope
-	public static Scope currentScope()
+
+    // try to add the given symbol to the symbol table and return if the addition was successful
+    public static boolean addSymbol( Symbol symbol )
     {
-		return Tab.currentScope();
-	}
+        if( symbol == null ) return false;
+        Symbol existing = findSymbol( symbol._name() );
 
+        // if a type with the given name has already been defined, this symbol cannot redefine it or hide it
+        if( existing._kind() == Symbol.TYPE ) return false;
 
-    // creates a new Obj, adds it to the symbol table and returns it
-    // +   if the Obj already exists, return the existing Obj (if it exists, otherwise the default noObj -- should never happen)
-    // +   always returns a Obj (noObj instead of null)
-	public static Obj insertObj( int kind, String name, Struct type )
-    {
-        return Tab.insert( kind, name, type );
-	}
+        // return if the symbol has been added to the current scope
+        return _scope().addToLocals( symbol );
+    }
 
-    // find the Obj with the given name in the symbol table
+    // find the symbol with the given name in the symbol table
     // +   start the search from the most recent open scope
     // +   if the object cannot be found in the current scope, go to its parent scope and search there
-    // +   return the found object, or noObj if the search was unsuccessful
-	public static Obj findObj( String name )
+    // +   return the found object, or noSymbol if the search was unsuccessful
+    public static Symbol findSymbol( String name )
     {
-        return Tab.find( name );
-	}
-	
+        Symbol symbol = null;
+        
+        for( Scope curr = _scope(); curr != null; curr = curr.getOuter() )
+        {
+            SymbolDataStructure locals = curr.getLocals();
+            if( locals == null ) break;
+
+            symbol = ( Symbol )locals.searchKey( name );
+            // if a match has been found, break
+            if( symbol != null ) break;
+        }
+
+        return ( symbol != null ) ? symbol : noSym;
+    }
+    
 
     
     // return the symbol table as string
-	public static String dump()
+    public static String dump()
     {
         String output = null;
         
@@ -120,5 +167,5 @@ public class SymbolTable
         }
         
         return output;
-	}
+    }
 }
