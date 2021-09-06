@@ -78,11 +78,21 @@ public class CompilerErrorList
     @Override
     public String toString()
     {
+        int[] count = new int[ CompilerError.ERROR_TYPES ];
+        
         StringBuilder builder = new StringBuilder();
         for( CompilerError error : errorList )
         {
             builder.append( error.toString() ).append( "\n" );
+            count[ error.getKind() ]++;
         }
+        builder.append( "\n" );
+        builder.append(
+            String.format( "Lexer: %-3d Syntax: %-3d Semantic: %-3d\n",
+            count[ CompilerError.LEXICAL_ERROR ],
+            count[ CompilerError.SYNTAX_ERROR ],
+            count[ CompilerError.SEMANTIC_ERROR ]
+        ) );
 
         return builder.toString();
     }

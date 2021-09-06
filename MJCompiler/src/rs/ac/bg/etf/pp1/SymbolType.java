@@ -1,26 +1,31 @@
 package rs.ac.bg.etf.pp1;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
+import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 
-// IMPORTANT: don't add any new fields to this class, otherwise there will be problems with the Tab class
 public class SymbolType extends Struct
 {
-    public static final int NO_TYPE = Struct.None;
-    public static final int INT     = Struct.Int;
-    public static final int CHAR    = Struct.Char;
-    public static final int BOOL    = Struct.Bool;
+    public static final int NO_VALUE   = 0;
 
-    public static final int ARRAY   = Struct.Array;
-    public static final int ENUM    = Struct.Enum;
-    public static final int CLASS   = Struct.Class;
+    public static final int ANY_TYPE = Struct.None;
+    public static final int INT      = Struct.Int;    // redefinable
+    public static final int CHAR     = Struct.Char;   // redefinable
+    public static final int BOOL     = Struct.Bool;   // redefinable
+
+    public static final int ARRAY    = Struct.Array;
+    public static final int ENUM     = Struct.Enum;
+    public static final int CLASS    = Struct.Class;
     public static final int INTERFACE = Struct.Interface;
 
     // // None, Int, Char, Array, Class, Bool, Enum, Interface
     // private int kind;
+
+    private String name;
 
     // // niz: tip elementa niza
     // // klasa: tip roditeljske klase
@@ -36,37 +41,54 @@ public class SymbolType extends Struct
     // // enum: referenca na hes tabelu u kojoj se nalaze konstante nabrajanja
     // private SymbolDataStructure members;
 
-    public SymbolType( int kind )
-    {
-        this( kind, null, null );
-    }
+    // inheritance level, zero for primitive types
+    private int level = 0;
 
-    private SymbolType( int kind, SymbolType type, SymbolMap members )
+    private SymbolType( int kind, String name, SymbolType type, SymbolMap members )
     {
         super( kind );
+        _name( name );
         _type( type );
         _members( members );
     }
 
     // NONE, INT, CHAR, BOOL, ARRAY, ENUM, CLASS, INTERFACE
-    public static SymbolType newPrimitive( int kind )                           { return new SymbolType( kind,                 null, null ); }
-    public static SymbolType newArray    ( SymbolType type )                    { return new SymbolType( SymbolType.ARRAY,     type, null ); }
-    public static SymbolType newEnum     ( SymbolMap members )                  { return new SymbolType( SymbolType.ENUM,      null, members ); }
-    public static SymbolType newClass    ( SymbolType type, SymbolMap members ) { return new SymbolType( SymbolType.CLASS,     type, members ); }
-    public static SymbolType newInterface( SymbolType type, SymbolMap members ) { return new SymbolType( SymbolType.INTERFACE, type, members ); }
+    public static SymbolType newPrimitive( String name, int kind )                           { return new SymbolType( kind,                 name, null, null    ); }
+    public static SymbolType newArray    ( String name, SymbolType type )                    { return new SymbolType( SymbolType.ARRAY,     name, type, null    )._members(  new ArrayList<Obj>(){{ add( Symbol.newArrayElem( "@elem", type ) ); }}  ); }
+    public static SymbolType newEnum     ( String name, SymbolMap members )                  { return new SymbolType( SymbolType.ENUM,      name, null, members ); }
+    public static SymbolType newClass    ( String name, SymbolType type, SymbolMap members ) { return new SymbolType( SymbolType.CLASS,     name, type, members ); }
+    public static SymbolType newInterface( String name, SymbolType type, SymbolMap members ) { return new SymbolType( SymbolType.INTERFACE, name, type, members ); }
 
 
     // <symbol type>'s kind
     public int _kind() { return getKind(); }
 
+    public String _name() { return name; }
+    protected SymbolType _name( String name ) { this.name = name; return this; }
+
+    public int _level() { return level; }
+    protected SymbolType _level( int level ) { this.level = level; return this; }
+
     // ARRAY: array element type
     // CLASS: supertype
     public SymbolType _type() { return ( SymbolType )getElemType(); }
-    public SymbolType _type( SymbolType type ) { setElementType( type ); return this; }
+    public SymbolType _type( SymbolType type )
+    {
+        if( type == null )
+        {
+            type = SymbolTable.anyType;
+            // type can still be null if the SymbolTable's anyType has not been initialized
+            if( type == null ) type = this;
+        }
+        
+        setElementType( type );
+        _level( ( type != this ) ? type.level + 1 : 0 );
+        return this;
+    }
 
     // CLASS: the list of implemented interfaces
     public Collection<Struct> _interfaceList() { return getImplementedInterfaces(); }
-    public SymbolType _addInterface( SymbolType type ) { addImplementedInterface( type ); return this; }
+    public SymbolType _addInterface( SymbolType type ) { if( type != null ) addImplementedInterface( type ); return this; }
 
     // CLASS: number of fields
     public int _fieldCount() { return getNumberOfFields(); }
@@ -74,14 +96,102 @@ public class SymbolType extends Struct
     // CLASS, INTERFACE: fields and methods
     // ENUM: constants
     public SymbolMap _members() { return ( SymbolMap )getMembersTable(); }
-    public SymbolType _members( SymbolMap symbols ) { setMembers( symbols ); return this; }
+    public SymbolType _members( SymbolMap symbols ) { setMembers( ( symbols != null ) ? symbols : new SymbolMap() ); return this; }
     public SymbolType _members( SymbolDataStructure symbols ) { setMembers( new SymbolMap( symbols ) ); return this; }
+    public SymbolType _members( Collection<Obj> symbols ) { setMembers( new SymbolMap( symbols ) ); return this; }
     
 
-    public boolean isEqualTo( SymbolType type ) { return equals( type ); }
-    public boolean isReferenceType() { return isRefType(); }
-    public boolean isCompatibleWith( SymbolType type ) { return compatibleWith( type ); }
-    public boolean isAssignableTo( SymbolType type ) { return assignableTo( type ); }
+    public boolean isAnyType()   { return _kind() == ANY_TYPE;  }
+    public boolean isInt()       { return _kind() == INT;       }
+    public boolean isChar()      { return _kind() == CHAR;      }
+    public boolean isBool()      { return _kind() == BOOL;      }
+
+    public boolean isArray()     { return _kind() == ARRAY;     }
+    public boolean isEnum()      { return _kind() == ENUM;      }
+    public boolean isClass()     { return _kind() == CLASS;     }
+    public boolean isInterface() { return _kind() == INTERFACE; }
+
+
+    public boolean isNullType()      { return this == SymbolTable.nullType; }
+    public boolean isPrimitiveType() { return this == SymbolTable.intType || this == SymbolTable.charType || this == SymbolTable.boolType; }
+    public boolean isReferenceType() { return _kind() == CLASS || _kind() == ARRAY; }
+
+    public boolean isEqualTo       ( SymbolType type ) { return isEqual( this, type ); }
+    public boolean isEquivalentTo  ( SymbolType type ) { return isEquivalent( this, type ); }
+    public boolean isCompatibleWith( SymbolType type ) { return isCompatibleWith( this, type ); }
+    public boolean isAssignableFrom( SymbolType type ) { return isAssignableFrom( this, type ); }
+
+
+    public static boolean isEqual( SymbolType typeA, SymbolType typeB )
+    {
+        if( typeA == typeB ) return true;
+        if( typeA == null || typeB == null ) return false;
+
+        return typeA._kind() == typeB._kind()
+            && isEqual( typeA._type(), typeB._type() )
+            && typeA._interfaceList().equals( typeB._interfaceList() )   // FIXME: check if this is a element-by-element comparison
+            && SymbolMap.isEqual( typeA._members(), typeB._members() );
+    }
+
+    public static boolean isInstanceOf( SymbolType type, SymbolType supertype )
+    {
+        if( type == supertype ) return true;
+        if( type == null || supertype == null ) return false;
+        if( !type.isClass() || !supertype.isClass() ) return false;
+
+        // if the type is higher in the inheritance tree than it supertype, it cannot be its instance, return
+        // +   higher in the inheritance tree <=> lower level
+        if( type.level < supertype.level ) return false;
+        
+        boolean isSubclass = false;
+        for( SymbolType curr = type; curr.level >= supertype.level;   )
+        {
+            // if a match has been found, save that it has been found and break
+            if( curr.name.equals( supertype.name ) )
+            {
+                isSubclass = true;
+                break;
+            }
+
+            // if we are at the root of the tree and a match hasn't been found, break
+            if( curr.isAnyType() ) break;
+            
+            curr = curr._type();
+        }
+
+        return isSubclass;
+    }
+
+    public static boolean isEquivalent( SymbolType left, SymbolType right )
+    {
+        if( left == right ) return true;
+        if( left == null || right == null ) return false;
+
+        return left.name == right.name
+            || ( left.isArray() && right.isArray() && isEquivalent( left._type(), right._type() ) );
+        
+    }
+
+    public static boolean isCompatibleWith( SymbolType left, SymbolType right )
+    {
+        if( left == right ) return true;
+        if( left == null || right == null ) return false;
+
+        return isEquivalent( left, right )
+            || ( left.isNullType() && right.isRefType()  )
+            || ( left.isRefType()  && right.isNullType() );
+    }
+
+    public static boolean isAssignableFrom( SymbolType dst, SymbolType src )
+    {
+        if( dst == src ) return true;
+        if( dst == null || src == null ) return false;
+
+        return isEquivalent( dst, src )
+            || ( dst.isRefType() && src.isNullType() )
+            || isInstanceOf( src, dst )
+            || ( dst.isArray() && dst._type().isAnyType() && src.isArray() );   // assignment of array to formal parameter of type <any array>
+    }
 
 
 
@@ -94,65 +204,36 @@ public class SymbolType extends Struct
     @Override
     public boolean equals( Object obj )
     {
-        // if the references are equal, return true
-        if( super.equals( obj ) ) return true;
         if( !( obj instanceof SymbolType ) ) return false;
-
-        return equals( ( SymbolType )obj );
+        return isEqual( this, ( SymbolType )obj );
     }
 
     @Deprecated
     @Override
     public boolean equals( Struct other )
     {
-        SymbolType otherType = ( SymbolType )other;
-        if( _kind() != otherType._kind() ) return false;
-
-        switch( _kind() )
-        {
-            case ARRAY:
-            {
-                // the arrays must have the same element type
-                return _type().equals( otherType._type() );
-            }
-            case CLASS:
-            {
-                // the classes must have the same members in the same order
-                return SymbolMap.isEqual( _members(), otherType._members() );
-            }
-            default:
-            {
-                // the <other type> must be the same object reference
-                return this == otherType;
-            }
-        }
+        return isEqual( this, ( SymbolType )other );
     }
 
     @Deprecated
     @Override
     public boolean isRefType()
     {
-        return _kind() == CLASS || _kind() == ARRAY;
+        return isReferenceType();
     }
 
     @Deprecated
     @Override
     public boolean compatibleWith( Struct other )
     {
-        SymbolType otherType = ( SymbolType )other;
-        return ( this == SymbolTable.nullType && otherType.isRefType() )
-            || ( otherType == SymbolTable.nullType && this.isRefType() )
-            || this.equals( otherType );
+        return isCompatibleWith( this, ( SymbolType )other );
     }
 
     @Deprecated
     @Override
     public boolean assignableTo( Struct destination )
     {
-        SymbolType destType = ( SymbolType )destination;
-        return ( this == SymbolTable.nullType && destType.isRefType() )
-            || ( this._kind() == ARRAY && destType._kind() == ARRAY && destType._type() == SymbolTable.noType )
-            || this.equals( destType );
+        return isAssignableFrom( ( SymbolType )destination, this );
     }
     
 }

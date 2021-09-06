@@ -252,10 +252,10 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ReturnType;  // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Type;        // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Literal;     // value, type
 
-nonterminal Assignop;
-nonterminal Relop;
-nonterminal Addop;
-nonterminal Mulop;
+nonterminal rs.ac.bg.etf.pp1.Symbol Assignop;
+nonterminal rs.ac.bg.etf.pp1.Symbol Relop;
+nonterminal rs.ac.bg.etf.pp1.Symbol Addop;
+nonterminal rs.ac.bg.etf.pp1.Symbol Mulop;
 
 
 
@@ -541,10 +541,10 @@ Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
 OpenScope ::= (OpenScope_Plain) ;
 
 // void | type
-ReturnType ::= (ReturnType_Void ) VOID_K:ReturnType;
-ReturnType ::= (ReturnType_Ident) ident :ReturnType;
+ReturnType ::= (ReturnType_Void ) VOID_K:TypeName;
+ReturnType ::= (ReturnType_Ident) ident :TypeName;
 // int | bool | char | ident
-Type ::= (Type_Ident) ident:Type;
+Type ::= (Type_Ident) ident:TypeName;
 // 1202 | 'c' | true
 Literal ::= (Literal_Int ) int_lit :Literal;
 Literal ::= (Literal_Char) char_lit:Literal;
@@ -553,12 +553,12 @@ Literal ::= (Literal_Bool) bool_lit:Literal;
 // =
 Assignop ::= (Assignop_Assign) assign:Assignop;
 // ==  |  !=  |  >  |  >=  |  <  |  <=
-Relop ::= (Relop_Eq ) eq:Relop;
-Relop ::= (Relop_Neq) ne:Relop;
-Relop ::= (Relop_Gt ) gt:Relop;
-Relop ::= (Relop_Geq) ge:Relop;
-Relop ::= (Relop_Lt ) lt:Relop;
-Relop ::= (Relop_Leq) le:Relop;
+Relop ::= (Relop_Eq) eq:Relop;
+Relop ::= (Relop_Ne) ne:Relop;
+Relop ::= (Relop_Gt) gt:Relop;
+Relop ::= (Relop_Ge) ge:Relop;
+Relop ::= (Relop_Lt) lt:Relop;
+Relop ::= (Relop_Le) le:Relop;
 // +  |  -
 Addop ::= (Addop_Plus ) plus :Addop;
 Addop ::= (Addop_Minus) minus:Addop;

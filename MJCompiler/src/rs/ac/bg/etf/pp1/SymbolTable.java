@@ -14,12 +14,15 @@ public class SymbolTable
 {
     // IMPORTANT: don't use the Tab's types and symbols! (for compatibility with Symbol and SymbolType classes)
     // +   actually, don't use the Tab class at all (it's deprecated), use the SymbolTable class instead
-    public static final SymbolType noType   = SymbolType.newPrimitive( SymbolType.NO_TYPE );
-    public static final SymbolType intType  = SymbolType.newPrimitive( SymbolType.INT     );
-    public static final SymbolType charType = SymbolType.newPrimitive( SymbolType.CHAR    );
-    public static final SymbolType boolType = SymbolType.newPrimitive( SymbolType.BOOL    );
-    public static final SymbolType nullType = SymbolType.newPrimitive( SymbolType.CLASS   );
-    public static final Symbol noSym = Symbol.newConst( "@noObj", noType, 0 );
+    // IMPORTANT: initialize anyType first, since it's the root type for all other types, and its supertype is itself
+    public static final SymbolType anyType  = SymbolType.newPrimitive( "@anyType",  SymbolType.ANY_TYPE );
+    public static final SymbolType anyArrayType = SymbolType.newArray( "@anyArray", anyType             );
+    public static final SymbolType intType  = SymbolType.newPrimitive( "int",       SymbolType.INT      );
+    public static final SymbolType charType = SymbolType.newPrimitive( "char",      SymbolType.CHAR     );
+    public static final SymbolType boolType = SymbolType.newPrimitive( "bool",      SymbolType.BOOL     );
+    public static final SymbolType nullType = SymbolType.newPrimitive( "class",     SymbolType.CLASS    );
+    public static final Symbol noSym   = Symbol.newConst( "@noSym", anyType, 0 );
+    public static final Symbol voidSym = Symbol.newConst( "void", anyType, 0 );
 
     // this value is copied over from the Tab.init() method
     private static int currScopeLevel = -1;
@@ -44,12 +47,13 @@ public class SymbolTable
         Scope global = openScope();
 
         // add the global types to the global scope
-        global.addToLocals( Symbol.newType( "@noType", noType   ) );
-        global.addToLocals( Symbol.newType( "int",     intType  ) );
-        global.addToLocals( Symbol.newType( "char",    charType ) );
-        global.addToLocals( Symbol.newType( "bool",    boolType ) );
-        global.addToLocals( Symbol.newType( "null",    nullType ) );
+        global.addToLocals( Symbol.newType( "@any", anyType  ) );
+        global.addToLocals( Symbol.newType( "int",  intType  ) );
+        global.addToLocals( Symbol.newType( "char", charType ) );
+        global.addToLocals( Symbol.newType( "bool", boolType ) );
+        global.addToLocals( Symbol.newType( "null", nullType ) );
         global.addToLocals( noSym );
+        global.addToLocals( voidSym );
     
         // char chr( int i );
         try( ScopeGuard guard = new ScopeGuard(); )
@@ -58,21 +62,21 @@ public class SymbolTable
             
             // IMPORTANT: set the method's formal parameters after all locals have been added to the current scope!
             // +   the method's formal parameters aren't automatically updated due to the way the _params function is implemented)
-            global.addToLocals( Symbol.newMethod( "chr", charType, Symbol.NO_VALUE, _locals() ) );
+            global.addToLocals( Symbol.newFunction( "chr", charType, Symbol.NO_VALUE, _locals() ) );
         }
 
         // int ord( char c );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
             _scope().addToLocals( Symbol.newFormalParam( "c", charType, 0, _scopeLevel() ) );
-            global.addToLocals( Symbol.newMethod( "ord", intType, Symbol.NO_VALUE, _locals() ) );
+            global.addToLocals( Symbol.newFunction( "ord", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
-        // int len( noType arr[] );
+        // int len( anyType arr[] );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
-            _scope().addToLocals( Symbol.newFormalParam( "arr", SymbolType.newArray( noType ), 0, _scopeLevel() ) );
-            global.addToLocals( Symbol.newMethod( "len", intType, Symbol.NO_VALUE, _locals() ) );
+            _scope().addToLocals( Symbol.newFormalParam( "arr", anyArrayType, 0, _scopeLevel() ) );
+            global.addToLocals( Symbol.newFunction( "len", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
         // '\n'
@@ -117,8 +121,11 @@ public class SymbolTable
         if( symbol == null ) return false;
         Symbol existing = findSymbol( symbol._name() );
 
-        // if a type with the given name has already been defined, this symbol cannot redefine it or hide it
-        if( existing._kind() == Symbol.TYPE ) return false;
+        // if a type with the given name has already been defined, and is not redefinable, this symbol cannot redefine it or hide it
+        if( existing != noSym
+            && existing._kind() == Symbol.TYPE
+            && !existing._type().isPrimitiveType()
+        ) return false;
 
         // return if the symbol has been added to the current scope
         return _scope().addToLocals( symbol );

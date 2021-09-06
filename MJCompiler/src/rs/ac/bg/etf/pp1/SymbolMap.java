@@ -4,19 +4,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
-public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
+public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>, Cloneable
 {
-    protected Map<String, Symbol> symbolMap = new LinkedHashMap<>();
+    protected LinkedHashMap<String, Symbol> symbolMap = new LinkedHashMap<>();
 
     public SymbolMap() { }
 
     public SymbolMap( Collection<Obj> symbols )
     {
+        if( symbols == null ) return;
         symbols( symbols );
     }
 
@@ -27,11 +27,22 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
 
 
     // add a symbol to the symbol map
-    public boolean addSymbol( Symbol symbol ) { return insertKey( symbol ); }
+    public boolean addSymbol( Symbol symbol )
+    {
+        if( symbol == null ) return false;
+        return null == symbolMap.putIfAbsent( symbol.getName(), symbol );
+    }
     // remove a symbol with the given name from the symbol map
-    public boolean removeSymbol( String name ) { return deleteKey( name ); }
+    public boolean removeSymbol( String name )
+    {
+        return null != symbolMap.remove( name );
+    }
     // get a symbol with the given name from the symbol map
-    public Symbol findSymbol( String name ) { return ( Symbol )searchKey( name ); }
+    public Symbol findSymbol( String name )
+    {
+        Symbol result = symbolMap.get( name );
+        return ( result != null ) ? result : SymbolTable.noSym;
+    }
 
 
     // get the symbols in the symbol map in the order they were added to the map
@@ -40,17 +51,22 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
     public SymbolMap _symbols( Collection<Symbol> symbols )
     {
         symbolMap.clear();
+        if( symbols == null ) return this;
+
         for( Symbol symbol : symbols )
         {
+            if( symbol == null ) continue;
             insertKey( symbol );
         }
+        
         return this;
     }
 
     // get the number of symbols in the symbol map
-    public int size() { return numSymbols(); }
+    public int size() { return symbolMap.size(); }
 
 
+    // get an iterator through the symbol map elements
     @Override
     public Iterator<Symbol> iterator()
     {
@@ -70,14 +86,27 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
         
         while( iterA.hasNext() && iterB.hasNext() )
         {
-            Symbol objA = iterA.next();
-            Symbol objB = iterB.next();
-            if( !objA.equals( objB ) ) return false;
+            Symbol symbolA = iterA.next();
+            Symbol symbolB = iterB.next();
+            if( !Symbol.isEqual( symbolA, symbolB ) ) return false;
         }
 
         return true;
     }
-    
+
+    // clone the symbol map
+    @Override
+    public SymbolMap clone()
+    {
+        SymbolMap result = new SymbolMap();
+
+        for( Symbol symbol : _symbols() )
+        {
+            result.addSymbol( symbol.clone() );
+        }
+
+        return result;
+    }
 
     // return the symbol map as a string
     @Override
@@ -105,10 +134,7 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
     @Override
     public boolean insertKey( Obj symbol )
     {
-        if( symbolMap.containsKey( symbol.getName() ) ) return false;
-
-        symbolMap.put( symbol.getName(), ( Symbol )symbol );
-        return true;
+        return addSymbol( ( Symbol )symbol );
     }
 
     // remove a symbol with the given name from the symbol map
@@ -116,13 +142,7 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
     @Override
     public boolean deleteKey( String name )
     {
-        Obj symbol = null;
-        if( symbolMap.containsKey( name ) )
-        {
-            symbol = symbolMap.remove( name );
-        }
-
-        return !symbolMap.containsKey( name ) && ( symbol != null );
+        return removeSymbol( name );
     }
 
     // get a symbol with the given name from the symbol map
@@ -130,7 +150,7 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
     @Override
     public Obj searchKey( String name )
     {
-        return symbolMap.get( name );
+        return findSymbol( name );
     }
 
 
@@ -149,10 +169,10 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
         symbolMap.clear();
         if( symbols == null ) return;
         
-        for( Obj obj : symbols )
+        for( Obj symbol : _symbols() )
         {
-            Symbol symbol = ( Symbol )obj;
-            insertKey( symbol );
+            if( symbol == null ) continue;
+            insertKey( ( Symbol )symbol );
         }
     }
 
@@ -161,6 +181,6 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>
     @Override
     public int numSymbols()
     {
-        return symbolMap.size();
+        return size();
     }
 }

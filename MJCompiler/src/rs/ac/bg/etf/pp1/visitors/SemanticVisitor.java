@@ -2,9 +2,11 @@ package rs.ac.bg.etf.pp1.visitors;
 
 import rs.ac.bg.etf.pp1.Compiler;
 import rs.ac.bg.etf.pp1.CompilerError;
+import rs.ac.bg.etf.pp1.Symbol;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.ac.bg.etf.pp1.SymbolTable;
-import rs.etf.pp1.symboltable.concepts.*;
+import rs.ac.bg.etf.pp1.SymbolType;
+import rs.ac.bg.etf.pp1.TokenCode;
 
 
 public class SemanticVisitor extends VisitorAdaptor
@@ -45,14 +47,14 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// program ident constdl constdl vardl vardl classdl { method method method }
     // Program ::= (Program_Plain) ProgramType GlobalDeclList lbrace MethodDeclList rbrace;
     @Override
-    public void visit( Program_Plain node )
+    public void visit( Program_Plain curr )
     {
     }
 
     ////// program my_program
     // ProgramType ::= (ProgramType_Plain) PROGRAM_K ident:ProgramName;
     @Override
-    public void visit( ProgramType_Plain node )
+    public void visit( ProgramType_Plain curr )
     {
     }
 
@@ -76,7 +78,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// class A extends B { vardl vardl vardl vardl { method method method } }
     // ClassDecl ::= (ClassDecl_Plain) ClassDeclType lbrace OpenScope ClassDeclBody rbrace;
     @Override
-    public void visit( ClassDecl_Plain node )
+    public void visit( ClassDecl_Plain curr )
     {
     }
 
@@ -84,17 +86,17 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// class A extends B
     // ClassDeclType ::= (ClassDeclType_Plain  ) CLASS_K ident:ClassName;
     @Override
-    public void visit( ClassDeclType_Plain node )
+    public void visit( ClassDeclType_Plain curr )
     {
     }
     // ClassDeclType ::= (ClassDeclType_Extends) CLASS_K ident:ClassName EXTENDS_K Type;
     @Override
-    public void visit( ClassDeclType_Extends node )
+    public void visit( ClassDeclType_Extends curr )
     {
     }
     // ClassDeclType ::= (ClassDeclType_Err    ) CLASS_K error {: parser.report_error( "Bad class declaration", null ); :};
     @Override
-    public void visit( ClassDeclType_Err node )
+    public void visit( ClassDeclType_Err curr )
     {
     }
 
@@ -104,12 +106,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// vardl vardl vardl vardl { method method method }
     // ClassDeclBody ::= (ClassDeclBody_Vars       ) VarDeclList;
     @Override
-    public void visit( ClassDeclBody_Vars node )
+    public void visit( ClassDeclBody_Vars curr )
     {
     }
     // ClassDeclBody ::= (ClassDeclBody_VarsMethods) VarDeclList lbrace OpenScope MethodDeclList rbrace;
     @Override
-    public void visit( ClassDeclBody_VarsMethods node )
+    public void visit( ClassDeclBody_VarsMethods curr )
     {
     }
 
@@ -117,12 +119,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// method method method
     // MethodDeclList ::= (MethodDeclList_Tail ) MethodDeclList MethodDecl;
     @Override
-    public void visit( MethodDeclList_Tail node )
+    public void visit( MethodDeclList_Tail curr )
     {
     }
     // MethodDeclList ::= (MethodDeclList_Empty) ;
     @Override
-    public void visit( MethodDeclList_Empty node )
+    public void visit( MethodDeclList_Empty curr )
     {
     }
 
@@ -138,7 +140,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
     // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen OpenScope FormPars rparen OpenScope VarDeclList lbrace StatementList rbrace;
     @Override
-    public void visit( MethodDecl_Plain node )
+    public void visit( MethodDecl_Plain curr )
     {
     }
 
@@ -146,7 +148,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// A foo
     // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
     @Override
-    public void visit( MethodDeclType_Plain node )
+    public void visit( MethodDeclType_Plain curr )
     {
     }
 
@@ -154,36 +156,36 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// int ident, Node Array[], char c
     // FormPars ::= (FormPars_List ) FormParsList;
     @Override
-    public void visit( FormPars_List node )
+    public void visit( FormPars_List curr )
     {
     }
     // FormPars ::= (FormPars_Empty) ;
     @Override
-    public void visit( FormPars_Empty node )
+    public void visit( FormPars_Empty curr )
     {
     }
 
     ////// int a, char c, Node Array[]
     // FormParsList ::= (FormParsList_Init)                    FormParam;
     @Override
-    public void visit( FormParsList_Init node )
+    public void visit( FormParsList_Init curr )
     {
     }
     // FormParsList ::= (FormParsList_Tail) FormParsList comma FormParam;
     @Override
-    public void visit( FormParsList_Tail node )
+    public void visit( FormParsList_Tail curr )
     {
     }
 
     ////// int a, char c, Node Array[]
     // FormParam ::= (FormParam_Plain) Type VarIdent;
     @Override
-    public void visit( FormParam_Plain node )
+    public void visit( FormParam_Plain curr )
     {
     }
     // FormParam ::= (FormParam_Err  ) error {: parser.report_error( "Bad formal parameter", null ); :};
     @Override
-    public void visit( FormParam_Err node )
+    public void visit( FormParam_Err curr )
     {
     }
 
@@ -191,12 +193,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// vardl vardl vardl vardl
     // VarDeclList ::= (VarDeclList_VarDecl) VarDeclList VarDecl;
     @Override
-    public void visit( VarDeclList_VarDecl node )
+    public void visit( VarDeclList_VarDecl curr )
     {
     }
     // VarDeclList ::= (VarDeclList_Empty  ) ;
     @Override
-    public void visit( VarDeclList_Empty node )
+    public void visit( VarDeclList_Empty curr )
     {
     }
 
@@ -208,7 +210,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// static A a1, a2;
     // VarDecl ::= (VarDecl_Plain) VarDeclType VarIdentList semicol;
     @Override
-    public void visit( VarDecl_Plain node )
+    public void visit( VarDecl_Plain curr )
     {
     }
 
@@ -216,17 +218,17 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// static A
     // VarDeclType ::= (VarDeclType_Plain )          Type;
     @Override
-    public void visit( VarDeclType_Plain node )
+    public void visit( VarDeclType_Plain curr )
     {
     }
     // VarDeclType ::= (VarDeclType_Static) STATIC_K Type;
     @Override
-    public void visit( VarDeclType_Static node )
+    public void visit( VarDeclType_Static curr )
     {
     }
     // VarDeclType ::= (VarDeclType_Err   ) error {: parser.report_error( "Bad class declaration", null ); :};
     @Override
-    public void visit( VarDeclType_Err node )
+    public void visit( VarDeclType_Err curr )
     {
     }
 
@@ -234,12 +236,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// a, b[], c
     // VarIdentList ::= (VarIdentList_VarIdent)                    VarIdent;
     @Override
-    public void visit( VarIdentList_VarIdent node )
+    public void visit( VarIdentList_VarIdent curr )
     {
     }
     // VarIdentList ::= (VarIdentList_Tail    ) VarIdentList comma VarIdent;
     @Override
-    public void visit( VarIdentList_Tail node )
+    public void visit( VarIdentList_Tail curr )
     {
     }
 
@@ -247,17 +249,17 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// b[]
     // VarIdent ::= (VarIdent_Ident) ident:VarName;
     @Override
-    public void visit( VarIdent_Ident node )
+    public void visit( VarIdent_Ident curr )
     {
     }
     // VarIdent ::= (VarIdent_Array) ident:VarName lbracket rbracket;
     @Override
-    public void visit( VarIdent_Array node )
+    public void visit( VarIdent_Array curr )
     {
     }
     // VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
     @Override
-    public void visit( VarIdent_Err node )
+    public void visit( VarIdent_Err curr )
     {
     }
 
@@ -266,43 +268,43 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// const int a = 5, b = 6, c = 11;
     // ConstDecl ::= (ConstDecl_Plain) ConstDeclType ConstInitList semicol;
     @Override
-    public void visit( ConstDecl_Plain node )
+    public void visit( ConstDecl_Plain curr )
     {
     }
 
     ////// const int
     // ConstDeclType ::= (ConstDeclType_Plain) CONST_K Type;
     @Override
-    public void visit( ConstDeclType_Plain node )
+    public void visit( ConstDeclType_Plain curr )
     {
     }
     // ConstDeclType ::= (ConstDeclType_Err  ) CONST_K error {: parser.report_error( "Bad constant type", null ); :};
     @Override
-    public void visit( ConstDeclType_Err node )
+    public void visit( ConstDeclType_Err curr )
     {
     }
 
     ////// a = 5, b = 6, c = 11
     // ConstInitList ::= (ConstInitList_Init)                     ConstInit;
     @Override
-    public void visit( ConstInitList_Init node )
+    public void visit( ConstInitList_Init curr )
     {
     }
     // ConstInitList ::= (ConstInitList_Tail) ConstInitList comma ConstInit;
     @Override
-    public void visit( ConstInitList_Tail node )
+    public void visit( ConstInitList_Tail curr )
     {
     }
 
     ////// a = 5
     // ConstInit ::= (ConstInit_Plain) ident:IdentName Assignop Literal;
     @Override
-    public void visit( ConstInit_Plain node )
+    public void visit( ConstInit_Plain curr )
     {
     }
     // ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initialization", null ); :};
     @Override
-    public void visit( ConstInit_Err node )
+    public void visit( ConstInit_Err curr )
     {
     }
 
@@ -334,77 +336,77 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// { statement statement statement }
     // Statement ::= (Statement_Designator ) DesignatorStatement semicol;
     @Override
-    public void visit( Statement_Designator node )
+    public void visit( Statement_Designator curr )
     {
     }
     // Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
     @Override
-    public void visit( Statement_If node )
+    public void visit( Statement_If curr )
     {
     }
     // Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
     @Override
-    public void visit( Statement_IfElse node )
+    public void visit( Statement_IfElse curr )
     {
     }
     // Statement ::= (Statement_DoWhile    ) DO_K Statement WHILE_K lparen Condition rparen semicol;
     @Override
-    public void visit( Statement_DoWhile node )
+    public void visit( Statement_DoWhile curr )
     {
     }
     // Statement ::= (Statement_Switch     ) SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
     @Override
-    public void visit( Statement_Switch node )
+    public void visit( Statement_Switch curr )
     {
     }
     // Statement ::= (Statement_Break      ) BREAK_K       semicol;
     @Override
-    public void visit( Statement_Break node )
+    public void visit( Statement_Break curr )
     {
     }
     // Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
     @Override
-    public void visit( Statement_Continue node )
+    public void visit( Statement_Continue curr )
     {
     }
     // Statement ::= (Statement_Return     ) RETURN_K      semicol;
     @Override
-    public void visit( Statement_Return node )
+    public void visit( Statement_Return curr )
     {
     }
     // Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
     @Override
-    public void visit( Statement_ReturnExpr node )
+    public void visit( Statement_ReturnExpr curr )
     {
     }
     // Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
     @Override
-    public void visit( Statement_Read node )
+    public void visit( Statement_Read curr )
     {
     }
     // Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
     @Override
-    public void visit( Statement_Print node )
+    public void visit( Statement_Print curr )
     {
     }
     // Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
     @Override
-    public void visit( Statement_PrintFormat node )
+    public void visit( Statement_PrintFormat curr )
     {
     }
     // Statement ::= (Statement_Scope      ) lbrace OpenScope StatementList rbrace;
     @Override
-    public void visit( Statement_Scope node )
+    public void visit( Statement_Scope curr )
     {
     }
     // Statement ::= (Statement_Semicolon  ) semicol;
     @Override
-    public void visit( Statement_Semicolon node )
+    public void visit( Statement_Semicolon curr )
     {
     }
     // Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
     @Override
-    public void visit( Statement_Err node )
+    public void visit( Statement_Err curr )
     {
     }
 
@@ -415,22 +417,22 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// ident.ident[ expr ]--
     // DesignatorStatement ::= (DesignatorStatement_Assign    ) Designator Assignop Expr;
     @Override
-    public void visit( DesignatorStatement_Assign node )
+    public void visit( DesignatorStatement_Assign curr )
     {
     }
     // DesignatorStatement ::= (DesignatorStatement_Call      ) Designator lparen ActPars rparen;
     @Override
-    public void visit( DesignatorStatement_Call node )
+    public void visit( DesignatorStatement_Call curr )
     {
     }
     // DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
     @Override
-    public void visit( DesignatorStatement_Plusplus node )
+    public void visit( DesignatorStatement_Plusplus curr )
     {
     }
     // DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
     @Override
-    public void visit( DesignatorStatement_Minusminus node )
+    public void visit( DesignatorStatement_Minusminus curr )
     {
     }
 
@@ -438,12 +440,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// statement statement statement statement
     // StatementList ::= (StatementList_Tail ) StatementList Statement;
     @Override
-    public void visit( StatementList_Tail node )
+    public void visit( StatementList_Tail curr )
     {
     }
     // StatementList ::= (StatementList_Empty) ;
     @Override
-    public void visit( StatementList_Empty node )
+    public void visit( StatementList_Empty curr )
     {
     }
 
@@ -451,12 +453,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// case 1: statement statement statement   case 2: statement statement
     // CaseList ::= (CaseList_Tail ) CaseList Case;
     @Override
-    public void visit( CaseList_Tail node )
+    public void visit( CaseList_Tail curr )
     {
     }
     // CaseList ::= (CaseList_Empty) ;
     @Override
-    public void visit( CaseList_Empty node )
+    public void visit( CaseList_Empty curr )
     {
     }
 
@@ -465,7 +467,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// case 3: {}
     // Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
     @Override
-    public void visit( Case_Plain node )
+    public void visit( Case_Plain curr )
     {
     }
 
@@ -476,12 +478,12 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// expr, expr, expr
     // ActPars ::= (ActPars_Plain) ActParsList;
     @Override
-    public void visit( ActPars_Plain node )
+    public void visit( ActPars_Plain curr )
     {
     }
     // ActPars ::= (ActPars_Empty) ;
     @Override
-    public void visit( ActPars_Empty node )
+    public void visit( ActPars_Empty curr )
     {
     }
 
@@ -489,61 +491,63 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// expr, expr, expr
     // ActParsList ::= (ActParsList_Expr)                   Expr;
     @Override
-    public void visit( ActParsList_Expr node )
+    public void visit( ActParsList_Expr curr )
     {
     }
     // ActParsList ::= (ActParsList_Tail) ActParsList comma Expr;
     @Override
-    public void visit( ActParsList_Tail node )
+    public void visit( ActParsList_Tail curr )
     {
     }
 
     ////// expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
     // Condition ::= (Condition_Term)              CondTerm;
     @Override
-    public void visit( Condition_Term node )
+    public void visit( Condition_Term curr )
     {
     }
     // Condition ::= (Condition_Tail) Condition or CondTerm;
     @Override
-    public void visit( Condition_Tail node )
+    public void visit( Condition_Tail curr )
     {
     }
 
     ////// expr < expr and expr >= expr
     // CondTerm ::= (CondTerm_Fact)              CondFact;
     @Override
-    public void visit( CondTerm_Fact node )
+    public void visit( CondTerm_Fact curr )
     {
     }
     // CondTerm ::= (CondTerm_Tail) CondTerm and CondFact;
     @Override
-    public void visit( CondTerm_Tail node )
+    public void visit( CondTerm_Tail curr )
     {
     }
 
     ////// expr < expr and expr >= expr
     // CondFact ::= (CondFact_Expr) Expr;
     @Override
-    public void visit( CondFact_Expr node )
+    public void visit( CondFact_Expr curr )
     {
     }
     // CondFact ::= (CondFact_Tail) Expr Relop Expr;
     @Override
-    public void visit( CondFact_Tail node )
+    public void visit( CondFact_Tail curr )
     {
     }
 
     ////// +term - term + term + term
     // Expr ::= (Expr_Addition) Addition;
     @Override
-    public void visit( Expr_Addition node )
+    public void visit( Expr_Addition curr )
     {
+        curr.symbol = curr.getAddition().symbol;
     }
     // Expr ::= (Expr_Err     ) error {: parser.report_error( "Bad expression", null ); :};
     @Override
-    public void visit( Expr_Err node )
+    public void visit( Expr_Err curr )
     {
+        curr.symbol = SymbolTable.noSym;
     }
 
     ////// term
@@ -554,31 +558,115 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// +term + term + term + term
     // Addition ::= (Addition_Term )                Term;
     @Override
-    public void visit( Addition_Term node )
+    public void visit( Addition_Term curr )
     {
+        curr.symbol = curr.getTerm().symbol;
     }
     // Addition ::= (Addition_STerm)          Addop Term;
     @Override
-    public void visit( Addition_STerm node )
+    public void visit( Addition_STerm curr )
     {
+        curr.symbol = SymbolTable.noSym;
+
+        Symbol left = curr.getTerm().symbol;
+
+        if( left.isNoSym() ) return;
+
+        // if the term is not an int
+        if( !left._type().isInt() )
+        {
+            report_error( curr.getTerm(), "This signed expression must result in an int" );
+            return;
+        }
+
+        curr.symbol = left;
     }
     // Addition ::= (Addition_Tail ) Addition Addop Term;
     @Override
-    public void visit( Addition_Tail node )
+    public void visit( Addition_Tail curr )
     {
+        curr.symbol = SymbolTable.noSym;
+
+        Symbol left = curr.getAddition().symbol;
+        Symbol right = curr.getTerm().symbol;
+
+        // if the left symbol is valid
+        if( !left.isNoSym() )
+        {
+            // if the left symbol is not an int
+            if( !left._type().isInt() )
+            {
+                report_error( curr.getAddition(), "The left side of the addition is not an int" );
+            }
+            // otherwise, save it
+            else
+            {
+                curr.symbol = left;
+            }
+        }
+        
+        // if the right symbol is valid
+        if( !right.isNoSym() )
+        {
+            // if the right symbol is not an int
+            if( !right._type().isInt() )
+            {
+                report_error( curr.getTerm(), "The right side of the addition is not an int" );
+            }
+            // otherwise, save it
+            else
+            {
+                curr.symbol = right;
+            }
+        }
     }
 
     ////// factor
     ////// factor*factor*factor
     // Term ::= (Term_Factor)            Factor;
     @Override
-    public void visit( Term_Factor node )
+    public void visit( Term_Factor curr )
     {
+        curr.symbol = curr.getFactor().symbol;
     }
     // Term ::= (Term_Tail  ) Term Mulop Factor;
     @Override
-    public void visit( Term_Tail node )
+    public void visit( Term_Tail curr )
     {
+        curr.symbol = SymbolTable.noSym;
+
+        Symbol left = curr.getTerm().symbol;
+        Symbol right = curr.getFactor().symbol;
+
+        // if the left symbol is valid
+        if( !left.isNoSym() )
+        {
+            // if the left symbol is not an int
+            if( !left._type().isInt() )
+            {
+                report_error( curr.getTerm(), "The left side of the multiplication is not an int" );
+            }
+            // otherwise, save it
+            else
+            {
+                curr.symbol = left;
+            }
+        }
+        
+        // if the right symbol is valid
+        if( !right.isNoSym() )
+        {
+            // if the right symbol is not an int
+            if( !right._type().isInt() )
+            {
+                report_error( curr.getFactor(), "The right side of the multiplication is not an int" );
+            }
+            // otherwise, save it
+            else
+            {
+                curr.symbol = right;
+            }
+        }
     }
 
 
@@ -592,33 +680,108 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// ( expr )
     // Factor ::= (Factor_Designator    ) Designator;
     @Override
-    public void visit( Factor_Designator node )
+    public void visit( Factor_Designator curr )
     {
+        curr.symbol = SymbolTable.noSym;
+        
+        Symbol left = curr.getDesignator().symbol;
+
+        if( left.isNoSym() ) return;
+        
+        // if the designator is not a rvalue
+        if( !left.isRvalue() )
+        {
+            report_error( curr, "This expression doesn't have a value" );
+            return;
+        }
+
+        curr.symbol = left;
     }
     // Factor ::= (Factor_DesignatorCall) Designator lparen ActPars rparen;
     @Override
-    public void visit( Factor_DesignatorCall node )
+    public void visit( Factor_DesignatorCall curr )
     {
+        curr.symbol = SymbolTable.noSym;
+
+        Symbol left = curr.getDesignator().symbol;
+     // Symbol right = curr.getActPars().symbol;
+
+        if( left.isNoSym() ) return;
+
+        // if the designator is not a function or class member method
+        if( !left.isFunction() && !left.isMethod() )
+        {
+            report_error( curr.getDesignator(), "Expected function or class member method" );
+            return;
+        }
+
+        curr.symbol = left;
     }
     // Factor ::= (Factor_Literal       ) Literal;
     @Override
-    public void visit( Factor_Literal node )
+    public void visit( Factor_Literal curr )
     {
+        curr.symbol = curr.getLiteral().symbol;
     }
     // Factor ::= (Factor_NewVar        ) NEW_K Type;
     @Override
-    public void visit( Factor_NewVar node )
+    public void visit( Factor_NewVar curr )
     {
+        curr.symbol = SymbolTable.noSym;
+        
+        Symbol left = curr.getType().symbol;
+        
+        if( left.isNoSym() ) return;
+        
+        // if the <type token> is not a <class type>
+        if( !left.isType() || !left._type().isClass() )
+        {
+            report_error( curr.getType(), "Cannot instantiate a non-class type", false );
+            return;
+        }
+
+        curr.symbol = left;
     }
     // Factor ::= (Factor_NewArray      ) NEW_K Type lbracket Expr rbracket;
     @Override
-    public void visit( Factor_NewArray node )
+    public void visit( Factor_NewArray curr )
     {
+        curr.symbol = SymbolTable.noSym;
+        
+        Symbol left = curr.getType().symbol;
+        Symbol right = curr.getExpr().symbol;
+        
+        if( left.isNoSym() ) return;
+        
+        // if the <type token> is not a <type>
+        if( !left.isType() )
+        {
+            report_error( curr.getType(), "Cannot instantiate a non-type", false );
+            return;
+        }
+
+        curr.symbol = Symbol.newVar(
+            "@Factor_NewArray",
+            SymbolType.newArray( "@Factor_NewArray", left._type() ),
+            Symbol.NO_VALUE,
+            SymbolTable._scopeLevel()
+        );
+
+
+        if( right.isNoSym() ) return;
+
+        // if the expression does not result in an int
+        if( !right._type().isInt() )
+        {
+            report_error( curr.getExpr(), "This expression must result in an int" );
+            return;
+        }
     }
     // Factor ::= (Factor_Expr          ) lparen Expr rparen;
     @Override
-    public void visit( Factor_Expr node )
+    public void visit( Factor_Expr curr )
     {
+        curr.symbol = curr.getExpr().symbol;
     }
 
     ////// ident
@@ -626,18 +789,21 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// ident[ expr ]
     ////// ident.ident.ident[ expr ].ident
     ////// ident.ident.ident[ expr ].ident[ expr ]
+    private Designator lastDesignator = null;
+    
     // Designator ::= (Designator_Ident  ) ident:Name;
     @Override
     public void visit( Designator_Ident curr )
     {
-        // try to find the variable in the symbol table
+        // save the last encountered designator
+        lastDesignator = curr;
+        // try to find the symbol in the symbol table
         curr.symbol = SymbolTable.findSymbol( curr.getName() );
 
-        // if the variable does not exist in the current scopes
-        if( curr.symbol == SymbolTable.noSym )
+        // if the symbol does not exist in the symbol table
+        if( curr.symbol.isNoSym() )
         {
-            // then it has not been declared, return
-            report_error( curr, "This variable has not been declared", false );
+            report_error( curr, "This symbol has not been declared", false );
             return;
         }
     }
@@ -645,95 +811,79 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_Field curr )
     {
+        // save the last encountered designator
+        lastDesignator = curr;
         // set the current designator to the default value
         curr.symbol = SymbolTable.noSym;
 
-        // if the previous designator segment does not exist
-        Designator prev = curr.getDesignator();
-        if( prev.symbol == SymbolTable.noSym )
+        Symbol left = curr.getDesignator().symbol;
+
+        // if the previous designator segment does not exist, an error must have been reported somewhere in the previous segments, return
+        if( left.isNoSym() ) return;
+
+        // if the previous symbol is not a class (doesn't have inner methods)
+        if( !left._type().isClass() )
         {
-            // an error must have been reported somewhere in the previous segments, return
+            report_error( curr, "Expected class member, but the left designator is not a class", false );
             return;
         }
 
-        // if the previous variable is not a class (doesn't have inner methods)
-        Struct prevType = prev.symbol.getType();
-        if( prevType.getKind() != Struct.Class )
+        // find the symbol with the given name in the previous designator's type's members
+        Symbol member = left._type()._members().findSymbol( curr.getName() );
+
+        // if the previous symbol doesn't contain the current field/member
+        if( member.isNoSym() )
         {
-            // report an error and return
-            report_error( curr, "Cannot access inner members since the variable is not a class", false );
+            report_error( curr, "The specified class does not contain this member", false );
+            return;
+        }
+        // if the previous designator is a type (static access) and its non-static member is accessed
+        if( left.isType() && !member.isStaticField() )
+        {
+            report_error( curr, "This non-static class member cannot be accessed in a static way", false );
             return;
         }
 
-        // go through the fields and members of the previous designator
-        for( Obj member : prevType.getMembers() )
-        {
-            // if the previous variable (designator segment) contains the current field/member
-            if( curr.getName().equals( member.getName() ) )
-            {
-                // if the member is not a variable or method
-                int memberKind = member.getKind();
-                if( memberKind != Obj.Var && memberKind != Obj.Meth )
-                {
-                    // report an error and return
-                    report_error( curr, "Cannot access the requested member since it is not a variable or method", false );
-                    return;
-                }
-                
-                // // clone the current object and save it as the 
-                // curr.obj = new Object(  );
-                // // TODO: clone the object
-
-                // stop the search
-                break;
-            }
-        }
-
-        // if the previous variable doesn't contain the current field/member
-        if( curr.symbol == SymbolTable.noSym )
-        {
-            // report an error and return
-            report_error( curr, "The requested member does not exist inside the variable", false );
-            return;
-        }
+        // save the class's member -- don't modify it in the future, since it is a part of the class's definition
+        curr.symbol = member;
     }
     // Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
     @Override
     public void visit( Designator_ArrElem curr )
     {
+        // save the last encountered designator
+        lastDesignator = curr;
         // set the current designator to the default value
         curr.symbol = SymbolTable.noSym;
 
-        // if the previous designator segment does not exist
-        Designator prev = curr.getDesignator();
-        if( prev.symbol == SymbolTable.noSym )
+        Symbol left = curr.getDesignator().symbol;
+        Symbol right = curr.getExpr().symbol;
+
+        // if the previous designator segment does not exist, an error must have been reported somewhere in the previous segments, return
+        if( left.isNoSym() ) return;
+
+        // if the previous symbol is not an array
+        if( !left._type().isArray() )
         {
-            // an error must have been reported somewhere in the previous segments, return
+            report_error( curr, "The left side of the brackets is not an array", false );
             return;
         }
 
-        Struct prevType = prev.symbol.getType();
-        // if the previous variable is not an array
-        if( prevType.getKind() != Struct.Array )
+        // find the symbol with the given name in the previous designator's type's members
+        Symbol member = left._type()._members().findSymbol( "@elem" );
+
+        // if the expression inside the angle brackets has an error, an error must have already been reported for the expression, return
+        if( right.isNoSym() ) return;
+
+        // if the expression inside the angle brackets does not result in an int
+        if( !right._type().isInt() )
         {
-            // report an error and return
-            report_error( curr, "Cannot access the requested array element, since the variable is not an array", false );
+            report_error( curr, "This expression must result in an int", false );
             return;
         }
-        // // if the expression inside the angle brackets does not result in an int
-        // if( curr.getExpr().obj )
-        // {
-        //     // report an error and return
-        //     report_error( curr, "Cannot access the requested array element, since the variable is not an array", false );
-        //     return;
-        // }
 
-        // // get the type of array element from the array type
-        // Struct currType = prevType.getElemType();
-
-        // // create a new object
-        // curr.obj = new Obj( kind, name, type );
-        // prevType.getElemType().get;
+        // save the array's member -- don't modify it in the future, since it is a part of the array's type definition
+        curr.symbol = member;
     }
 
 
@@ -752,30 +902,106 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// void | type
     // ReturnType ::= (ReturnType_Void ) VOID_K:ReturnType;
+    @Override
+    public void visit( ReturnType_Void curr )
+    {
+        curr.symbol = SymbolTable.voidSym;
+    }
     // ReturnType ::= (ReturnType_Ident) ident :ReturnType;
+    @Override
+    public void visit( ReturnType_Ident curr )
+    {
+        curr.symbol = SymbolTable.findSymbol( curr.getTypeName() );
+
+        // if the symbol is missing from the symbol table
+        if( curr.symbol.isNoSym() )
+        {
+            report_error( curr, "Expected type here, but this symbol has not been declared", false );
+            return;
+        }
+        // if the symbol is not a type
+        if( !curr.symbol.isType() )
+        {
+            report_error( curr, "Expected type here, but this isn't a type", false );
+            return;
+        }
+    }
+
     ////// int | bool | char | ident
     // Type ::= (Type_Ident) ident:Type;
+    @Override
+    public void visit( Type_Ident curr )
+    {
+        curr.symbol = SymbolTable.findSymbol( curr.getTypeName() );
+
+        // if the symbol is missing from the symbol table
+        if( curr.symbol.isNoSym() )
+        {
+            report_error( curr, "Expected type here, but this symbol has not been declared", false );
+            return;
+        }
+        // if the symbol is not a type
+        if( !curr.symbol.isType() )
+        {
+            report_error( curr, "Expected type here, but this isn't a type", false );
+            return;
+        }
+    }
+
     ////// 1202 | 'c' | true
     // Literal ::= (Literal_Int ) int_lit :Literal;
+    @Override
+    public void visit( Literal_Int curr ) { curr.symbol = Symbol.newConst( "@Literal_Int", SymbolTable.intType, curr.getLiteral() ); }
     // Literal ::= (Literal_Char) char_lit:Literal;
+    @Override
+    public void visit( Literal_Char curr )  { curr.symbol = Symbol.newConst( "@Literal_Char", SymbolTable.charType, curr.getLiteral() ); }
     // Literal ::= (Literal_Bool) bool_lit:Literal;
+    @Override
+    public void visit( Literal_Bool curr ) { curr.symbol = Symbol.newConst( "@Literal_Bool", SymbolTable.boolType, ( curr.getLiteral() ) ? 1 : 0 ); }
 
     ////// =
     // Assignop ::= (Assignop_Assign) assign:Assignop;
+    @Override
+    public void visit( Assignop_Assign curr ) { curr.symbol = Symbol.newConst( "@Assignop_Assign", SymbolTable.intType, TokenCode.assign ); }
+
     ////// ==  |  !=  |  >  |  >=  |  <  |  <=
-    // Relop ::= (Relop_Eq ) eq:Relop;
-    // Relop ::= (Relop_Neq) ne:Relop;
-    // Relop ::= (Relop_Gt ) gt:Relop;
-    // Relop ::= (Relop_Geq) ge:Relop;
-    // Relop ::= (Relop_Lt ) lt:Relop;
-    // Relop ::= (Relop_Leq) le:Relop;
+    // Relop ::= (Relop_Eq) eq:Relop;
+    @Override
+    public void visit( Relop_Eq curr ) { curr.symbol = Symbol.newConst( "@Relop_Eq", SymbolTable.intType, TokenCode.eq ); }
+    // Relop ::= (Relop_Ne) ne:Relop;
+    @Override
+    public void visit( Relop_Ne curr ) { curr.symbol = Symbol.newConst( "@Relop_Ne", SymbolTable.intType, TokenCode.ne ); }
+    // Relop ::= (Relop_Gt) gt:Relop;
+    @Override
+    public void visit( Relop_Gt curr ) { curr.symbol = Symbol.newConst( "@Relop_Gt", SymbolTable.intType, TokenCode.gt ); }
+    // Relop ::= (Relop_Ge) ge:Relop;
+    @Override
+    public void visit( Relop_Ge curr ) { curr.symbol = Symbol.newConst( "@Relop_Ge", SymbolTable.intType, TokenCode.ge ); }
+    // Relop ::= (Relop_Lt) lt:Relop;
+    @Override
+    public void visit( Relop_Lt curr ) { curr.symbol = Symbol.newConst( "@Relop_Lt", SymbolTable.intType, TokenCode.lt ); }
+    // Relop ::= (Relop_Le) le:Relop;
+    @Override
+    public void visit( Relop_Le curr ) { curr.symbol = Symbol.newConst( "@Relop_Le", SymbolTable.intType, TokenCode.le ); }
+
     ////// +  |  -
     // Addop ::= (Addop_Plus ) plus :Addop;
+    @Override
+    public void visit( Addop_Plus curr ) { curr.symbol = Symbol.newConst( "@Addop_Plus", SymbolTable.intType, TokenCode.plus ); }
     // Addop ::= (Addop_Minus) minus:Addop;
+    @Override
+    public void visit( Addop_Minus curr ) { curr.symbol = Symbol.newConst( "@Addop_Minus", SymbolTable.intType, TokenCode.minus ); }
+
     ////// *  |  /  |  %
     // Mulop ::= (Mulop_Mul ) mul :Mulop;
+    @Override
+    public void visit( Mulop_Mul curr ) { curr.symbol = Symbol.newConst( "@Mulop_Mul", SymbolTable.intType, TokenCode.mul ); }
     // Mulop ::= (Mulop_Div ) div :Mulop;
+    @Override
+    public void visit( Mulop_Div curr ) { curr.symbol = Symbol.newConst( "@Mulop_Div", SymbolTable.intType, TokenCode.div ); }
     // Mulop ::= (Mulop_Perc) perc:Mulop;
+    @Override
+    public void visit( Mulop_Perc curr ) { curr.symbol = Symbol.newConst( "@Mulop_Perc", SymbolTable.intType, TokenCode.perc ); }
 
 
 

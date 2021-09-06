@@ -55,7 +55,7 @@ function Find-Recursive
 
 if( "-help" -in $args -or "--help" -in $args )
 {
-    Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-verbose] [-lex file] [-par file] [-o file] file]   [-disasm file] [-run -debug file]";
+    Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-verbose] [-lex file] [-par file] [-o file] file]   [-disasm file] [-run [-debug] file]";
     Write-Output "";
     Write-Output "Default:        build -jflex -ast -cup -build";
     Write-Output "";
@@ -351,11 +351,11 @@ if( "-disasm" -in $args )
     # invoke the run command
     Invoke-Expression -Command $RunCmd;
 
-    # exit with the error code of the last native program that was run
-    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
-
     # restore the previous working directory
     Pop-Location;
+
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 }
 
 
@@ -385,11 +385,11 @@ if( "-run" -in $args )
     # invoke the run command
     Invoke-Expression -Command $RunCmd;
 
-    # exit with the error code of the last native program that was run
-    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
-
     # restore the previous working directory
     Pop-Location;
+
+    # exit with the error code of the last native program that was run
+    if( $LASTEXITCODE -ne 0 ) { exit $LASTEXITCODE; }
 }
 
 

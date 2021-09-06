@@ -70,11 +70,11 @@ public class ScopeVisitor implements Visitor
     public void visit( Mulop_Mul                      node ) { updateScope( node ); }
     public void visit( Addop_Minus                    node ) { updateScope( node ); }
     public void visit( Addop_Plus                     node ) { updateScope( node ); }
-    public void visit( Relop_Leq                      node ) { updateScope( node ); }
+    public void visit( Relop_Le                       node ) { updateScope( node ); }
     public void visit( Relop_Lt                       node ) { updateScope( node ); }
-    public void visit( Relop_Geq                      node ) { updateScope( node ); }
+    public void visit( Relop_Ge                       node ) { updateScope( node ); }
     public void visit( Relop_Gt                       node ) { updateScope( node ); }
-    public void visit( Relop_Neq                      node ) { updateScope( node ); }
+    public void visit( Relop_Ne                       node ) { updateScope( node ); }
     public void visit( Relop_Eq                       node ) { updateScope( node ); }
     public void visit( Assignop_Assign                node ) { updateScope( node ); }
     public void visit( Literal_Bool                   node ) { updateScope( node ); }

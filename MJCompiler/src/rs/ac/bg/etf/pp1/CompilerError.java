@@ -3,6 +3,7 @@ package rs.ac.bg.etf.pp1;
 public class CompilerError
 {
     public static final int NO_INDEX = -1;
+    public static final int ERROR_TYPES = 4;
 
     public static final int ARGUMENTS_ERROR = 0;
     public static final int LEXICAL_ERROR   = 1;
