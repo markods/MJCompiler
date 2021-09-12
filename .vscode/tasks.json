@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build -clean",
+            "type": "shell",
+            "command": "./build -clean",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+            },
+        },
+        {
+            "label": "build -jflex -cup -ast",
+            "type": "shell",
+            "command": "./build -jflex -cup -ast",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+            },
+        },
+        {
+            "label": "build -build",
+            "type": "shell",
+            "command": "./build -build",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+            },
+        },
+        {
+            "label": "build -build -compile __main__",
+            "type": "shell",
+            "command": "./build -build -compile __main__",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+            },
+        },
+    ]
+}

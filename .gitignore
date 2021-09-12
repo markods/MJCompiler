@@ -5,7 +5,8 @@
 *~$*
 
 # temporary files
-logs/
+**/!docs
+**/logs
 *~
 *_astbuild.cup
 *.lex

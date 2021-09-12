@@ -5,7 +5,7 @@ program test301
     int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
     int pet=5-;
     int sest[6];
-    int 123;   // FIXME: error reporting issue on this line
+ // int 123;
     int a, b, c;
 
     class Predmet extends extends A
@@ -21,10 +21,10 @@ program test301
     int 'sedam[7];
     const int osam=-8;
 {
-    int sumA(1int z)
+    int sumA(int 1z)
     {
         z = z + # + 1321 + 123;
-        if( z > 0 && z >> 1 ) return -1;   // FIXME: error reporting issue on this line
+        if( z > 0 && z >> 1 ) return -1;
         return z;
     }
 

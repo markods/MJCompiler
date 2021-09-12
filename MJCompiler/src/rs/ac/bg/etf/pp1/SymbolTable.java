@@ -1,31 +1,67 @@
 package rs.ac.bg.etf.pp1;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
+
+// import java.io.ByteArrayOutputStream;
+// import java.io.IOException;
+// import java.util.Stack;
 
 import rs.ac.bg.etf.pp1.util.ScopeGuard;
-import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
+// import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Scope;
 import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 
+// FIXME: make a symbol table visitor
 public class SymbolTable
 {
+    // the number of predefined symbols in the program
+    private static final int predefSymbolCnt = 11;
     // IMPORTANT: don't use the Tab's types and symbols! (for compatibility with Symbol and SymbolType classes)
     // +   actually, don't use the Tab class at all (it's deprecated), use the SymbolTable class instead
-    // IMPORTANT: initialize anyType first, since it's the root type for all other types, and its supertype is itself
-    public static final SymbolType anyType  = SymbolType.newPrimitive( "@anyType",  SymbolType.ANY_TYPE );
-    public static final SymbolType anyArrayType = SymbolType.newArray( "@anyArray", anyType             );
-    public static final SymbolType intType  = SymbolType.newPrimitive( "int",       SymbolType.INT      );
-    public static final SymbolType charType = SymbolType.newPrimitive( "char",      SymbolType.CHAR     );
-    public static final SymbolType boolType = SymbolType.newPrimitive( "bool",      SymbolType.BOOL     );
-    public static final SymbolType nullType = SymbolType.newPrimitive( "class",     SymbolType.CLASS    );
-    public static final Symbol noSym   = Symbol.newConst( "@noSym", anyType, 0 );
-    public static final Symbol voidSym = Symbol.newConst( "void", anyType, 0 );
+    // IMPORTANT: initialize <any type> first, since it's the root type for all other types, and its supertype is itself
+    // +   also, most of these symbols are special cases, intended to be used sparingly
+    // +   anyType is not intended to be used as Object (like in Java), since it is equivalent to all types (its used for preventing too many semantic errors from being reported)
+    // +   voidType is used when no type is expected (void functions)
+    // +   nullType is used when a null keyword is found
+    public static final SymbolType anyType  = SymbolType.newPrimitive( "@any", SymbolType.ANY_TYPE );
+    public static final SymbolType voidType = SymbolType.newPrimitive( "void", SymbolType.NO_TYPE  );
+    public static final SymbolType nullType = SymbolType.newPrimitive( "null", SymbolType.CLASS    );
+    public static final SymbolType intType  = SymbolType.newPrimitive( "int",  SymbolType.INT      );
+    public static final SymbolType charType = SymbolType.newPrimitive( "char", SymbolType.CHAR     );
+    public static final SymbolType boolType = SymbolType.newPrimitive( "bool", SymbolType.BOOL     );
+    
+    // IMPORTANT: <no symbol> is returned when the symbol table cannot find a symbol
+    // +   other symbols are just there for allowing their symbol types to be saved in the symbol table
+    public static final Symbol noSym   = Symbol.newType( "@noSym", anyType  );
+    public static final Symbol anySym  = Symbol.newType( "@any",   anyType  );
+    public static final Symbol voidSym = Symbol.newType( "void",   voidType );
+    public static final Symbol nullSym = Symbol.newType( "null",   nullType );
+    public static final Symbol intSym  = Symbol.newType( "int",    intType  );
+    public static final Symbol charSym = Symbol.newType( "char",   charType );
+    public static final Symbol boolSym = Symbol.newType( "bool",   boolType );
 
     // this value is copied over from the Tab.init() method
     private static int currScopeLevel = -1;
+    private static Scope global = null;
+    // saves all the scopes that were ever created in preorder
+    // +   used for printing the symbol table
+    private static ArrayList<ScopeInfo> scopeList = new ArrayList<>();
+    private static class ScopeInfo
+    {
+        public ScopeInfo( Scope scope, int level )
+        {
+            this.scope = scope;
+            this.level = level;
+        }
+        private Scope scope;
+        private int level;
+
+        public Scope _scope() { return scope; }
+        public int _level() { return level; }
+        public SymbolMap _symbols() { return new SymbolMap( scope.getLocals() ); }
+    }
 
     static
     {
@@ -42,23 +78,23 @@ public class SymbolTable
         //     +   methods [obj]:   chr( i ), ord( ch ), len( arr )
         Tab.init();
         // throw away what was initialized, but keep the scope level as -2
-        closeScope();
+        Tab.closeScope();
         // initialize the global scope (-1st scope)
-        Scope global = openScope();
+        global = openScope();
 
         // add the global types to the global scope
-        global.addToLocals( Symbol.newType( "@any", anyType  ) );
-        global.addToLocals( Symbol.newType( "int",  intType  ) );
-        global.addToLocals( Symbol.newType( "char", charType ) );
-        global.addToLocals( Symbol.newType( "bool", boolType ) );
-        global.addToLocals( Symbol.newType( "null", nullType ) );
-        global.addToLocals( noSym );
+        global.addToLocals( noSym   );
+        global.addToLocals( anySym  );
         global.addToLocals( voidSym );
-    
+        global.addToLocals( nullSym );
+        global.addToLocals( intSym  );
+        global.addToLocals( charSym );
+        global.addToLocals( boolSym );
+        
         // char chr( int i );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
-            _scope().addToLocals( Symbol.newFormalParam( "i", intType, 0, _scopeLevel() ) );
+            _local().addToLocals( Symbol.newFormalParam( "i", intType, 0, _localsLevel() ) );
             
             // IMPORTANT: set the method's formal parameters after all locals have been added to the current scope!
             // +   the method's formal parameters aren't automatically updated due to the way the _params function is implemented)
@@ -68,50 +104,68 @@ public class SymbolTable
         // int ord( char c );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
-            _scope().addToLocals( Symbol.newFormalParam( "c", charType, 0, _scopeLevel() ) );
+            _local().addToLocals( Symbol.newFormalParam( "c", charType, 0, _localsLevel() ) );
             global.addToLocals( Symbol.newFunction( "ord", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
         // int len( anyType arr[] );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
-            _scope().addToLocals( Symbol.newFormalParam( "arr", anyArrayType, 0, _scopeLevel() ) );
+            SymbolType anyArrayType = SymbolType.newArray( "@anyArray", anyType );
+            _local().addToLocals( Symbol.newFormalParam( "arr", anyArrayType, 0, _localsLevel() ) );
             global.addToLocals( Symbol.newFunction( "len", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
         // '\n'
-        try( ScopeGuard guard = new ScopeGuard(); )
-        {
-            global.addToLocals( Symbol.newConst( "eol", charType, '\n' ) );
-        }
+        global.addToLocals( Symbol.newConst( "eol", charType, '\n' ) );
     }
 
     private SymbolTable() {}
 
 
 
+    // IMPORTANT: no need to check if the scope is not null, since the symbol table should always be initialized before use
+    // +   the only way the scope can be null is if the user calls scopeClose() more times than scopeOpen()
+
+    // get the global scope
+    public static Scope _global() { return global; }
+    // get the global scope's local symbols
+    public static SymbolMap _globals() { return new SymbolMap( global.getLocals() ); }
+    // get the global scope's size
+    public static int _globalsSize() { return _globals().size(); }
+    // get the global scope's size without predefined symbols
+    public static int _globalsSizeNoPredef() { return _globals().size() - SymbolTable.predefSymbolCnt; }
+    
     // get the current scope
-    public static Scope _scope() { return Tab.currentScope(); }
+    public static Scope _local() { return Tab.currentScope(); }
     // get the current scope's local symbols
-    public static SymbolDataStructure _locals() { return _scope().getLocals(); }
+    public static SymbolMap _locals() { return new SymbolMap( _local().getLocals() ); }
+    // get the current scope's size
+    public static int _localsSize() { return _locals().size(); }
     // get the current scope's level
-    public static int _scopeLevel() { return currScopeLevel; }
+    public static int _localsLevel() { return currScopeLevel; }
     
     // open a new scope
     public static Scope openScope()
     {
         Tab.openScope();
+        scopeList.add( new ScopeInfo( _local(), currScopeLevel ) );
         currScopeLevel++;
 
-        return _scope();
+        return _local();
     }
     // close the most recent scope
-    public static void closeScope()
+    // +   stop when the global scope is reached
+    public static Scope closeScope()
     {
-        if( _scope() == null ) return;
-
+        // prevent the global scope from being closed
+        if( _local() == global ) return global;
+        
+        Scope curr = _local();
         Tab.closeScope();
         currScopeLevel--;
+        
+        return curr;
     }
 
 
@@ -127,8 +181,36 @@ public class SymbolTable
             && !existing._type().isPrimitiveType()
         ) return false;
 
+        // if a system type with the same name already exists, prevent it from being redefined
+        if(
+         // existing == noSym    ||   // this symbol cannot be redefined
+            existing == anySym   ||
+            existing == voidSym  ||
+            existing == nullSym  //
+         // existing == intSym   ||   // redefinable
+         // existing == charSym  ||   // redefinable
+         // existing == boolSym       // redefinable
+        )
+        return false;
+
         // return if the symbol has been added to the current scope
-        return _scope().addToLocals( symbol );
+        return _local().addToLocals( symbol );
+    }
+
+    // try to add the given symbol map to the symbol table
+    // +   return the index of the element that wasn't added successfully (-1 if everything is ok)
+    public static int addSymbols( SymbolMap symbols )
+    {
+        int i = 0;
+        for( Symbol symbol : symbols )
+        {
+            if( !addSymbol( symbol ) )
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     // find the symbol with the given name in the symbol table
@@ -139,10 +221,10 @@ public class SymbolTable
     {
         Symbol symbol = null;
         
-        for( Scope curr = _scope(); curr != null; curr = curr.getOuter() )
+        for( Scope curr = _local(); curr != null; curr = curr.getOuter() )
         {
             SymbolDataStructure locals = curr.getLocals();
-            if( locals == null ) break;
+            if( locals == null ) continue;
 
             symbol = ( Symbol )locals.searchKey( name );
             // if a match has been found, break
@@ -157,22 +239,40 @@ public class SymbolTable
     // return the symbol table as string
     public static String dump()
     {
-        String output = null;
-        
-        try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-             SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDOUT, buffer );
-        )
+        StringBuilder builder = new StringBuilder();
+
+        builder.append( "=========================SYMBOL TABLE==========================\n" );
+        for( ScopeInfo curr : scopeList )
         {
-            // workaround since symbol table dump method only outputs to System.out
-            Tab.dump();
-            output = buffer.toString( "UTF-8" );
+            // start at the -1'st (global) scope
+            String scopeName = ( curr._level() > -1 ) ? String.format( "Scope[%d]\n", curr._level() ) : "Global\n";
+            builder.append( "--------------------------------------------------------------- <<< " ).append( scopeName )
+                .append( curr._symbols().toString( curr._level() + 1 ) );
         }
-        catch( IOException ex )
-        {
-            Compiler.errors.add( CompilerError.SEMANTIC_ERROR, "Error during conversion of symbol table to string", ex );
-            return null;
-        }
-        
-        return output;
+
+        return builder.toString();
     }
+
+    // // return the symbol table as string
+    // public static String dump_old()
+    // {
+    //     String output = null;
+        
+    //     try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+    //          SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDOUT, buffer );
+    //     )
+    //     {
+    //         // workaround since symbol table dump method only outputs to System.out
+    //         Tab.dump();
+    //         output = buffer.toString( "UTF-8" );
+    //     }
+    //     catch( IOException ex )
+    //     {
+    //         Compiler.errors.add( CompilerError.SEMANTIC_ERROR, "Error during conversion of symbol table to string", ex );
+    //         return null;
+    //     }
+        
+    //     return output;
+    // }
+
 }

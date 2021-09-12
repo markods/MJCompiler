@@ -10,17 +10,18 @@ import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 public class SymbolType extends Struct
 {
-    public static final int NO_VALUE   = 0;
+    public static final int NO_TYPE   = -1;
+    public static final int ANY_TYPE  = Struct.None;
+    public static final int INT       = Struct.Int;    // redefinable
+    public static final int CHAR      = Struct.Char;   // redefinable
+    public static final int BOOL      = Struct.Bool;   // redefinable
 
-    public static final int ANY_TYPE = Struct.None;
-    public static final int INT      = Struct.Int;    // redefinable
-    public static final int CHAR     = Struct.Char;   // redefinable
-    public static final int BOOL     = Struct.Bool;   // redefinable
-
-    public static final int ARRAY    = Struct.Array;
-    public static final int ENUM     = Struct.Enum;
-    public static final int CLASS    = Struct.Class;
+    public static final int ARRAY     = Struct.Array;
+    public static final int ENUM      = Struct.Enum;
+    public static final int CLASS     = Struct.Class;
     public static final int INTERFACE = Struct.Interface;
+
+    public static final int NO_VALUE  = 0;
 
     // // None, Int, Char, Array, Class, Bool, Enum, Interface
     // private int kind;
@@ -90,7 +91,7 @@ public class SymbolType extends Struct
     public Collection<Struct> _interfaceList() { return getImplementedInterfaces(); }
     public SymbolType _addInterface( SymbolType type ) { if( type != null ) addImplementedInterface( type ); return this; }
 
-    // CLASS: number of fields
+    // CLASS: number of non-static fields
     public int _fieldCount() { return getNumberOfFields(); }
 
     // CLASS, INTERFACE: fields and methods
@@ -101,6 +102,7 @@ public class SymbolType extends Struct
     public SymbolType _members( Collection<Obj> symbols ) { setMembers( new SymbolMap( symbols ) ); return this; }
     
 
+    public boolean isNoType()    { return _kind() == NO_TYPE;   }
     public boolean isAnyType()   { return _kind() == ANY_TYPE;  }
     public boolean isInt()       { return _kind() == INT;       }
     public boolean isChar()      { return _kind() == CHAR;      }
@@ -112,6 +114,7 @@ public class SymbolType extends Struct
     public boolean isInterface() { return _kind() == INTERFACE; }
 
 
+    public boolean isVoidType()      { return this == SymbolTable.voidType; }
     public boolean isNullType()      { return this == SymbolTable.nullType; }
     public boolean isPrimitiveType() { return this == SymbolTable.intType || this == SymbolTable.charType || this == SymbolTable.boolType; }
     public boolean isReferenceType() { return _kind() == CLASS || _kind() == ARRAY; }
@@ -129,7 +132,7 @@ public class SymbolType extends Struct
 
         return typeA._kind() == typeB._kind()
             && isEqual( typeA._type(), typeB._type() )
-            && typeA._interfaceList().equals( typeB._interfaceList() )   // FIXME: check if this is a element-by-element comparison
+            && typeA._interfaceList().equals( typeB._interfaceList() )   // FIXME: check if this is an element-by-element comparison
             && SymbolMap.isEqual( typeA._members(), typeB._members() );
     }
 
@@ -166,11 +169,22 @@ public class SymbolType extends Struct
     {
         if( left == right ) return true;
         if( left == null || right == null ) return false;
+        // special case for anyType which is the base type for everything (including itself), and also equivalent to any type
+        if( left.isAnyType() || right.isAnyType() ) return true;
 
         return left.name == right.name
             || ( left.isArray() && right.isArray() && isEquivalent( left._type(), right._type() ) );
         
     }
+
+    public static boolean canOverride( SymbolType type, SymbolType inherited )
+    {
+        if( type == inherited ) return true;
+        if( type == null || inherited == null ) return false;
+
+        return isEquivalent( type, inherited )
+            || isInstanceOf( type, inherited );
+}
 
     public static boolean isCompatibleWith( SymbolType left, SymbolType right )
     {
@@ -191,6 +205,64 @@ public class SymbolType extends Struct
             || ( dst.isRefType() && src.isNullType() )
             || isInstanceOf( src, dst )
             || ( dst.isArray() && dst._type().isAnyType() && src.isArray() );   // assignment of array to formal parameter of type <any array>
+    }
+
+    public String toString( String prefix )
+    {
+        String result = "<type>";
+        switch( _kind() )
+        {
+            case NO_TYPE:   result = String.format( "%sNO_TYPE       %s %s\n",     prefix, _type(), _name() ); break;
+            case ANY_TYPE:  result = String.format( "%sANY_TYPE      %s %s\n",     prefix, _type(), _name() ); break;
+            case INT:       result = String.format( "%sINT           %s %s\n",     prefix, _type(), _name() ); break;
+            case CHAR:      result = String.format( "%sCHAR          %s %s\n",     prefix, _type(), _name() ); break;
+            case BOOL:      result = String.format( "%sBOOL          %s %s\n",     prefix, _type(), _name() ); break;
+            case ARRAY:     result = String.format( "%sARRAY         %s %s\n",     prefix, _type(), _name() ); break;
+            case ENUM:      result = String.format( "%sENUM          %s %s\n%s\n", prefix, _type(), _name(), membersToString( prefix ) ); break;
+            case CLASS:     result = String.format( "%sCLASS         %s %s\n%s\n", prefix, _type(), _name(), membersToString( prefix ) ); break;
+            case INTERFACE: result = String.format( "%sINTERFACE     %s %s\n%s\n", prefix, _type(), _name(), membersToString( prefix ) ); break;
+        }
+        return result;
+    }
+
+    String nameToString()
+    {
+        switch( _kind() )
+        {
+            case NO_TYPE:   return _name();
+            case ANY_TYPE:  return _name();
+            case INT:       return _name();
+            case CHAR:      return _name();
+            case BOOL:      return _name();
+            case ARRAY:     return _type()._name() + "[]";
+            case ENUM:      return _name();
+            case CLASS:     return _name();
+            case INTERFACE: return _name();
+            default: return "<typename>";
+        }
+    }
+
+    String membersToString( String prefix )
+    {
+        switch( _kind() )
+        {
+            case ENUM:      break;
+            case CLASS:     break;
+            case INTERFACE: break;
+            default:        return "";
+        }
+        
+        SymbolMap members = _members();
+        if( members.size() == 0 ) return prefix + "{}\n";
+
+        String memberPrefix = prefix + "    ";
+        StringBuilder builder = new StringBuilder( prefix ).append( "{\n" );
+        for( Symbol member : members )
+        {
+            builder.append( member.toString( memberPrefix ) );
+        }
+        builder.append( prefix ).append( "}\n" );
+        return builder.toString();
     }
 
 

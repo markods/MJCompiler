@@ -107,7 +107,7 @@ public class Compiler
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ LEXER" );
         logger.info( "Lexing input file:" );
 
-        StringBuilder output = new StringBuilder( "========================LEXER OUTPUT===========================\n" );
+        StringBuilder output = new StringBuilder( "=========================LEXER OUTPUT==========================\n" );
 
 
         // read file and lex it
@@ -190,7 +190,7 @@ public class Compiler
 
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ PARSER" );
         logger.info( "Parsing input file:" );
-        logger.info( "========================PARSER OUTPUT===========================" );
+        logger.info( "=========================PARSER OUTPUT==========================" );
 
         SyntaxNode syntaxRoot = null;
         Parser parser = null;
@@ -306,17 +306,22 @@ public class Compiler
         if( syntaxRoot == null ) return null;
 
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ SEMANTIC" );
-        logger.info( "Semantic checking" );
+        logger.info( "Semantic checking:" );
         
         // create a semantic check visitor
         SemanticVisitor semanticVisitor = new SemanticVisitor();
 
-        // do a semantic pass over the abstract syntax tree and fill in the symbol table
-        syntaxRoot.traverseBottomUp( semanticVisitor );
-        
-        // log the symbol table and the syntax tree
-        logger.log( Log4J.INFO, tsdump(), true );
-        logger.log( Log4J.INFO, syntaxTree( syntaxRoot ), true );
+        try
+        {
+            // do a semantic pass over the abstract syntax tree and fill in the symbol table
+            syntaxRoot.traverseBottomUp( semanticVisitor );
+        }
+        finally
+        {
+            // log the symbol table and the syntax tree
+            logger.log( Log4J.INFO, tsdump(), true );
+            logger.log( Log4J.INFO, syntaxTree( syntaxRoot ), true );
+        }
 
         // if there are syntax or semantic errors, return
         if( errors.hasErrors() ) return null;
@@ -331,7 +336,7 @@ public class Compiler
         if( syntaxRoot == null || fOutput == null ) return false;
 
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER" );
-        logger.info( "Compiling code" );
+        logger.info( "Compiling code:" );
 
         // generate code from the abstract syntax tree
         CodeGenVisitor codeGenerator = new CodeGenVisitor();
@@ -366,7 +371,7 @@ public class Compiler
     private static String syntaxTree( SyntaxNode syntaxRoot )
     {
         if( syntaxRoot == null ) return null;
-        String syntaxTree = "========================SYNTAX TREE============================\n"
+        String syntaxTree = "=========================SYNTAX TREE===========================\n"
                           + syntaxRoot.toString();
         return syntaxTree;
     }

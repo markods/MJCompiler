@@ -87,6 +87,12 @@ public class TokenCode implements ITokenCode
         return false;
     }
 
+    public static boolean isEqualityComparison( int tokenCode )
+    {
+        return tokenCode == TokenCode.eq
+            || tokenCode == TokenCode.ne;
+    }
+
     public static boolean isEOF( int tokenCode )
     {
         return tokenCode == TokenCode.EOF;

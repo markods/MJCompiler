@@ -78,6 +78,7 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 "static"     { return new_token( TokenCode.STATIC_K, yytext() ); }
 "const"      { return new_token( TokenCode.CONST_K, yytext() ); }
 "void"       { return new_token( TokenCode.VOID_K, yytext() ); }
+"null"       { return new_token( TokenCode.NULL_K, yytext() ); }
 
 "if"         { return new_token( TokenCode.IF_K, yytext() ); }
 "else"       { return new_token( TokenCode.ELSE_K, yytext() ); }

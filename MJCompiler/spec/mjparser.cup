@@ -159,7 +159,7 @@ scan with {:
 
 // keywords [terminals]
 terminal PROGRAM_K, CLASS_K, /*ENUM_K,*/ EXTENDS_K;   // enum currently not supported
-terminal STATIC_K, CONST_K, VOID_K;
+terminal STATIC_K, CONST_K, VOID_K, NULL_K;
 terminal IF_K, ELSE_K, SWITCH_K, CASE_K, BREAK_K, CONTINUE_K, RETURN_K;
 terminal DO_K, WHILE_K;
 terminal NEW_K, PRINT_K, READ_K;
@@ -204,9 +204,12 @@ nonterminal MethodDeclList;
 
 nonterminal MethodDecl;
 nonterminal rs.ac.bg.etf.pp1.Symbol MethodDeclType;
+nonterminal MethodDeclBody;
 nonterminal FormPars;
+nonterminal FormParsScope;
 nonterminal FormParsList;
 nonterminal rs.ac.bg.etf.pp1.Symbol FormParam;
+nonterminal rs.ac.bg.etf.pp1.Symbol FormParamType;
 nonterminal VarDeclList;
 
 nonterminal VarDecl;
@@ -223,14 +226,17 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ConstInit;
 
 // statements [nonterminals]
 nonterminal Statement;
+nonterminal DoWhileScope;
+nonterminal SwitchScope;
 nonterminal DesignatorStatement;
 nonterminal StatementList;
-
 nonterminal CaseList;
 nonterminal Case;
 
-nonterminal rs.ac.bg.etf.pp1.Symbol ActPars;
-nonterminal rs.ac.bg.etf.pp1.Symbol ActParsList;
+nonterminal ActPars;
+nonterminal ActParsScope;
+nonterminal ActParsList;
+nonterminal rs.ac.bg.etf.pp1.Symbol ActParam;
 
 nonterminal rs.ac.bg.etf.pp1.Symbol Condition;
 nonterminal rs.ac.bg.etf.pp1.Symbol CondTerm;
@@ -246,8 +252,6 @@ nonterminal rs.ac.bg.etf.pp1.Symbol Designator;
 
 
 // miscellaneous [nonterminals]
-nonterminal OpenScope;
-
 nonterminal rs.ac.bg.etf.pp1.Symbol ReturnType;  // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Type;        // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Literal;     // value, type
@@ -300,7 +304,7 @@ GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
 // class A { { method method method } }
 // class A extends B { vardl vardl vardl vardl }
 // class A extends B { vardl vardl vardl vardl { method method method } }
-ClassDecl ::= (ClassDecl_Plain) ClassDeclType lbrace OpenScope ClassDeclBody rbrace;
+ClassDecl ::= (ClassDecl_Plain) ClassDeclType lbrace ClassDeclBody rbrace;
 
 // class A
 // class A extends B
@@ -313,7 +317,7 @@ ClassDeclType ::= (ClassDeclType_Err    ) CLASS_K error {: parser.report_error( 
 // vardl vardl vardl vardl
 // vardl vardl vardl vardl { method method method }
 ClassDeclBody ::= (ClassDeclBody_Vars       ) VarDeclList;
-ClassDeclBody ::= (ClassDeclBody_VarsMethods) VarDeclList lbrace OpenScope MethodDeclList rbrace;
+ClassDeclBody ::= (ClassDeclBody_VarsMethods) VarDeclList lbrace MethodDeclList rbrace;
 
 // <epsilon>
 // method method method
@@ -330,24 +334,34 @@ MethodDeclList ::= (MethodDeclList_Empty) ;
 // void foo( int a, char c, Node Array[] ) { statement statement }
 // void foo( int a, char c, Node Array[] ) vardl vardl { }
 // void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen OpenScope FormPars rparen OpenScope VarDeclList lbrace StatementList rbrace;
+MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList lbrace StatementList rbrace;
 
 // void foo
 // A foo
 MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
 
+// action symbol for opening a new scope
+MethodDeclBody ::= (MethodDeclBody_Plain) ;
+
 // <epsilon>
 // int ident, Node Array[], char c
-FormPars ::= (FormPars_List ) FormParsList;
-FormPars ::= (FormPars_Empty) ;
+FormPars ::= (FormPars_List ) FormParsScope FormParsList;
+FormPars ::= (FormPars_Empty) FormParsScope ;
+
+// action symbol for opening a new scope
+FormParsScope ::= (FormParsScope_Plain) ;
 
 // int a, char c, Node Array[]
 FormParsList ::= (FormParsList_Init)                    FormParam;
 FormParsList ::= (FormParsList_Tail) FormParsList comma FormParam;
 
 // int a, char c, Node Array[]
-FormParam ::= (FormParam_Plain) Type VarIdent;
+FormParam ::= (FormParam_Plain) FormParamType VarIdent;
 FormParam ::= (FormParam_Err  ) error {: parser.report_error( "Bad formal parameter", null ); :};
+
+// int
+// Node
+FormParamType ::= (FormParamType_Plain) Type;
 
 // <epsilon>
 // vardl vardl vardl vardl
@@ -425,8 +439,8 @@ ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initializatio
 Statement ::= (Statement_Designator ) DesignatorStatement semicol;
 Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
 Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
-Statement ::= (Statement_DoWhile    ) DO_K Statement WHILE_K lparen Condition rparen semicol;
-Statement ::= (Statement_Switch     ) SWITCH_K lparen Expr rparen lbrace CaseList rbrace;
+Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen Condition rparen semicol;
+Statement ::= (Statement_Switch     ) SwitchScope lparen Expr rparen lbrace CaseList rbrace;
 Statement ::= (Statement_Break      ) BREAK_K       semicol;
 Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
 Statement ::= (Statement_Return     ) RETURN_K      semicol;
@@ -434,9 +448,13 @@ Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
 Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
 Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
 Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
-Statement ::= (Statement_Scope      ) lbrace OpenScope StatementList rbrace;
+Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
 Statement ::= (Statement_Semicolon  ) semicol;
 Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
+
+// action symbols for opening a new scope
+DoWhileScope ::= (DoWhileScope_Plain) DO_K;
+SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
 
 // ident.ident[ expr ] = expr
 // ident.ident[ expr ]( )
@@ -468,25 +486,31 @@ Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
 // <epsilon>
 // expr
 // expr, expr, expr
-ActPars ::= (ActPars_Plain) ActParsList;
-ActPars ::= (ActPars_Empty) ;
+ActPars ::= (ActPars_Plain) ActParsScope ActParsList;
+ActPars ::= (ActPars_Empty) ActParsScope ;
+
+// action symbol for opening a new scope
+ActParsScope ::= (ActParsScope_Plain) ;
 
 // expr
 // expr, expr, expr
-ActParsList ::= (ActParsList_Expr)                   Expr;
-ActParsList ::= (ActParsList_Tail) ActParsList comma Expr;
+ActParsList ::= (ActParsList_Expr)                   ActParam;
+ActParsList ::= (ActParsList_Tail) ActParsList comma ActParam;
+
+// expr
+ActParam ::= (ActParam_Plain) Expr;
 
 // expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
 Condition ::= (Condition_Term)              CondTerm;
-Condition ::= (Condition_Tail) Condition or CondTerm;
+Condition ::= (Condition_Or  ) Condition or CondTerm;
 
 // expr < expr and expr >= expr
 CondTerm ::= (CondTerm_Fact)              CondFact;
-CondTerm ::= (CondTerm_Tail) CondTerm and CondFact;
+CondTerm ::= (CondTerm_And ) CondTerm and CondFact;
 
 // expr < expr and expr >= expr
-CondFact ::= (CondFact_Expr) Expr;
-CondFact ::= (CondFact_Tail) Expr Relop Expr;
+CondFact ::= (CondFact_Expr ) Expr;
+CondFact ::= (CondFact_Relop) Expr Relop Expr;
 
 // +term - term + term + term
 Expr ::= (Expr_Addition) Addition;
@@ -523,22 +547,20 @@ Factor ::= (Factor_NewVar        ) NEW_K Type;
 Factor ::= (Factor_NewArray      ) NEW_K Type lbracket Expr rbracket;
 Factor ::= (Factor_Expr          ) lparen Expr rparen;
 
+// null
 // ident
 // ident.ident
 // ident[ expr ]
 // ident.ident.ident[ expr ].ident
 // ident.ident.ident[ expr ].ident[ expr ]
 Designator ::= (Designator_Ident  ) ident:Name;
+Designator ::= (Designator_Null   ) NULL_K;
 Designator ::= (Designator_Field  ) Designator dot ident:Name;
 Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
 
 
 
 
-
-
-// action rule for opening a new scope
-OpenScope ::= (OpenScope_Plain) ;
 
 // void | type
 ReturnType ::= (ReturnType_Void ) VOID_K:TypeName;

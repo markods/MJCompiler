@@ -40,7 +40,7 @@ class Sfera extends Predmet
 
 class Kvadar extends Predmet
 {
-     int a, b, c;
+    int a, b, c;
     {
         void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 'k';}
         void postaviStranice(int a, int b, int c) {this.a = a; this.b = b; this.c = c; vrsta = 'k';}
@@ -73,6 +73,7 @@ int tezinaK, tezinaS;
         s2 = new Sfera;
         s3 = new Sfera;
         
+        k1 = null;
         k1 = new Kvadar;
         k2 = new Kvadar;
         k3 = new Kvadar;
