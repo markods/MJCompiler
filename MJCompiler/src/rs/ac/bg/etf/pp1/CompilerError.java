@@ -3,12 +3,13 @@ package rs.ac.bg.etf.pp1;
 public class CompilerError extends Error
 {
     public static final int NO_INDEX = -1;
-    public static final int ERROR_TYPES = 4;
+    public static final int ERROR_TYPES = 5;
 
     public static final int ARGUMENTS_ERROR = 0;
     public static final int LEXICAL_ERROR   = 1;
     public static final int SYNTAX_ERROR    = 2;
     public static final int SEMANTIC_ERROR  = 3;
+    public static final int COMPILE_ERROR   = 4;
 
     public static String getKindName( int errType )
     {
@@ -18,6 +19,7 @@ public class CompilerError extends Error
             case LEXICAL_ERROR:   return "LEX";
             case SYNTAX_ERROR:    return "SYN";
             case SEMANTIC_ERROR:  return "SEM";
+            case COMPILE_ERROR:   return "COM";
             default:              return ".";
         }
     }

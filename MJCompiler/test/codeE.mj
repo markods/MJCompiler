@@ -1,4 +1,6 @@
-program p
+// codeE
+
+program codeE
 const int size = 10;
 class Table {
     int pos[], neg[];
@@ -49,3 +51,5 @@ Table val;
         else        print('+');
     }
 }
+
+// codeE

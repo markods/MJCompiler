@@ -227,7 +227,7 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ConstInit;
 // statements [nonterminals]
 nonterminal Statement;
 nonterminal DoWhileScope;
-nonterminal SwitchScope;
+nonterminal rs.ac.bg.etf.pp1.props.IntSetProp SwitchScope;
 nonterminal DesignatorStatement;
 nonterminal StatementList;
 nonterminal CaseList;
@@ -247,6 +247,7 @@ nonterminal rs.ac.bg.etf.pp1.Symbol Addition;
 nonterminal rs.ac.bg.etf.pp1.Symbol Term;
 
 nonterminal rs.ac.bg.etf.pp1.Symbol Factor;
+nonterminal rs.ac.bg.etf.pp1.Symbol MethodCall;
 nonterminal rs.ac.bg.etf.pp1.Symbol Designator;
 
 
@@ -462,7 +463,7 @@ SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
 // ident.ident[ expr ]++
 // ident.ident[ expr ]--
 DesignatorStatement ::= (DesignatorStatement_Assign    ) Designator Assignop Expr;
-DesignatorStatement ::= (DesignatorStatement_Call      ) Designator lparen ActPars rparen;
+DesignatorStatement ::= (DesignatorStatement_Call      ) MethodCall lparen ActPars rparen;
 DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
 DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
 
@@ -540,12 +541,15 @@ Term ::= (Term_Tail  ) Term Mulop Factor;
 // new Object
 // new Array[ expr ]
 // ( expr )
-Factor ::= (Factor_Designator    ) Designator;
-Factor ::= (Factor_DesignatorCall) Designator lparen ActPars rparen;
-Factor ::= (Factor_Literal       ) Literal;
-Factor ::= (Factor_NewVar        ) NEW_K Type;
-Factor ::= (Factor_NewArray      ) NEW_K Type lbracket Expr rbracket;
-Factor ::= (Factor_Expr          ) lparen Expr rparen;
+Factor ::= (Factor_Designator ) Designator;
+Factor ::= (Factor_MethodCall ) MethodCall lparen ActPars rparen;
+Factor ::= (Factor_Literal    ) Literal;
+Factor ::= (Factor_NewVar     ) NEW_K Type;
+Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
+Factor ::= (Factor_Expr       ) lparen Expr rparen;
+
+// ident.ident[ expr ]( expr, expr, expr )
+MethodCall ::= (MethodCallScope_Plain) Designator;
 
 // null
 // ident

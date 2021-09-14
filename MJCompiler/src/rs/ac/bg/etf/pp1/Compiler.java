@@ -2,6 +2,7 @@ package rs.ac.bg.etf.pp1;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -284,7 +285,7 @@ public class Compiler
                  BufferedWriter bwParse = new BufferedWriter( fwParse );
             )
             {
-                bwParse.write( syntaxTree( syntaxRoot ) );
+                bwParse.write( syntaxTreeToString( syntaxRoot ) );
             }
             catch( IOException ex )
             {
@@ -320,9 +321,10 @@ public class Compiler
         {}
         finally
         {
-            // log the symbol table and the syntax tree
-            logger.log( Log4J.INFO, tsdump(), true );
-            logger.log( Log4J.INFO, syntaxTree( syntaxRoot ), true );
+            // log the source code, symbol table and the syntax tree
+            logger.log( Log4J.INFO, sourceCodeToString(), true );
+            logger.log( Log4J.INFO, symbolTableToString(), true );
+            logger.log( Log4J.INFO, syntaxTreeToString( syntaxRoot ), true );
         }
 
         // if there are syntax or semantic errors, return
@@ -345,11 +347,15 @@ public class Compiler
         syntaxRoot.traverseBottomUp( codeGenerator );
         Code.dataSize = semanticCheck.getVarCount();
         Code.mainPc = codeGenerator.getMainPc();
-        
+
+        // log the compiled code
+        String compiledCode = compiledCodeToString();
+        logger.log( Log4J.INFO, compiledCode, true );
+
         // write compiler results to output file
-        try( FileOutputStream fosOutput = new FileOutputStream( fOutput ); )
+        try( FileWriter fWriter = new FileWriter( fOutput ); )
         {
-            Code.write( fosOutput );
+            fWriter.write( compiledCode );
         }
         catch( IOException ex )
         {
@@ -363,19 +369,46 @@ public class Compiler
     
     
 
-    // return the compiler's symbol table as string
-    private static String tsdump()
+    // return the source code as a string
+    private static String sourceCodeToString()
     {
-        return SymbolTable.dump();
+        return "=========================SOURCE CODE============================\n"
+            + tokens.toString();
+    }
+
+    // return the compiler's symbol table as a string
+    private static String symbolTableToString()
+    {
+        return SymbolTable.asString();
     }
 
     // return the syntax tree as a string
-    private static String syntaxTree( SyntaxNode syntaxRoot )
+    private static String syntaxTreeToString( SyntaxNode syntaxRoot )
     {
         if( syntaxRoot == null ) return null;
         String syntaxTree = "=========================SYNTAX TREE===========================\n"
                           + syntaxRoot.toString();
         return syntaxTree;
+    }
+
+    // return the compiled code as a string
+    private static String compiledCodeToString()
+    {
+        String output = null;
+
+        try( ByteArrayOutputStream buffer = new ByteArrayOutputStream(); )
+        {
+            buffer.write( "=========================COMPILED CODE==========================\n".getBytes() );
+            Code.write( buffer );
+            output = buffer.toString( "UTF-8" );
+        }
+        catch( IOException ex )
+        {
+            Compiler.errors.add( CompilerError.COMPILE_ERROR, "Error during conversion of compiled code to string", ex );
+            return null;
+        }
+
+        return output;
     }
 
 

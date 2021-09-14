@@ -1,4 +1,4 @@
-//Test 302
+// codeB
 
 program test302
 
@@ -92,3 +92,4 @@ int niz2;
     }
 }
 
+// codeB

@@ -23,6 +23,7 @@ public class StackProp<T> implements Iterable<T>
         }
         return null;
     }
+    public int size() { return stack.size(); }
     public void reset() { stack.clear(); }
     public Iterator<T> iterator() { return stack.iterator(); }
 }

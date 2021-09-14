@@ -1,6 +1,6 @@
-// Test301
+// errorA
 
-program test301
+program errorA
 
     int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
     int pet=5-;
@@ -40,4 +40,4 @@ program test301
     {}
 }
 
-
+// errorA

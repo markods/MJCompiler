@@ -1,6 +1,6 @@
-//Test 303
+// codeC
 
-program test_303
+program test303
 
 const int delilac = 3;
 
@@ -163,3 +163,5 @@ int tezinaK, tezinaS;
         }while(i<10);
     }
 }
+
+// codeC

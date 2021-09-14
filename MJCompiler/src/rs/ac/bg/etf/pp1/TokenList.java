@@ -57,4 +57,16 @@ public class TokenList
         return tokenList.get( tokenList.size() - 1 );
     }
 
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        for( Token token : tokenList )
+        {
+            builder.append( token.value != null ? token.value : "" );
+        }
+        if( builder.charAt( builder.length()-1 ) != '\n' ) builder.append( "\n" );
+        return builder.toString();
+    }
+
 }

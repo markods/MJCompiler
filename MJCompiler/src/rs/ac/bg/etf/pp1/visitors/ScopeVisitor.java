@@ -32,6 +32,7 @@ public class ScopeVisitor implements Visitor
     public void visit( Assignop                       node ) { updateScope( node ); }
     public void visit( ActParam                       node ) { updateScope( node ); }
     public void visit( SwitchScope                    node ) { updateScope( node ); }
+    public void visit( MethodCall                     node ) { updateScope( node ); }
     public void visit( VarDeclType                    node ) { updateScope( node ); }
     public void visit( StatementList                  node ) { updateScope( node ); }
     public void visit( Addop                          node ) { updateScope( node ); }
@@ -93,11 +94,12 @@ public class ScopeVisitor implements Visitor
     public void visit( Designator_Field               node ) { updateScope( node ); }
     public void visit( Designator_Null                node ) { updateScope( node ); }
     public void visit( Designator_Ident               node ) { updateScope( node ); }
+    public void visit( MethodCallScope_Plain               node ) { updateScope( node ); }
     public void visit( Factor_Expr                    node ) { updateScope( node ); }
     public void visit( Factor_NewArray                node ) { updateScope( node ); }
     public void visit( Factor_NewVar                  node ) { updateScope( node ); }
     public void visit( Factor_Literal                 node ) { updateScope( node ); }
-    public void visit( Factor_DesignatorCall          node ) { updateScope( node ); }
+    public void visit( Factor_MethodCall              node ) { updateScope( node ); }
     public void visit( Factor_Designator              node ) { updateScope( node ); }
     public void visit( Term_Tail                      node ) { updateScope( node ); }
     public void visit( Term_Factor                    node ) { updateScope( node ); }

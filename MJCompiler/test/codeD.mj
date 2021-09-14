@@ -1,4 +1,6 @@
-program MJProgram
+// codeD
+
+program codeD
     int x; int y;
 {
     
@@ -14,3 +16,5 @@ program MJProgram
         print(y);
     }
 }
+
+// codeD

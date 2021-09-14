@@ -2,6 +2,8 @@ package rs.ac.bg.etf.pp1;
 
 import java.util.ArrayList;
 
+import rs.ac.bg.etf.pp1.props.StackProp;
+
 // import java.io.ByteArrayOutputStream;
 // import java.io.IOException;
 // import java.util.Stack;
@@ -42,7 +44,7 @@ public class SymbolTable
     public static final Symbol boolSym = Symbol.newType( "bool",   boolType );
 
     // this value is copied over from the Tab.init() method
-    private static int currScopeLevel = -1;
+    private static int currScopeLevel = -2;
     private static Scope global = null;
     // saves all the scopes that were ever created in preorder
     // +   used for printing the symbol table
@@ -148,8 +150,7 @@ public class SymbolTable
     public static Scope openScope()
     {
         Tab.openScope();
-        scopeList.add( new ScopeInfo( _local(), currScopeLevel ) );
-        currScopeLevel++;
+        scopeList.add( new ScopeInfo( _local(), ++currScopeLevel ) );
 
         return _local();
     }
@@ -239,16 +240,27 @@ public class SymbolTable
 
     
     // return the symbol table as string
-    public static String dump()
+    public static String asString()
     {
+        StackProp<Scope> scopeStack = new StackProp<>();
+        for( Scope scope = _local(); scope != null;   )
+        {
+            scopeStack.add( scope );
+            scope = scope.getOuter();
+        }
+        
         StringBuilder builder = new StringBuilder();
-
         builder.append( "=========================SYMBOL TABLE==========================\n" );
         for( ScopeInfo curr : scopeList )
         {
             // start at the -1'st (global) scope
-            String scopeName = ( curr._level() > -1 ) ? String.format( "Scope[%d]\n", curr._level() ) : "Global\n";
-            builder.append( "--------------------------------------------------------------- <<< " ).append( scopeName )
+            String scopeName = ( curr._level() > -1 ) ? String.format( "Scope[%d]", curr._level() ) : "Global";
+            String scopeNameExt = "\n";
+            if( curr._scope() == scopeStack.top() ) { scopeNameExt =    " *\n"; scopeStack.remove(); }
+            if( curr._scope() == _local()         ) { scopeNameExt = " <---\n";  }
+
+            builder.append( "--------------------------------------------------------------- <<< " )
+                .append( scopeName ).append( scopeNameExt )
                 .append( curr._symbols().toString( curr._level() + 1 ) );
         }
 

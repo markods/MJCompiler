@@ -23,10 +23,8 @@ public class SemanticVisitor extends VisitorAdaptor
         public final CountProp programVarCnt = new CountProp();
 
         public final StackProp<SyntaxNode> syntaxNodeStack = new StackProp<>();
+        // FIXME: this should also be on the syntax node stack (allows for nested classes)
         public final BoolProp isInForwardDeclMode = new BoolProp();
-
-        public final RefProp<Designator> lastDesignator = new RefProp<>();
-        public final SetProp<Integer> lastSwitchNumbers = new SetProp<>();
     }
 
 
@@ -244,6 +242,7 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Program_Plain curr )
     {
+        // remove the program node from the syntax node stack
         context.syntaxNodeStack.remove();
 
         Symbol left = curr.getProgramType().symbol;
@@ -276,6 +275,24 @@ public class SemanticVisitor extends VisitorAdaptor
         {
             if( symbol.isVar() ) context.programVarCnt.get_inc();
         }
+
+        // if the symbol table has more or less scopes open than expected
+        // +   global -> program
+        if( SymbolTable._localsLevel() != 0 )
+        {
+            report_verbose( curr.getProgramType(), String.format( "Unexpected symbol table scope level: %d (expected 0)", SymbolTable._localsLevel() ) );
+        }
+        // if the symbol table has more or less scopes open than expected
+        // +   global -> program
+        if( context.syntaxNodeStack.size() != 0 )
+        {
+            report_verbose( curr.getProgramType(), "Syntax node stack not empty" );
+        }
+        // if the semantic visitor is in forward declaration mode (impossible here)
+        if( context.isInForwardDeclMode.true_() )
+        {
+            report_verbose( curr.getProgramType(), "Semantic visitor somehow still in forward declaration mode" );
+        }
     }
 
     ////// program my_program
@@ -283,6 +300,7 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( ProgramType_Plain curr )
     {
+        // add the program node to the syntax node stack
         context.syntaxNodeStack.add( curr );
         SymbolType programType = SymbolType.newClass( "@prog", SymbolTable.anyType, null );
         curr.symbol = Symbol.newProgram( curr.getProgramName(), programType, null );
@@ -325,7 +343,9 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( ClassDecl_Plain curr )
     {
+        // remove the class declaration type node from the syntax node stack
         context.syntaxNodeStack.remove();
+        // close the class's scope
         SymbolTable.closeScope();
     }
 
@@ -352,6 +372,7 @@ public class SemanticVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_ClassDeclType( ClassDeclType curr, String className, Symbol base )
     {
+        // add the class declaration type node to the syntax node stack
         context.syntaxNodeStack.add( curr );
         String dummyName = String.format( "@Class[%d]", SymbolTable._localsSize() );
 
@@ -531,9 +552,8 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the method's formal parameters have already been set by the forward declaration pass
         if( context.isInForwardDeclMode.false_() && function.isMethod() )
         {
-            // set up the method scope, containing the method's formal parameters and its locals in the future
-            SymbolTable.openScope();
-            SymbolTable.addSymbols( function._params() );
+            // do nothing, as the method scope was already set up by <MethodDeclType>
+            // +   the scope currently contains the method's formal parameters, but it will contain its locals in the future
             return;
         }
 
@@ -657,13 +677,13 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the formal parameter is plain
         if( curr instanceof FormParam_Plain )
         {
-            // remove the <FormParamType> from the <syntax node stack>
+            // remove the FormParamType from the syntax node stack
             context.syntaxNodeStack.remove();
         }
         // if the formal parameter is an error
         else if( curr instanceof FormParam_Err )
         {
-            // don't do this next line since the <FormParam_Err syntax node> wasn't added to the <syntax node stack>
+            // don't do this next line since the FormParam_Err syntax node wasn't added to the syntax node stack
          // context.syntaxNodeStack.remove();
 
             int paramIdx = SymbolTable._localsSize();
@@ -734,7 +754,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // +   if we are in a class and the forward declaration mode is finished
         if( classDeclType != null && context.isInForwardDeclMode.false_() ) return;
 
-        // remove the <VarDeclType> from the <syntax node stack>
+        // remove the VarDeclType from the syntax node stack
         context.syntaxNodeStack.remove();
     }
 
@@ -1009,8 +1029,8 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // find the surrounding do-while or switch statement
         SyntaxNode scope = context.syntaxNodeStack.find(
-            elem -> ( elem instanceof Statement_DoWhile
-                   || elem instanceof Statement_Switch )
+            elem -> ( elem instanceof DoWhileScope_Plain
+                   || elem instanceof SwitchScope_Plain )
         );
 
         // if the break is not in a do-while or switch statement
@@ -1026,7 +1046,7 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // find the surrounding do-while statement
         SyntaxNode scope = context.syntaxNodeStack.find(
-            elem -> ( elem instanceof Statement_DoWhile )
+            elem -> ( elem instanceof DoWhileScope_Plain )
         );
 
         // if the continue is not in a do-while statement
@@ -1138,13 +1158,14 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( DoWhileScope_Plain curr )
     {
-        context.syntaxNodeStack.add( curr.getParent() );
+        context.syntaxNodeStack.add( curr );
     }
     // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
     @Override
     public void visit( SwitchScope_Plain curr )
     {
-        context.syntaxNodeStack.add( curr.getParent() );
+        context.syntaxNodeStack.add( curr );
+        curr.intsetprop = new IntSetProp();
     }
 
     ////// ident.ident[ expr ] = expr
@@ -1188,7 +1209,13 @@ public class SemanticVisitor extends VisitorAdaptor
             report_fatal( curr, "Assignment operator not yet supported" );
         }
     }
-    // DesignatorStatement ::= (DesignatorStatement_Call      ) Designator lparen ActPars rparen;
+    // DesignatorStatement ::= (DesignatorStatement_Call      ) MethodCall lparen ActPars rparen;
+    @Override
+    public void visit( DesignatorStatement_Call curr )
+    {
+        // remove the function call's designator from the syntax node stack
+        context.syntaxNodeStack.remove();
+    }
     // DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
     @Override
     public void visit( DesignatorStatement_Plusplus curr )
@@ -1240,8 +1267,23 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Case_Plain curr )
     {
+        // find the switch scope surrounding this symbol
+        SwitchScope_Plain switchScope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof SwitchScope_Plain )
+        );
+
+        // if the switch scope doesn't exist
+        if( switchScope == null )
+        {
+            report_fatal( curr, "Switch statement not yet supported" );
+            return;
+        }
+        
+        // get the switch numbers set
+        IntSetProp switchNumbers = switchScope.intsetprop;
+
         // if the case number already exists
-        if( !context.lastSwitchNumbers.add( curr.getCaseNum() ) )
+        if( !switchNumbers.add( curr.getCaseNum() ) )
         {
             report_verbose( curr, "Case with the same number already exists" );
             return;
@@ -1275,22 +1317,28 @@ public class SemanticVisitor extends VisitorAdaptor
         // open a temporary scope for the activation parameters
         SymbolTable.openScope();
 
-        // get the last designator
-        Designator lastDesignator = context.lastDesignator.get();
-        if( lastDesignator == null ) return;
+        // find the method call scope surrounding this symbol
+        MethodCallScope_Plain methodCallScope = ( MethodCallScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodCallScope_Plain )
+        );
+        // if the method call scope doesn't exist
+        if( methodCallScope == null )
+        {
+            report_fatal( curr, "Method call not yet supported" );
+            return;
+        }
 
         // if an error has been reported somewhere in the designator
-        Symbol design = lastDesignator.symbol;
+        Symbol design = methodCallScope.symbol;
         if( design.isNoSym() )
         {
-            lastDesignator = null;
             return;
         }
         // if the designator is not a function or class member method
         if( !design.isFunction() && !design.isMethod() )
         {
-            report_verbose( lastDesignator, "Expected function or class member method" );
-            lastDesignator = null;
+            report_verbose( methodCallScope, "Expected function or class member method" );
+            methodCallScope.symbol = SymbolTable.noSym;
             return;
         }
     }
@@ -1322,20 +1370,32 @@ public class SemanticVisitor extends VisitorAdaptor
             actParamNode.symbol = null;
         }
 
-        // get the last designator
+        // find the method call scope surrounding this symbol
         // +   the check if this is a function/method is performed in the ActParsScope
-        Designator lastDesignator = context.lastDesignator.get();
-        if( lastDesignator == null ) return;
-        
+        MethodCallScope_Plain methodCallScope = ( MethodCallScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodCallScope_Plain )
+        );
+        // if the method call scope doesn't exist
+        if( methodCallScope == null )
+        {
+            report_fatal( curr, "Method call not yet supported" );
+            return;
+        }
+        // if there was an error in the method call scope (either designator error, or one of the formal parameters reported an error that should stop the next formal parameters' checking)
+        if( methodCallScope.symbol.isNoSym())
+        {
+            return;
+        }
+
         // if the actual parameter list is empty (currExpression is null in ActPars_Empty)
-        List<Symbol> formParams = lastDesignator.symbol._params()._sorted();
+        List<Symbol> formParams = methodCallScope.symbol._params()._sorted();
         if( currExpression == null )
         {
             // but the function has formal parameters
             if( !formParams.isEmpty() )
             {
-                report_basic( lastDesignator, "Less parameters given than expected in function call" );
-                lastDesignator = null;
+                report_basic( methodCallScope, "Less parameters given than expected in function call" );
+                methodCallScope.symbol = SymbolTable.noSym;
             }
             
             // IMPORTANT: the <empty activation parameter list> checking always ends here
@@ -1345,7 +1405,7 @@ public class SemanticVisitor extends VisitorAdaptor
         if( actParamIdx >= formParams.size() )
         {
             report_basic( currExpression, "More parameters given than expected in function call" );
-            lastDesignator = null;
+            methodCallScope.symbol = SymbolTable.noSym;
             return;
         }
         // if less activation parameters are given than expected in the function declaration
@@ -1353,8 +1413,8 @@ public class SemanticVisitor extends VisitorAdaptor
         boolean hasNext = curr.getParent().getParent() instanceof ActParsList;
         if( !hasNext && actParamIdx != formParams.size()-1 )
         {
-            report_basic( lastDesignator, "Less parameters given than expected in function call" );
-            lastDesignator = null;
+            report_basic( methodCallScope, "Less parameters given than expected in function call" );
+            methodCallScope.symbol = SymbolTable.noSym;
             // IMPORTANT: don't return here, because the current parameter hasn't yet been checked
          // return;
         }
@@ -1643,11 +1703,13 @@ public class SemanticVisitor extends VisitorAdaptor
 
         curr.symbol = left;
     }
-    // Factor ::= (Factor_DesignatorCall) Designator lparen ActPars rparen;
+    // Factor ::= (Factor_MethodCall ) MethodCall lparen ActPars rparen;
     @Override
-    public void visit( Factor_DesignatorCall curr )
+    public void visit( Factor_MethodCall curr )
     {
-        curr.symbol = curr.getDesignator().symbol;
+        curr.symbol = curr.getMethodCall().symbol;
+        // remove the function call's designator from the syntax node stack
+        context.syntaxNodeStack.remove();
     }
     // Factor ::= (Factor_Literal       ) Literal;
     @Override
@@ -1716,6 +1778,16 @@ public class SemanticVisitor extends VisitorAdaptor
         curr.symbol = curr.getExpr().symbol;
     }
 
+    ////// ident.ident[ expr ]( expr, expr, expr )
+    // MethodCall ::= (MethodCallScope_Plain) Designator;
+    @Override
+    public void visit( MethodCallScope_Plain curr )
+    {
+        curr.symbol = curr.getDesignator().symbol;
+        // add the function call's designator to the syntax node stack
+        context.syntaxNodeStack.add( curr );
+    }
+
     ////// null
     ////// ident
     ////// ident.ident
@@ -1726,8 +1798,6 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_Ident curr )
     {
-        // save the last encountered designator
-        context.lastDesignator.set( curr );
         // reset the current designator's symbol
         curr.symbol = SymbolTable.noSym;
 
@@ -1762,8 +1832,6 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_Null curr )
     {
-        // save the last encountered designator
-        context.lastDesignator.set( curr );
         // reset the current designator's symbol
         curr.symbol = SymbolTable.nullSym;
     }
@@ -1771,8 +1839,6 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_Field curr )
     {
-        // save the last encountered designator
-        context.lastDesignator.set( curr );
         // reset the current designator's symbol
         curr.symbol = SymbolTable.noSym;
 
@@ -1811,8 +1877,6 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_ArrElem curr )
     {
-        // save the last encountered designator
-        context.lastDesignator.set( curr );
         // set the current designator to the default value
         curr.symbol = SymbolTable.noSym;
 
