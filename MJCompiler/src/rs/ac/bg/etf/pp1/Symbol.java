@@ -9,7 +9,7 @@ import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 public class Symbol extends Obj implements Cloneable
 {
-    public static final int NO_VALUE = -1;
+    public static final int NO_VALUE = -999;
 
     public static final int CONST        = Obj.Con;
     public static final int VAR          = Obj.Var;
@@ -130,10 +130,10 @@ public class Symbol extends Obj implements Cloneable
     public boolean isArrayElem()   { return _kind() == ARRAY_ELEM;   }
     public boolean isProgram()     { return _kind() == PROGRAM;      }
 
-    public boolean isNoSym()       { return this == SymbolTable.noSym;               }
-    public boolean isAnySym()      { return this == SymbolTable.anySym;              }
-    public boolean isDummySym()    { return isNoSym() || _name().charAt( 0 ) != '@'; }
-    public boolean isLvalue()      { return                     _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM; }
+    public boolean isNoSym()       { return this == SymbolTable.noSym;  }
+    public boolean isAnySym()      { return this == SymbolTable.anySym; }
+    public boolean isDummySym()    { return _name().charAt( 0 ) == '@'; }
+    public boolean isLvalue()      { return                   ( _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM ) && !"this".equals( _name() ); }
     public boolean isRvalue()      { return _kind() == CONST || _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM; }
 
 
@@ -154,7 +154,6 @@ public class Symbol extends Obj implements Cloneable
     public static boolean canOverride( Symbol methodA, Symbol methodB )
     {
         if( methodA == methodB ) return true;
-        if( methodA == null || methodB == null ) return false;
         if( !methodA.isMethod() || !methodB.isMethod() ) return false;
 
         // check if the return type is equivalent or a subtype of the inherited return type

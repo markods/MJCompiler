@@ -6,5 +6,7 @@ public class BoolProp
     
     public boolean get() { return bool; }
     public boolean set() { bool = true; return bool; }
+    public boolean true_() { return bool; }
+    public boolean false_() { return !bool; }
     public boolean reset() { bool = false; return bool; }
 }

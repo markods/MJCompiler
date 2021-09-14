@@ -316,6 +316,8 @@ public class Compiler
             // do a semantic pass over the abstract syntax tree and fill in the symbol table
             syntaxRoot.traverseBottomUp( semanticVisitor );
         }
+        catch( CompilerError err )
+        {}
         finally
         {
             // log the symbol table and the syntax tree

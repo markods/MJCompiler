@@ -1,6 +1,6 @@
 package rs.ac.bg.etf.pp1;
 
-public class CompilerError
+public class CompilerError extends Error
 {
     public static final int NO_INDEX = -1;
     public static final int ERROR_TYPES = 4;
@@ -35,6 +35,7 @@ public class CompilerError
 
     CompilerError( int kind, String message, int tokenFromIdx, int tokenToIdx )
     {
+        super( message );
         this.kind = kind;
         this.message = message;
         this.tokenFromIdx = tokenFromIdx;

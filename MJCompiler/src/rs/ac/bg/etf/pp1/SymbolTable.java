@@ -13,7 +13,6 @@ import rs.etf.pp1.symboltable.concepts.Scope;
 import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 
-// FIXME: make a symbol table visitor
 public class SymbolTable
 {
     // the number of predefined symbols in the program
@@ -25,12 +24,12 @@ public class SymbolTable
     // +   anyType is not intended to be used as Object (like in Java), since it is equivalent to all types (its used for preventing too many semantic errors from being reported)
     // +   voidType is used when no type is expected (void functions)
     // +   nullType is used when a null keyword is found
-    public static final SymbolType anyType  = SymbolType.newPrimitive( "@any", SymbolType.ANY_TYPE );
-    public static final SymbolType voidType = SymbolType.newPrimitive( "void", SymbolType.NO_TYPE  );
-    public static final SymbolType nullType = SymbolType.newPrimitive( "null", SymbolType.CLASS    );
-    public static final SymbolType intType  = SymbolType.newPrimitive( "int",  SymbolType.INT      );
-    public static final SymbolType charType = SymbolType.newPrimitive( "char", SymbolType.CHAR     );
-    public static final SymbolType boolType = SymbolType.newPrimitive( "bool", SymbolType.BOOL     );
+    public static final SymbolType anyType  = SymbolType.newPrimitive( "@any", SymbolType.ANY_TYPE  );
+    public static final SymbolType voidType = SymbolType.newPrimitive( "void", SymbolType.VOID_TYPE );
+    public static final SymbolType nullType = SymbolType.newPrimitive( "null", SymbolType.CLASS     );
+    public static final SymbolType intType  = SymbolType.newPrimitive( "int",  SymbolType.INT       );
+    public static final SymbolType charType = SymbolType.newPrimitive( "char", SymbolType.CHAR      );
+    public static final SymbolType boolType = SymbolType.newPrimitive( "bool", SymbolType.BOOL      );
     
     // IMPORTANT: <no symbol> is returned when the symbol table cannot find a symbol
     // +   other symbols are just there for allowing their symbol types to be saved in the symbol table
@@ -180,6 +179,9 @@ public class SymbolTable
             && existing._kind() == Symbol.TYPE
             && !existing._type().isPrimitiveType()
         ) return false;
+
+        // if the current scope is a class scope and the 'this' parameter has already been declared, the new 'this' symbol cannot redefined it or hide it
+        if( "this".equals( existing._name() ) ) return false;
 
         // if a system type with the same name already exists, prevent it from being redefined
         if(
