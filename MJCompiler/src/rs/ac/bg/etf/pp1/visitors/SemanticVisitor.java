@@ -23,7 +23,7 @@ public class SemanticVisitor extends VisitorAdaptor
         public final CountProp programVarCnt = new CountProp();
 
         public final StackProp<SyntaxNode> syntaxNodeStack = new StackProp<>();
-        // FIXME: this should also be on the syntax node stack (allows for nested classes)
+        // FIX: this should also be on the syntax node stack (allows for nested classes)
         public final BoolProp isInForwardDeclMode = new BoolProp();
     }
 
@@ -407,8 +407,9 @@ public class SemanticVisitor extends VisitorAdaptor
             SymbolTable.addSymbol( curr.symbol );
         }
 
-        // open the class's scope
+        // open the class's scope and add the class's inherited members
         SymbolTable.openScope();
+        SymbolTable.addSymbols( classType._base()._members() );
 
 
 
@@ -434,11 +435,16 @@ public class SemanticVisitor extends VisitorAdaptor
             else                              report_fatal( curr, String.format( "Class member not yet supported: %s", member._name() ) );
         }
 
+        // sort the methods and fields based on their member indexes
+        methods._symbols( methods._sorted() );
+        fields._symbols( fields._sorted() );
+        staticFields._symbols( staticFields._sorted() );
+        
         int idx = 0;
         // compact the <methods>', <fields>' and <static fields>' indexes
-        idx = 0;   for( Symbol member : methods     ._sorted() ) { member._memberIdx( idx++ ); }
-        idx = 0;   for( Symbol member : fields      ._sorted() ) { member._memberIdx( idx++ ); }
-        idx = 0;   for( Symbol member : staticFields._sorted() ) { member._memberIdx( idx++ ); }
+        idx = 0;   for( Symbol member : methods      ) { member._memberIdx( idx++ ); }
+        idx = 0;   for( Symbol member : fields       ) { member._memberIdx( idx++ ); }
+        idx = 0;   for( Symbol member : staticFields ) { member._memberIdx( idx++ ); }
         idx = 0;
 
         // join all the now sorted members by category
@@ -450,7 +456,7 @@ public class SemanticVisitor extends VisitorAdaptor
         classType._members( members );
 
         // add a dummy 'this' field to the symbol table scope with the index -1
-        Symbol thisSymbol = Symbol.newField( "this", classType, Symbol.NO_VALUE, -1 );
+        Symbol thisSymbol = Symbol.newConst( "this", classType, Symbol.NO_VALUE );
         SymbolTable.addSymbol( thisSymbol );
     }
 
@@ -837,8 +843,14 @@ public class SemanticVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_VarIdent( VarIdent curr, String varName, boolean isArray )
     {
-        // if the symbol has already been initialized by the forward class declaration visitor, return
-        if( curr.symbol != null ) return;
+        // if the symbol has already been initialized by the forward class declaration visitor
+        if( curr.symbol != null )
+        {
+            // if the symbol is in a class/method declaration, add the symbol to the current symbol table scope (method scope)
+            // +   the forward declaration visitor initialized this symbol, but now in the second pass it is missing from the symbol table, so re-add it
+            SymbolTable.addSymbol( curr.symbol );
+            return;
+        }
         // initialize the current symbol
         curr.symbol = SymbolTable.noSym;
 
@@ -1410,7 +1422,7 @@ public class SemanticVisitor extends VisitorAdaptor
         }
         // if less activation parameters are given than expected in the function declaration
         // +   if there are no more activation parameters after the current
-        boolean hasNext = curr.getParent().getParent() instanceof ActParsList;
+        boolean hasNext = ( /*Expr*/curr.getParent() ).getParent() instanceof ActParsList;
         if( !hasNext && actParamIdx != formParams.size()-1 )
         {
             report_basic( methodCallScope, "Less parameters given than expected in function call" );

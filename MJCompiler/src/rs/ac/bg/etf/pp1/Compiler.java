@@ -347,9 +347,10 @@ public class Compiler
         syntaxRoot.traverseBottomUp( codeGenerator );
         Code.dataSize = semanticCheck.getVarCount();
         Code.mainPc = codeGenerator.getMainPc();
-
-        // log the compiled code
         String compiledCode = compiledCodeToString();
+
+        // log the symbol table and the compiled code
+        logger.log( Log4J.INFO, symbolTableToString(), true );
         logger.log( Log4J.INFO, compiledCode, true );
 
         // write compiler results to output file

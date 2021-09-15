@@ -35,13 +35,13 @@ public class SymbolTable
     
     // IMPORTANT: <no symbol> is returned when the symbol table cannot find a symbol
     // +   other symbols are just there for allowing their symbol types to be saved in the symbol table
-    public static final Symbol noSym   = Symbol.newType( "@noSym", anyType  );
-    public static final Symbol anySym  = Symbol.newType( "@any",   anyType  );
-    public static final Symbol voidSym = Symbol.newType( "void",   voidType );
-    public static final Symbol nullSym = Symbol.newType( "null",   nullType );
-    public static final Symbol intSym  = Symbol.newType( "int",    intType  );
-    public static final Symbol charSym = Symbol.newType( "char",   charType );
-    public static final Symbol boolSym = Symbol.newType( "bool",   boolType );
+    public static final Symbol noSym   = Symbol.newType ( "@noSym", anyType  );
+    public static final Symbol anySym  = Symbol.newType ( "@any",   anyType  );
+    public static final Symbol voidSym = Symbol.newType ( "void",   voidType );
+    public static final Symbol nullSym = Symbol.newConst( "null",   nullType, Symbol.NO_VALUE );
+    public static final Symbol intSym  = Symbol.newType ( "int",    intType  );
+    public static final Symbol charSym = Symbol.newType ( "char",   charType );
+    public static final Symbol boolSym = Symbol.newType ( "bool",   boolType );
 
     // this value is copied over from the Tab.init() method
     private static int currScopeLevel = -2;
@@ -172,7 +172,7 @@ public class SymbolTable
     // try to add the given symbol to the symbol table and return if the addition was successful
     public static boolean addSymbol( Symbol symbol )
     {
-        if( symbol == null ) return false;
+        if( symbol == null || symbol.isNoSym() ) return false;
         Symbol existing = findSymbol( symbol._name() );
 
         // if a type with the given name has already been defined, and is not redefinable, this symbol cannot redefine it or hide it
@@ -181,7 +181,7 @@ public class SymbolTable
             && !existing._type().isPrimitiveType()
         ) return false;
 
-        // if the current scope is a class scope and the 'this' parameter has already been declared, the new 'this' symbol cannot redefined it or hide it
+        // if the 'this' parameter has already been declared, prevent it from being redefined or hidden
         if( "this".equals( existing._name() ) ) return false;
 
         // if a system type with the same name already exists, prevent it from being redefined

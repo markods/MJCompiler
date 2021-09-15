@@ -80,13 +80,13 @@ int niz2;
         print(eol); 
         print(inkrement(niz[2], 2));
         
-        niz1 = niz * 2;
+     // niz1 = niz * 2;
         print(niz1[0]);
         print(niz1[1]);
         print(niz1[2]);
         print(eol);
         
-        niz2 = niz * niz1;
+     // niz2 = niz * niz1;
         print(niz2);
         print(eol);
     }

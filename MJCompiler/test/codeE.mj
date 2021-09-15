@@ -38,11 +38,11 @@ Table val;
             if(x <= 0) break;
             if (0 <= x && x < size)
             {
-                val.putp(val.getp(x)+1);
+                val.putp(x, val.getp(x)+1);
             }
             else if (-size < x && x < 0)
             {
-                val.putn(val.getn(-x)+1);
+                val.putn(-x, val.getn(-x)+1);
             }
             read(x);
         }while(true);

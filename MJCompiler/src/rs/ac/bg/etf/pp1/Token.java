@@ -26,6 +26,13 @@ public class Token extends java_cup.runtime.Symbol
     public boolean isInvalid() { return TokenCode.isInvalid( sym ); }
     public boolean containsNewline() { return TokenCode.containsNewline( this ); }
     public boolean isEOF() { return TokenCode.isEOF( sym ); }
+    public String valueToString()
+    {
+        if( value == null ) return "";
+        if( sym == TokenCode.char_lit ) return "'" + value + "'";
+        if( sym == TokenCode.bool_lit ) return ( ( Boolean )value ) ? "true" : "false";
+        return value.toString();
+    }
 
     public int getCode() { return sym; }
     public String getName() { return TokenCode.getTokenName( sym ); }
@@ -38,9 +45,9 @@ public class Token extends java_cup.runtime.Symbol
     @Override
     public String toString()
     {
-        String tokenValue = ( value != null ) ? "`" + value.toString() + "`" : "``";
-
-        return String.format( "Ln %-3d Col %-3d Idx %-3d     %-15s %s", getLine(), getCol(), getIdx(), getName(), tokenValue );
+        return String.format( "Ln %-3d Col %-3d Idx %-3d     %-15s `%s`",
+            getLine(), getCol(), getIdx(), getName(), valueToString()
+        );
     }
 }
 

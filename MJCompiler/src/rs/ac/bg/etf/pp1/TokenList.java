@@ -63,7 +63,7 @@ public class TokenList
         StringBuilder builder = new StringBuilder();
         for( Token token : tokenList )
         {
-            builder.append( token.value != null ? token.value : "" );
+            builder.append( token.valueToString() );
         }
         if( builder.charAt( builder.length()-1 ) != '\n' ) builder.append( "\n" );
         return builder.toString();

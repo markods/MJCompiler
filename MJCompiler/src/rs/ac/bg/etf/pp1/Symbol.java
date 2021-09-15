@@ -133,7 +133,7 @@ public class Symbol extends Obj implements Cloneable
     public boolean isNoSym()       { return this == SymbolTable.noSym;  }
     public boolean isAnySym()      { return this == SymbolTable.anySym; }
     public boolean isDummySym()    { return _name().charAt( 0 ) == '@'; }
-    public boolean isLvalue()      { return                   ( _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM || _kind() == FORMAL_PARAM ) && !"this".equals( _name() ); }
+    public boolean isLvalue()      { return                     _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM || _kind() == FORMAL_PARAM; }
     public boolean isRvalue()      { return _kind() == CONST || _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM || _kind() == FORMAL_PARAM; }
 
 

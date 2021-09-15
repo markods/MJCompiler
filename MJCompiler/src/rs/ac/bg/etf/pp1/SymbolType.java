@@ -64,6 +64,7 @@ public class SymbolType extends Struct
     public String _name() { return name; }
     protected SymbolType _name( String name ) { this.name = name; return this; }
 
+    // the class's level in the inheritance tree
     public int _level() { return level; }
     protected SymbolType _level( int level ) { this.level = level; return this; }
 
@@ -199,7 +200,7 @@ public class SymbolType extends Struct
         String result = "<type>";
         switch( _kind() )
         {
-            case VOID_TYPE:   result = String.format( "%sNO_TYPE       %s %s\n",     prefix, _base(), _name() ); break;
+            case VOID_TYPE: result = String.format( "%sNO_TYPE       %s %s\n",     prefix, _base(), _name() ); break;
             case ANY_TYPE:  result = String.format( "%sANY_TYPE      %s %s\n",     prefix, _base(), _name() ); break;
             case INT:       result = String.format( "%sINT           %s %s\n",     prefix, _base(), _name() ); break;
             case CHAR:      result = String.format( "%sCHAR          %s %s\n",     prefix, _base(), _name() ); break;
