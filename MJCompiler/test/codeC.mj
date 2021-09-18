@@ -114,7 +114,7 @@ int tezinaK, tezinaS;
             }
             zapreminaS = zapreminaS + predmeti[i - 1].zapremina();
             tezinaS = tezinaS + predmeti[i - 1].Q();
-            ispis(predmeti[i - 1]);
+            ispis(predmeti[i - 1]);                    // 'S', prelazak u novi red, tezina sfere
             i++;
         }while(i<=6);
         
@@ -129,14 +129,14 @@ int tezinaK, tezinaS;
             }
             zapreminaS = zapreminaS + predmeti[i - 1].zapremina();
             tezinaS = tezinaS + predmeti[i - 1].Q();
-            ispis(predmeti[i - 1]);
+            ispis(predmeti[i - 1]);                    // 'K', prelazak u novi red, tezina kvadra
             i++;
         }while(i<=6);
         
-        print(zapreminaS); print(eol);
-        print(zapreminaK); print(eol);
-        print(tezinaS); print(eol);
-        print(tezinaK); print(eol);
+        print(zapreminaS); print(eol);   // zapremina svih sfera i kvadara, zatim prelazak u novi red
+        print(zapreminaK); print(eol);   // 0, zatim prelazak u novi red
+        print(tezinaS); print(eol);      // zbirna tezina svih sfera i kvadara, zatim prelazak u novi red
+        print(tezinaK); print(eol);      // 0, zatim prelazak u novi red
         
         i = 0;
         do{

@@ -13,7 +13,7 @@ program codeD
         y = 2;
         x = y + 2;
         y = k() + 3;
-        print(y);
+        print(y);        // 6
     }
 }
 

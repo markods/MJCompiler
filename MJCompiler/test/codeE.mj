@@ -47,8 +47,8 @@ Table val;
             read(x);
         }while(true);
 
-        if( x < 0 ) print('-');
-        else        print('+');
+        if( x < 0 ) print('-');  // '-' nakon sto je ucitan prvi negativan broj
+        else        print('+');  // '+' nakon sto je ucitana prva nula
     }
 }
 

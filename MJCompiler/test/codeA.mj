@@ -19,7 +19,7 @@ program test301
         bodovi = bodovi + jedan;
         bodovi = bodovi * pet;
         bodovi--;
-        print(bodovi); 
+        print(bodovi);                     // 9
             
         
         niz = new int[3];
@@ -27,34 +27,34 @@ program test301
         niz[1] = 2;
         niz[niz[jedan]] = niz[niz[0]] * 3;
         bodovi = niz[2]/niz[0];
-        print(bodovi); 
-        print(niz[2]);
+        print(bodovi);                     // 6
+        print(niz[2]);                     // 6
         
         
         nizch = new char[3];
         nizch[0] = 'a';
         nizch[jedan] = 'b';
         nizch[pet - 3] = 'c';
-        print(nizch[1]);
-        print(nizch[jedan * 2]);
+        print(nizch[1]);                   // 'b'
+        print(nizch[jedan * 2]);           // 'c'
             
         
         bodovi = bodovi + (pet * jedan - 1) * bodovi - (3 % 2 + 3 * 2 - 3); 
-        print(bodovi);
+        print(bodovi);                     // 26
             
         read(bodovi);
         bt = true;
         
         if(bt) {
-            print(bodovi);
+            print(bodovi);                 // ucitani bodovi
         } else {
             print(bodovi + 10);
-        }
+        }                            
         
         if(bodovi > 10) {
-            print('+');
+            print('+');                    // '+' ako su ucitani bodovi veci od 10
         } else {
-            print('-');
+            print('-');                    // '-' ako su ucitani bodovi manji ili jednaki 10
         }
     }
 }
