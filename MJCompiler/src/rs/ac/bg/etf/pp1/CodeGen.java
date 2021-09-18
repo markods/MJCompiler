@@ -19,7 +19,7 @@ public class CodeGen
     private static final byte[] buf = Code.buf;
     
     public static int _pc32() { return Code.pc; };
-    private static void _pc32( int value_32 ) { Code.pc = value_32; };
+    public static void _pc32( int value_32 ) { Code.pc = value_32; };
     private static void _pc32Inc() { Code.pc++; };
 
     private static int _mainAddr32() { return Code.mainPc; };

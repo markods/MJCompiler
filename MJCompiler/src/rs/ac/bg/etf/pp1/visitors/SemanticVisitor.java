@@ -1067,7 +1067,7 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         context.syntaxNodeStack.remove();
     }
-    // Statement ::= (Statement_Switch     ) SwitchScope lparen SwitchExpr rparen lbrace CaseList rbrace;
+    // Statement ::= (Statement_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
     public void visit( Statement_Switch curr )
     {
@@ -1250,8 +1250,8 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( DoWhileScope_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
-        // initialize the jump instruction's address
-        curr.integer = 0;
+        // initialize the jump map
+        curr.jumpprop = new JumpProp();
     }
     // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
     @Override
@@ -1262,13 +1262,13 @@ public class SemanticVisitor extends VisitorAdaptor
     }
 
     ////// action symbols for opening a new scope and the switch-statement's jump instructions
-    // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
     // SwitchExpr ::= (SwitchExpr_Plain) Expr;
     @Override
     public void visit( SwitchExpr_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
-        curr.switchprop = new SwitchProp();
+        // initialize the jump map
+        curr.jumpprop = new JumpProp();
     }
 
     ////// ident.ident[ expr ] = expr
@@ -1386,10 +1386,10 @@ public class SemanticVisitor extends VisitorAdaptor
         }
         
         // get the switch numbers set
-        SwitchProp switchNumbers = switchExpr.switchprop;
+        JumpProp switchNumbers = switchExpr.jumpprop;
 
         // if the case number already exists
-        if( !switchNumbers.add( curr.getCaseNum() ) )
+        if( !switchNumbers.add( curr.getCaseNum().toString() ) )
         {
             report_verbose( curr, "Case with the same number already exists" );
             return;

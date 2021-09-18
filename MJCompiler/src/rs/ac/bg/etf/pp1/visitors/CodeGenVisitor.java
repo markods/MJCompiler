@@ -10,6 +10,7 @@ import rs.ac.bg.etf.pp1.SymbolType;
 import rs.ac.bg.etf.pp1.TokenCode;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.ac.bg.etf.pp1.props.*;
+import rs.ac.bg.etf.pp1.props.JumpProp.JumpRecord;
 
 
 public class CodeGenVisitor extends VisitorAdaptor
@@ -418,41 +419,80 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// {}
     ////// { statement statement statement }
     // Statement ::= (Statement_Designator ) DesignatorStatement semicol;
-    // Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
+    // Statement ::= (Statement_If         ) IF_K lparen IfCondition rparen IfStatement;
     @Override
     public void visit( Statement_If curr )
     {
-        // TODO
+        int pointA = curr.getIfCondition().integer;
+        int pointC = curr.getIfStatement().integer;
+
+        // set the if-condition's jump to point after the if-statement
+        CodeGen.fixJumpOffset( pointA, pointC );
+        // remove the unconditional jump instruction from the code (by restoring the pc's value before it was added)
+        CodeGen._pc32( pointC );
     }
-    // Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
+    // Statement ::= (Statement_IfElse     ) IF_K lparen IfCondition rparen IfStatement ElseScope ElseStatement;
     @Override
     public void visit( Statement_IfElse curr )
     {
-        // TODO
+        int pointA = curr.getIfCondition().integer;
+        int pointB = curr.getIfStatement().integer;
+        int pointC = curr.getElseScope().integer;
+        int pointD = curr.getElseStatement().integer;
+
+        // set the if-condition's jump to point to the else-statement
+        CodeGen.fixJumpOffset( pointA, pointC );
+        // set the if-condition's unconditional jump to point after the else-statement
+        CodeGen.fixJumpOffset( pointB, pointD );
     }
-    // Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen Condition rparen semicol;
+    // Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
     @Override
     public void visit( Statement_DoWhile curr )
     {
-        // TODO
+        context.syntaxNodeStack.remove();
     }
-    // Statement ::= (Statement_Switch     ) SwitchScope lparen Expr rparen lbrace CaseList rbrace;
+    // Statement ::= (Statement_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
     public void visit( Statement_Switch curr )
     {
-        // TODO
+        context.syntaxNodeStack.remove();
     }
     // Statement ::= (Statement_Break      ) BREAK_K       semicol;
     @Override
     public void visit( Statement_Break curr )
     {
-        // TODO
+        // find the surrounding do-while or switch statement
+        SyntaxNode scope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof DoWhileScope_Plain
+                   || elem instanceof SwitchExpr_Plain )
+        );
+
+        JumpProp jumpMap = null;
+        if     ( scope instanceof DoWhileScope     ) { jumpMap = ( ( DoWhileScope     )scope ).jumpprop; }
+        else if( scope instanceof SwitchExpr_Plain ) { jumpMap = ( ( SwitchExpr_Plain )scope ).jumpprop; }
+        
+        // unconditionally jump to the end of the do-while or switch statement
+        // +    get the jump-instruction's starting address
+        int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+
+        // mark the jump instruction's offset to be fixed later
+        jumpMap.get( "exit" )._addAddressToFix( pointA );
     }
     // Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
     @Override
     public void visit( Statement_Continue curr )
     {
-        // TODO
+        // find the surrounding do-while statement
+        DoWhileScope_Plain scope = ( DoWhileScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof DoWhileScope_Plain )
+        );
+
+        // unconditionally jump to the beginning of the do-while-statement
+        // +    get the jump-instruction's starting address
+        int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+
+        // mark the jump instruction's offset to be fixed later
+        scope.jumpprop.get( "enter" )._addAddressToFix( pointA );
     }
     // Statement ::= (Statement_Return     ) RETURN_K      semicol;
     @Override
@@ -472,7 +512,10 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Statement_Read curr )
     {
-        // TODO: load the designator
+        // read the value from the standard input
+        CodeGen.i_read();
+        // store the read value in the symbol
+        CodeGen.storeSymbolValue( curr.getDesignator().symbol );
     }
     // Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
     @Override
@@ -492,18 +535,105 @@ public class CodeGenVisitor extends VisitorAdaptor
     // Statement ::= (Statement_Semicolon  ) semicol;
     // Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
 
-    ////// action symbols for opening a new scope
+    ////// action symbols for opening a new scope and the if-statement's jump instructions
+    // IfCondition ::= (IfCondition_Plain) Condition;
+    @Override
+    public void visit( IfCondition_Plain curr )
+    {
+        // add the 'true' constant's value (1) to the expression stack
+        CodeGen.i_const( CodeGen.TRUE );
+        // initialize the jump instruction's address
+        // +    jump if the condition is not true
+        curr.integer = CodeGen.jumpIfNot( TokenCode.eq, CodeGen.NO_ADDRESS );
+    }
+    // IfStatement ::= (IfStatement_Plain) Statement;
+    @Override
+    public void visit( IfStatement_Plain curr )
+    {
+        // initialize the jump instruction's address
+        // +    unconditionally jump over the entire else-statement
+        curr.integer = CodeGen.jump( CodeGen.NO_ADDRESS );
+    }
+    // ElseScope ::= (ElseScope_Plain) ELSE_K;
+    @Override
+    public void visit( ElseScope_Plain curr )
+    {
+        // get the address of the first instruction after the if-statement
+        curr.integer = CodeGen._pc32();
+    }
+    // ElseStatement ::= (ElseStatement_Plain) Statement;
+    @Override
+    public void visit( ElseStatement_Plain curr )
+    {
+        // get the address of the first instruction after the entire if-else-statement
+        curr.integer = CodeGen._pc32();
+    }
+
+    ////// action symbols for opening a new scope and the do-while-statement's jump instructions
     // DoWhileScope ::= (DoWhileScope_Plain) DO_K;
     @Override
     public void visit( DoWhileScope_Plain curr )
     {
-        // TODO
+        context.syntaxNodeStack.add( curr );
+
+        // initialize the jump map
+        curr.jumpprop.add( "enter" );
+        curr.jumpprop.add( "exit" );
+
+        // get the address of the first instruction in the do-while-statement
+        curr.jumpprop.get( "enter" )._pointAddress( CodeGen._pc32() );
     }
-    // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
+    // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
     @Override
-    public void visit( SwitchScope_Plain curr )
+    public void visit( DoWhileCondition_Plain curr )
     {
-        // TODO
+        // find the surrounding do-while statement
+        DoWhileScope_Plain scope = ( DoWhileScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof DoWhileScope_Plain )
+        );
+
+        // add the 'true' constant's value (1) to the expression stack
+        CodeGen.i_const( CodeGen.TRUE );
+        // initialize the jump instruction's address
+        // +    jump if the condition is not true
+        curr.integer = CodeGen.jumpIfNot( TokenCode.eq, CodeGen.NO_ADDRESS );
+        scope.jumpprop.get( "enter" )._addAddressToFix( curr.integer );
+
+        // set the do-while-statement's exit point here
+        // +    the entry! point has been set in the DoWhileScope
+        scope.jumpprop.get( "exit" )._pointAddress( CodeGen._pc32() );
+    }
+
+    ////// action symbols for opening a new scope and the switch-statement's jump instructions
+    // SwitchExpr ::= (SwitchExpr_Plain) Expr;
+    @Override
+    public void visit( SwitchExpr_Plain curr )
+    {
+        context.syntaxNodeStack.add( curr );
+        // add the switch's exit point
+        curr.jumpprop.add( "exit" );
+
+        // for all the switch's cases in the order they appeared (default not yet supported)
+        for( JumpRecord caseRecord : curr.jumpprop )
+        {
+            // duplicate the switch-expression's result, so that it is there for other conditional jumps as well
+            // +    (the expression stack's top duplicate gets consumed whenever the conditional jump's condition is evaluated)
+            CodeGen.i_dup();
+
+            // add the 'true' constant's value (1) to the expression stack
+            CodeGen.i_const( CodeGen.TRUE );
+
+            // initialize the jump instruction's address
+            // +    jump if the condition is not true
+            int pointCaseX = CodeGen.jumpIf( TokenCode.eq, CodeGen.NO_ADDRESS );
+            curr.jumpprop.get( caseRecord._pointName() )._addAddressToFix( pointCaseX );
+        }
+
+        // remove the last duplicate, since there are no more cases left (default not yet supported)
+        CodeGen.i_epop();
+        // jump unconditionally to the first instruction after the switch-statement
+        int pointSkipCases = CodeGen.jump( CodeGen.NO_ADDRESS );
+        curr.jumpprop.get( "exit" )._addAddressToFix( pointSkipCases );
     }
 
     ////// ident.ident[ expr ] = expr
@@ -580,11 +710,23 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// case 1: statement statement statement
     ////// case 2: 
     ////// case 3: {}
-    // Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
+    // Case ::= (Case_Plain) CaseScope StatementList;
+
+    ////// action symbols for opening a new scope and the case-statement's jump instructions
+    // CaseScope ::= (CaseScope_Plain) CASE_K int_lit:CaseNum colon;
     @Override
-    public void visit( Case_Plain curr )
+    public void visit( CaseScope_Plain curr )
     {
-        // TODO
+        // find the switch scope surrounding this symbol
+        SwitchExpr_Plain scope = ( SwitchExpr_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof SwitchExpr_Plain )
+        );
+
+        // remove the last switch-expression's result (last duplicate)
+        int pointCase = CodeGen.i_epop();
+
+        // update the case's starting address
+        scope.jumpprop.get( curr.getCaseNum().toString() )._pointAddress( pointCase );
     }
 
 

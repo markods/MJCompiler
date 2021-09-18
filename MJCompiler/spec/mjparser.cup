@@ -233,11 +233,10 @@ nonterminal java.lang.Integer IfStatement;        // contains the jump instructi
 nonterminal java.lang.Integer ElseScope;          // contains the jump instruction's address
 nonterminal java.lang.Integer ElseStatement;      // contains the jump instruction's address
 
-nonterminal java.lang.Integer DoWhileScope;       // contains the jump instruction's address
-nonterminal java.lang.Integer DoWhileCondition;   // contains the jump instruction's address
+nonterminal rs.ac.bg.etf.pp1.props.JumpProp DoWhileScope;   // contains the jump instructions' addresses
+nonterminal java.lang.Integer DoWhileCondition;             // contains the jump instruction's address
 
-nonterminal SwitchScope;
-nonterminal rs.ac.bg.etf.pp1.props.SwitchProp SwitchExpr;   // contains the jump instructions' addresses
+nonterminal rs.ac.bg.etf.pp1.props.JumpProp SwitchExpr;   // contains the jump instructions' addresses
 
 nonterminal DesignatorStatement;
 nonterminal StatementList;
@@ -457,7 +456,7 @@ Statement ::= (Statement_Designator ) DesignatorStatement semicol;
 Statement ::= (Statement_If         ) IF_K lparen IfCondition rparen IfStatement;
 Statement ::= (Statement_IfElse     ) IF_K lparen IfCondition rparen IfStatement ElseScope ElseStatement;
 Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
-Statement ::= (Statement_Switch     ) SwitchScope lparen SwitchExpr rparen lbrace CaseList rbrace;
+Statement ::= (Statement_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
 Statement ::= (Statement_Break      ) BREAK_K       semicol;
 Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
 Statement ::= (Statement_Return     ) RETURN_K      semicol;
@@ -480,7 +479,6 @@ DoWhileScope ::= (DoWhileScope_Plain) DO_K;
 DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
 
 // action symbols for opening a new scope and the switch-statement's jump instructions
-SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
 SwitchExpr ::= (SwitchExpr_Plain) Expr;
 
 // ident.ident[ expr ] = expr
