@@ -302,8 +302,8 @@ public class CodeGen
     // append the given short (i16) to the code segment
     private static void put16( int value_16 )
     {
-        put8( value_16 >> 8 );
-        put8( value_16 );
+        put8( ( value_16 >> 8 ) & 0xFF );
+        put8( value_16 & 0xFF );
     }
     // overwrite the given short (i16) in the code segment with the given value
     private static void put16( int address_16, int value_16 )
@@ -316,8 +316,8 @@ public class CodeGen
     // append the given word (i32) to the code segment
     private static void put32( int value_32 )
     {
-        put16( value_32 >> 16 );
-        put16( value_32 );
+        put16( ( value_32 >> 16 ) & 0xFFFF );
+        put16( ( value_32 ) & 0xFFFF );
     }
 
     

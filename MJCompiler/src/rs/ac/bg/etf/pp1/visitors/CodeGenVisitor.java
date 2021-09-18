@@ -879,7 +879,8 @@ public class CodeGenVisitor extends VisitorAdaptor
         else if( function.isFunction() )
         {
             // call the method starting on the given address
-            CodeGen.i_call( function._address() );
+            int pointA = CodeGen.i_call( CodeGen.NO_ADDRESS );
+            CodeGen.fixJumpOffset( pointA, function._address() );
         }
 
         // if the return value should not be saved and the function/method returns something, remove the result from the expression stack
@@ -900,6 +901,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         CodeGen.i_new( curr.symbol._fieldCount() );
         // initialize the virtual table pointer, but leave the class instance's address on the expression stack
         CodeGen.i_dup();
+        CodeGen.loadConst( curr.symbol._address() );
         CodeGen.i_putfield( 0 );
     }
     // Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
