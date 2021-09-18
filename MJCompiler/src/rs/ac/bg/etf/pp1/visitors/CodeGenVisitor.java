@@ -224,11 +224,11 @@ public class CodeGenVisitor extends VisitorAdaptor
         // get the method's symbol
         Symbol method = curr.getMethodDeclType().symbol;
 
-        // if this method is the main method
-        if( method.isMain() )
+        // if this method is the main method, or the method doesn't return anything
+        if( method.isMain() || method._type().isVoidType() )
         {
             // add an exit instruction at the end of the method, followed by a return instruction
-            // +    used to gracefully stop the program execution
+            // +    used to gracefully stop the program execution for main
             CodeGen.i_exit(); CodeGen.i_return();
         }
         else
@@ -513,30 +513,56 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( DesignatorStatement_Assign curr )
     {
-        // TODO: load the designator
+        visit_UpdateDesignatorValue( curr, curr.getDesignator().symbol );
     }
     // DesignatorStatement ::= (DesignatorStatement_Call      ) MethodCall lparen ActPars rparen;
     @Override
     public void visit( DesignatorStatement_Call curr )
     {
-        // get the method's symbol
-        Symbol method = curr.getMethodCall().symbol;
-        // call the method starting on the given address
-        CodeGen.i_call( method._address() );
-        // if the method returns something, remove the result from the expression stack
-        if( !method._type().isVoidType() ) CodeGen.i_epop();
+        visit_MethodOrFunctionCall( curr, curr.getMethodCall().symbol, false );
     }
     // DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
     @Override
     public void visit( DesignatorStatement_Plusplus curr )
     {
-        // TODO: load the designator
+        visit_UpdateDesignatorValue( curr, curr.getDesignator().symbol );
     }
     // DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
     @Override
     public void visit( DesignatorStatement_Minusminus curr )
     {
-        // TODO: load the designator
+        visit_UpdateDesignatorValue( curr, curr.getDesignator().symbol );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_UpdateDesignatorValue( DesignatorStatement curr, Symbol designator )
+    {
+        if( curr instanceof DesignatorStatement_Assign )
+        {
+            // store the value of the expression to the symbol
+            // +   the symbol's address is present on the expression stack (if needed), followed by the expression value
+            CodeGen.storeSymbolValue( designator );
+            return;
+        }
+
+        // if the symbol needs designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
+        if( CodeGen.needsDesignation( designator ) )
+        {
+            // duplicate that previous value (so that we don't lose it)
+            CodeGen.i_dup();
+        }
+
+        // load the designator's value to the expression stack
+        // +    this uses up one of the duplicate designator's addresses
+        // +    (if they are present on the expression stack, that means that they were needed to load and store the designator's value)
+        CodeGen.loadSymbolValue( designator );
+
+        // load the constant 1 to the expression stack and add/sub it from the designator
+        CodeGen.i_const_1();
+        if     ( curr instanceof DesignatorStatement_Plusplus   ) CodeGen.i_add();
+        else if( curr instanceof DesignatorStatement_Minusminus ) CodeGen.i_sub();
+
+        // store the updated value back to the designator
+        CodeGen.storeSymbolValue( designator );
     }
 
     ////// <epsilon>
@@ -587,7 +613,11 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Condition_Or curr )
     {
-        // TODO
+        // HACK: if any of the inputs is one (true), their addition + one, when int divided by two ( (a+b+1)/2 ) result in a one (true)
+        CodeGen.i_add();
+        CodeGen.i_load_1();
+        CodeGen.i_add();
+        CodeGen.i_div();
     }
 
     ////// expr < expr and expr >= expr
@@ -596,7 +626,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( CondTerm_And curr )
     {
-        // TODO
+        // HACK: only if both inputs are one (true) their multiplication results in a one (true)
+        CodeGen.i_mul();
     }
 
     ////// expr < expr and expr >= expr
@@ -605,7 +636,17 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( CondFact_Relop curr )
     {
-        // TODO
+                     CodeGen.i_sub();
+        int pointA = CodeGen.jumpIfNot( curr.getRelop().symbol._value(), CodeGen.NO_ADDRESS );   // jump to C
+                     CodeGen.loadConst( CodeGen.TRUE );
+        int pointB = CodeGen.jump( CodeGen.NO_ADDRESS );   // jump to D
+        int pointC = CodeGen.loadConst( CodeGen.FALSE );
+        
+        int pointD = CodeGen._pc32();
+                     
+        // fix the jump addresses for the jump instructions
+        CodeGen.fixJumpOffset( pointA, pointC );
+        CodeGen.fixJumpOffset( pointB, pointD );
     }
 
 
@@ -668,14 +709,37 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Factor_Designator curr )
     {
-        // TODO: load the designator
+        // load the designator's value on the expression stack (given the previous designator where the designator evalueation stopped)
+        CodeGen.loadSymbolValue( curr.symbol );
     }
     // Factor ::= (Factor_MethodCall ) MethodCall lparen ActPars rparen;
     @Override
     public void visit( Factor_MethodCall curr )
     {
-        // call the method starting on the given address
-        CodeGen.i_call( curr.symbol._address() );
+        visit_MethodOrFunctionCall( curr, curr.getMethodCall().symbol, true );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_MethodOrFunctionCall( SyntaxNode curr, Symbol function, boolean saveReturnValueIfItExists )
+    {
+        // if the function is a method (class member)
+        if( function.isMethod() )
+        {
+            // duplicate the method address on the expression stack (one address will be used to get the virtual table pointer)
+            CodeGen.i_dup();
+            // push the virtual table pointer to the expression stack (#0 field in the class)
+            CodeGen.i_getfield( 0 );
+            // call the virtual method
+            CodeGen.i_invokevirtual( function._name() );
+        }
+        // if the function is a function (in the global scope)
+        else if( function.isFunction() )
+        {
+            // call the method starting on the given address
+            CodeGen.i_call( function._address() );
+        }
+
+        // if the return value should not be saved and the function/method returns something, remove the result from the expression stack
+        if( !saveReturnValueIfItExists && !function._type().isVoidType() ) CodeGen.i_epop();
     }
     // Factor ::= (Factor_Literal    ) Literal;
     @Override
@@ -704,15 +768,15 @@ public class CodeGenVisitor extends VisitorAdaptor
     // Factor ::= (Factor_Expr       ) lparen Expr rparen;
 
     ////// ident.ident[ expr ]( expr, expr, expr )
-    // MethodCall ::= (MethodCallScope_Plain) Designator;
+    // MethodCall ::= (MethodCall_Plain) Designator;
     @Override
-    public void visit( MethodCallScope_Plain curr )
+    public void visit( MethodCall_Plain curr )
     {
-        // if the current symbol is a method
-        if( curr.symbol.isMethod() )
-        {
-            // TODO: load the designator as the method's zeroth parameter on the expression stack
-        }
+     // // if the current symbol is a method
+     // if( curr.symbol.isMethod() )
+     // {
+     //     // IMPORTANT: the 'this' #0 method parameter has already been loaded by the Designator on the expression stack
+     // }
     }
 
     ////// null
@@ -722,10 +786,48 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// ident.ident.ident[ expr ].ident
     ////// ident.ident.ident[ expr ].ident[ expr ]
     // Designator ::= (Designator_Ident  ) ident:Name;
+    @Override
+    public void visit( Designator_Ident curr )
+    {
+        visit_Designator( curr );
+    }
     // Designator ::= (Designator_Null   ) NULL_K;
+    @Override
+    public void visit( Designator_Null curr )
+    {
+        visit_Designator( curr );
+    }
     // Designator ::= (Designator_Field  ) Designator dot ident:Name;
+    @Override
+    public void visit( Designator_Field curr )
+    {
+        visit_Designator( curr );
+    }
     // Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
+    @Override
+    public void visit( Designator_ArrElem curr )
+    {
+        visit_Designator( curr );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_Designator( Designator curr )
+    {
+        // if the current designator is 'null'
+        if( curr instanceof Designator_Null )
+        {
+            // always put the 'null' symbol's value (which is 0), and never its address (because 'null' isn't a lvalue)
+            CodeGen.loadSymbolValue( curr.symbol );
+            return;
+        }
 
+        // if the designator is not the last one in the sequence
+        boolean hasNext = curr.getParent() instanceof Designator;
+        if( hasNext )
+        {
+            // load its value on the expression stack
+            CodeGen.loadSymbolValue( curr.symbol );
+        }
+    }
 
 
 

@@ -481,7 +481,7 @@ public class SemanticVisitor extends VisitorAdaptor
         context.staticSegSize.get_inc( curr.symbol._virtualTableSize() );
 
         // add a dummy 'this' field to the symbol table scope with the index -1
-        // +   set its value to be 0 (equal to the null constant)
+        // +   set its value to be zero -- very important , since it will be the 0th method call's formal parameter
         Symbol thisSymbol = Symbol.newConst( "this", classType, 0 );
         SymbolTable.addSymbol( thisSymbol );
     }
@@ -564,9 +564,17 @@ public class SemanticVisitor extends VisitorAdaptor
         Symbol left = curr.getReturnType().symbol;
 
         // if the function is in the program scope
-        if     ( scope instanceof ProgramType   ) curr.symbol = Symbol.newFunction( curr.getMethodName(), left._type(), Symbol.NO_VALUE, null );
+        if( scope instanceof ProgramType )
+        {
+            curr.symbol = Symbol.newFunction( curr.getMethodName(), left._type(), Symbol.NO_VALUE, null );
+        }
         // if the function is in the class scope (a method then)
-        else if( scope instanceof ClassDeclType ) curr.symbol = Symbol.newMethod( curr.getMethodName(), left._type(), Symbol.NO_VALUE, methodIdx, null );
+        else if( scope instanceof ClassDeclType )
+        {
+            curr.symbol = Symbol.newMethod( curr.getMethodName(), left._type(), Symbol.NO_VALUE, methodIdx, null );
+            // add a dummy '@this' formal parameter that will be removed later (just to reserve the 0th formal parameter)
+            SymbolTable.addSymbol( Symbol.newFormalParam( "@this", ( ( ClassDeclType )scope ).symbol._type(), 0 ) );
+        }
         // ...
         else
         {
@@ -599,6 +607,8 @@ public class SemanticVisitor extends VisitorAdaptor
         // get the function's formal parameters from the symbol table and also close the formal parameter scope
         SymbolMap formalParams = SymbolTable._locals();
         SymbolTable.closeScope();
+        // remove the dummy '@this' symbol from the method's formal parameters
+        formalParams.removeSymbol( "@this" );
         
         // update the function's formal parameters
         function._params( formalParams );
@@ -1368,18 +1378,18 @@ public class SemanticVisitor extends VisitorAdaptor
         SymbolTable.openScope();
 
         // find the method call scope surrounding this symbol
-        MethodCallScope_Plain methodCallScope = ( MethodCallScope_Plain )context.syntaxNodeStack.find(
-            elem -> ( elem instanceof MethodCallScope_Plain )
+        MethodCall_Plain MethodCall = ( MethodCall_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodCall_Plain )
         );
         // if the method call scope doesn't exist
-        if( methodCallScope == null )
+        if( MethodCall == null )
         {
             report_fatal( curr, "Method call not yet supported" );
             return;
         }
 
         // if an error has been reported somewhere in the designator
-        Symbol design = methodCallScope.symbol;
+        Symbol design = MethodCall.symbol;
         if( design.isNoSym() )
         {
             return;
@@ -1387,8 +1397,8 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the designator is not a function or class member method
         if( !design.isFunction() && !design.isMethod() )
         {
-            report_verbose( methodCallScope, "Expected function or class member method" );
-            methodCallScope.symbol = SymbolTable.noSym;
+            report_verbose( MethodCall, "Expected function or class member method" );
+            MethodCall.symbol = SymbolTable.noSym;
             return;
         }
     }
@@ -1422,30 +1432,30 @@ public class SemanticVisitor extends VisitorAdaptor
 
         // find the method call scope surrounding this symbol
         // +   the check if this is a function/method is performed in the ActParsScope
-        MethodCallScope_Plain methodCallScope = ( MethodCallScope_Plain )context.syntaxNodeStack.find(
-            elem -> ( elem instanceof MethodCallScope_Plain )
+        MethodCall_Plain MethodCall = ( MethodCall_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodCall_Plain )
         );
         // if the method call scope doesn't exist
-        if( methodCallScope == null )
+        if( MethodCall == null )
         {
             report_fatal( curr, "Method call not yet supported" );
             return;
         }
         // if there was an error in the method call scope (either designator error, or one of the formal parameters reported an error that should stop the next formal parameters' checking)
-        if( methodCallScope.symbol.isNoSym())
+        if( MethodCall.symbol.isNoSym())
         {
             return;
         }
 
         // if the actual parameter list is empty (currExpression is null in ActPars_Empty)
-        List<Symbol> formParams = methodCallScope.symbol._params()._sorted();
+        List<Symbol> formParams = MethodCall.symbol._params()._sorted();
         if( currExpression == null )
         {
             // but the function has formal parameters
             if( !formParams.isEmpty() )
             {
-                report_basic( methodCallScope, "Less parameters given than expected in function call" );
-                methodCallScope.symbol = SymbolTable.noSym;
+                report_basic( MethodCall, "Less parameters given than expected in function call" );
+                MethodCall.symbol = SymbolTable.noSym;
             }
             
             // IMPORTANT: the <empty activation parameter list> checking always ends here
@@ -1455,7 +1465,7 @@ public class SemanticVisitor extends VisitorAdaptor
         if( actParamIdx >= formParams.size() )
         {
             report_basic( currExpression, "More parameters given than expected in function call" );
-            methodCallScope.symbol = SymbolTable.noSym;
+            MethodCall.symbol = SymbolTable.noSym;
             return;
         }
         // if less activation parameters are given than expected in the function declaration
@@ -1463,8 +1473,8 @@ public class SemanticVisitor extends VisitorAdaptor
         boolean hasNext = ( /*Expr*/curr.getParent() ).getParent() instanceof ActParsList;
         if( !hasNext && actParamIdx != formParams.size()-1 )
         {
-            report_basic( methodCallScope, "Less parameters given than expected in function call" );
-            methodCallScope.symbol = SymbolTable.noSym;
+            report_basic( MethodCall, "Less parameters given than expected in function call" );
+            MethodCall.symbol = SymbolTable.noSym;
             // IMPORTANT: don't return here, because the current parameter hasn't yet been checked
          // return;
         }
@@ -1832,9 +1842,9 @@ public class SemanticVisitor extends VisitorAdaptor
     }
 
     ////// ident.ident[ expr ]( expr, expr, expr )
-    // MethodCall ::= (MethodCallScope_Plain) Designator;
+    // MethodCall ::= (MethodCall_Plain) Designator;
     @Override
-    public void visit( MethodCallScope_Plain curr )
+    public void visit( MethodCall_Plain curr )
     {
         curr.symbol = curr.getDesignator().symbol;
         // add the function call's designator to the syntax node stack

@@ -553,7 +553,7 @@ Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
 Factor ::= (Factor_Expr       ) lparen Expr rparen;
 
 // ident.ident[ expr ]( expr, expr, expr )
-MethodCall ::= (MethodCallScope_Plain) Designator;
+MethodCall ::= (MethodCall_Plain) Designator;
 
 // null
 // ident

@@ -95,7 +95,7 @@ public class ScopeVisitor implements Visitor
     public void visit( Designator_Field               node ) { updateScope( node ); }
     public void visit( Designator_Null                node ) { updateScope( node ); }
     public void visit( Designator_Ident               node ) { updateScope( node ); }
-    public void visit( MethodCallScope_Plain          node ) { updateScope( node ); }
+    public void visit( MethodCall_Plain               node ) { updateScope( node ); }
     public void visit( Factor_Expr                    node ) { updateScope( node ); }
     public void visit( Factor_NewArray                node ) { updateScope( node ); }
     public void visit( Factor_NewVar                  node ) { updateScope( node ); }
