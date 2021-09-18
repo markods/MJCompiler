@@ -9,7 +9,7 @@ import rs.ac.bg.etf.pp1.SymbolTable;
 import rs.ac.bg.etf.pp1.SymbolType;
 import rs.ac.bg.etf.pp1.TokenCode;
 import rs.ac.bg.etf.pp1.ast.*;
-import rs.ac.bg.etf.pp1.props.BoolProp;
+import rs.ac.bg.etf.pp1.props.*;
 
 
 public class CodeGenVisitor extends VisitorAdaptor
@@ -19,6 +19,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     private static class Context
     {
         public final BoolProp errorDetected = new BoolProp();
+
+        public final StackProp<SyntaxNode> syntaxNodeStack = new StackProp<>();
     }
 
 
@@ -545,7 +547,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         }
 
         // if the symbol needs designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
-        if( CodeGen.needsDesignation( designator ) )
+        if( CodeGen.needsPrevDesignatorValue( designator ) )
         {
             // duplicate that previous value (so that we don't lose it)
             CodeGen.i_dup();

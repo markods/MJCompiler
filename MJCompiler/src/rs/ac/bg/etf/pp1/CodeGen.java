@@ -167,8 +167,8 @@ public class CodeGen
             default: { report_fatal( "Symbol not supported or doesn't have a value for loading onto the expression stack" ); return _pc32(); }
         }
     }
-    // check if the symbol doesn't need designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
-    public static boolean needsDesignation( Symbol symbol )
+    // check if the symbol needs designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
+    public static boolean needsPrevDesignatorValue( Symbol symbol )
     {
         // +   the <CONST case> also works for constants 'null' and 'this', since their values are 0
         // +   the <ARRAY_ELEM case> requires that the array element's index was previously loaded onto the expression stack

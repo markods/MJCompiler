@@ -227,12 +227,24 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ConstInit;
 
 // statements [nonterminals]
 nonterminal Statement;
-nonterminal DoWhileScope;
-nonterminal rs.ac.bg.etf.pp1.props.IntSetProp SwitchScope;
+
+nonterminal java.lang.Integer IfCondition;        // contains the jump instruction's address
+nonterminal java.lang.Integer IfStatement;        // contains the jump instruction's address
+nonterminal java.lang.Integer ElseScope;          // contains the jump instruction's address
+nonterminal java.lang.Integer ElseStatement;      // contains the jump instruction's address
+
+nonterminal java.lang.Integer DoWhileScope;       // contains the jump instruction's address
+nonterminal java.lang.Integer DoWhileCondition;   // contains the jump instruction's address
+
+nonterminal SwitchScope;
+nonterminal rs.ac.bg.etf.pp1.props.SwitchProp SwitchExpr;   // contains the jump instructions' addresses
+
 nonterminal DesignatorStatement;
 nonterminal StatementList;
+
 nonterminal CaseList;
 nonterminal Case;
+nonterminal java.lang.Integer CaseScope;   // contains the jump instruction's address
 
 nonterminal ActPars;
 nonterminal ActParsScope;
@@ -442,10 +454,10 @@ ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initializatio
 // {}
 // { statement statement statement }
 Statement ::= (Statement_Designator ) DesignatorStatement semicol;
-Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
-Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
-Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen Condition rparen semicol;
-Statement ::= (Statement_Switch     ) SwitchScope lparen Expr rparen lbrace CaseList rbrace;
+Statement ::= (Statement_If         ) IF_K lparen IfCondition rparen IfStatement;
+Statement ::= (Statement_IfElse     ) IF_K lparen IfCondition rparen IfStatement ElseScope ElseStatement;
+Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
+Statement ::= (Statement_Switch     ) SwitchScope lparen SwitchExpr rparen lbrace CaseList rbrace;
 Statement ::= (Statement_Break      ) BREAK_K       semicol;
 Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
 Statement ::= (Statement_Return     ) RETURN_K      semicol;
@@ -457,9 +469,19 @@ Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
 Statement ::= (Statement_Semicolon  ) semicol;
 Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
 
-// action symbols for opening a new scope
+// action symbols for opening a new scope and the if-statement's jump instructions
+IfCondition ::= (IfCondition_Plain) Condition;
+IfStatement ::= (IfStatement_Plain) Statement;
+ElseScope ::= (ElseScope_Plain) ELSE_K;
+ElseStatement ::= (ElseStatement_Plain) Statement;
+
+// action symbols for opening a new scope and the do-while-statement's jump instructions
 DoWhileScope ::= (DoWhileScope_Plain) DO_K;
+DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
+
+// action symbols for opening a new scope and the switch-statement's jump instructions
 SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
+SwitchExpr ::= (SwitchExpr_Plain) Expr;
 
 // ident.ident[ expr ] = expr
 // ident.ident[ expr ]( )
@@ -484,7 +506,10 @@ CaseList ::= (CaseList_Empty) ;
 // case 1: statement statement statement
 // case 2: 
 // case 3: {}
-Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
+Case ::= (Case_Plain) CaseScope StatementList;
+
+// action symbols for opening a new scope and the case-statement's jump instructions
+CaseScope ::= (CaseScope_Plain) CASE_K int_lit:CaseNum colon;
 
 
 

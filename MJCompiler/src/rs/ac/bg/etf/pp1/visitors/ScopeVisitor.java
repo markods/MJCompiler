@@ -21,6 +21,7 @@ public class ScopeVisitor implements Visitor
 
 
     public void visit( ReturnType                     node ) { updateScope( node ); }
+    public void visit( CaseScope                      node ) { updateScope( node ); }
     public void visit( Mulop                          node ) { updateScope( node ); }
     public void visit( FormParsScope                  node ) { updateScope( node ); }
     public void visit( MethodDecl                     node ) { updateScope( node ); }
@@ -49,14 +50,19 @@ public class ScopeVisitor implements Visitor
     public void visit( MethodDeclType                 node ) { updateScope( node ); }
     public void visit( CaseList                       node ) { updateScope( node ); }
     public void visit( ActParsList                    node ) { updateScope( node ); }
+    public void visit( IfCondition                    node ) { updateScope( node ); }
     public void visit( DoWhileScope                   node ) { updateScope( node ); }
     public void visit( MethodDeclCode                 node ) { updateScope( node ); }
+    public void visit( ElseStatement                  node ) { updateScope( node ); }
     public void visit( GlobalDeclList                 node ) { updateScope( node ); }
     public void visit( VarDeclList                    node ) { updateScope( node ); }
     public void visit( Expr                           node ) { updateScope( node ); }
     public void visit( Case                           node ) { updateScope( node ); }
     public void visit( ActPars                        node ) { updateScope( node ); }
+    public void visit( ElseScope                      node ) { updateScope( node ); }
     public void visit( DesignatorStatement            node ) { updateScope( node ); }
+    public void visit( SwitchExpr                     node ) { updateScope( node ); }
+    public void visit( DoWhileCondition               node ) { updateScope( node ); }
     public void visit( Statement                      node ) { updateScope( node ); }
     public void visit( ConstInitList                  node ) { updateScope( node ); }
     public void visit( ClassDeclBody                  node ) { updateScope( node ); }
@@ -67,6 +73,7 @@ public class ScopeVisitor implements Visitor
     public void visit( ClassDecl                      node ) { updateScope( node ); }
     public void visit( ConstDecl                      node ) { updateScope( node ); }
     public void visit( CondFact                       node ) { updateScope( node ); }
+    public void visit( IfStatement                    node ) { updateScope( node ); }
     public void visit( MethodDeclList                 node ) { updateScope( node ); }
     public void visit( Program                        node ) { updateScope( node ); }
     public void visit( MethodDeclBody                 node ) { updateScope( node ); }
@@ -121,6 +128,7 @@ public class ScopeVisitor implements Visitor
     public void visit( ActParsScope_Plain             node ) { updateScope( node ); }
     public void visit( ActPars_Empty                  node ) { updateScope( node ); }
     public void visit( ActPars_Plain                  node ) { updateScope( node ); }
+    public void visit( CaseScope_Plain                node ) { updateScope( node ); }
     public void visit( Case_Plain                     node ) { updateScope( node ); }
     public void visit( CaseList_Empty                 node ) { updateScope( node ); }
     public void visit( CaseList_Tail                  node ) { updateScope( node ); }
@@ -130,8 +138,14 @@ public class ScopeVisitor implements Visitor
     public void visit( DesignatorStatement_Plusplus   node ) { updateScope( node ); }
     public void visit( DesignatorStatement_Call       node ) { updateScope( node ); }
     public void visit( DesignatorStatement_Assign     node ) { updateScope( node ); }
+    public void visit( SwitchExpr_Plain               node ) { updateScope( node ); }
     public void visit( SwitchScope_Plain              node ) { updateScope( node ); }
+    public void visit( DoWhileCondition_Plain         node ) { updateScope( node ); }
     public void visit( DoWhileScope_Plain             node ) { updateScope( node ); }
+    public void visit( ElseStatement_Plain            node ) { updateScope( node ); }
+    public void visit( ElseScope_Plain                node ) { updateScope( node ); }
+    public void visit( IfStatement_Plain              node ) { updateScope( node ); }
+    public void visit( IfCondition_Plain              node ) { updateScope( node ); }
     public void visit( Statement_Err                  node ) { updateScope( node ); }
     public void visit( Statement_Semicolon            node ) { updateScope( node ); }
     public void visit( Statement_Scope                node ) { updateScope( node ); }

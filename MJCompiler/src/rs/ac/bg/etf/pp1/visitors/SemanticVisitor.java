@@ -1059,27 +1059,28 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// {}
     ////// { statement statement statement }
     // Statement ::= (Statement_Designator ) DesignatorStatement semicol;
-    // Statement ::= (Statement_If         ) IF_K lparen Condition rparen Statement;
-    // Statement ::= (Statement_IfElse     ) IF_K lparen Condition rparen Statement ELSE_K Statement;
-    // Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen Condition rparen semicol;
+    // Statement ::= (Statement_If         ) IF_K lparen IfCondition rparen IfStatement;
+    // Statement ::= (Statement_IfElse     ) IF_K lparen IfCondition rparen IfStatement ElseScope ElseStatement;
+    // Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
     @Override
     public void visit( Statement_DoWhile curr )
     {
         context.syntaxNodeStack.remove();
     }
-    // Statement ::= (Statement_Switch     ) SwitchScope lparen Expr rparen lbrace CaseList rbrace;
+    // Statement ::= (Statement_Switch     ) SwitchScope lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
     public void visit( Statement_Switch curr )
     {
         context.syntaxNodeStack.remove();
 
-        Symbol left = curr.getExpr().symbol;
+        Expr exprNode = ( ( SwitchExpr_Plain )curr.getSwitchExpr() ).getExpr();
+        Symbol left = exprNode.symbol;
         if( left.isNoSym() ) return;
 
         // if the switch expresssion does not result in an int
         if( !left._type().isInt() )
         {
-            report_verbose( curr.getExpr(), "Switch expression must result in an int" );
+            report_verbose( exprNode, "Switch expression must result in an int" );
             return;
         }
     }
@@ -1090,7 +1091,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // find the surrounding do-while or switch statement
         SyntaxNode scope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof DoWhileScope_Plain
-                   || elem instanceof SwitchScope_Plain )
+                   || elem instanceof SwitchExpr_Plain )
         );
 
         // if the break is not in a do-while or switch statement
@@ -1213,19 +1214,61 @@ public class SemanticVisitor extends VisitorAdaptor
     // Statement ::= (Statement_Semicolon  ) semicol;
     // Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
 
-    ////// action symbols for opening a new scope
+    ////// action symbols for opening a new scope and the if-statement's jump instructions
+    // IfCondition ::= (IfCondition_Plain) Condition;
+    @Override
+    public void visit( IfCondition_Plain curr )
+    {
+        // initialize the jump instruction's address
+        curr.integer = 0;
+    }
+    // IfStatement ::= (IfStatement_Plain) Statement;
+    @Override
+    public void visit( IfStatement_Plain curr )
+    {
+        // initialize the jump instruction's address
+        curr.integer = 0;
+    }
+    // ElseScope ::= (ElseScope_Plain) ELSE_K;
+    @Override
+    public void visit( ElseScope_Plain curr )
+    {
+        // initialize the jump instruction's address
+        curr.integer = 0;
+    }
+    // ElseStatement ::= (ElseStatement_Plain) Statement;
+    @Override
+    public void visit( ElseStatement_Plain curr )
+    {
+        // initialize the jump instruction's address
+        curr.integer = 0;
+    }
+
+    ////// action symbols for opening a new scope and the do-while-statement's jump instructions
     // DoWhileScope ::= (DoWhileScope_Plain) DO_K;
     @Override
     public void visit( DoWhileScope_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
+        // initialize the jump instruction's address
+        curr.integer = 0;
     }
-    // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
+    // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
     @Override
-    public void visit( SwitchScope_Plain curr )
+    public void visit( DoWhileCondition_Plain curr )
+    {
+        // initialize the jump instruction's address
+        curr.integer = 0;
+    }
+
+    ////// action symbols for opening a new scope and the switch-statement's jump instructions
+    // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
+    // SwitchExpr ::= (SwitchExpr_Plain) Expr;
+    @Override
+    public void visit( SwitchExpr_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
-        curr.intsetprop = new IntSetProp();
+        curr.switchprop = new SwitchProp();
     }
 
     ////// ident.ident[ expr ] = expr
@@ -1323,24 +1366,27 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// case 1: statement statement statement
     ////// case 2: 
     ////// case 3: {}
-    // Case ::= (Case_Plain) CASE_K int_lit:CaseNum colon StatementList;
+    // Case ::= (Case_Plain) CaseScope StatementList;
+
+    ////// action symbols for opening a new scope and the case-statement's jump instructions
+    // CaseScope ::= (CaseScope_Plain) CASE_K int_lit:CaseNum colon;
     @Override
-    public void visit( Case_Plain curr )
+    public void visit( CaseScope_Plain curr )
     {
         // find the switch scope surrounding this symbol
-        SwitchScope_Plain switchScope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
-            elem -> ( elem instanceof SwitchScope_Plain )
+        SwitchExpr_Plain switchExpr = ( SwitchExpr_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof SwitchExpr_Plain )
         );
 
         // if the switch scope doesn't exist
-        if( switchScope == null )
+        if( switchExpr == null )
         {
             report_fatal( curr, "Switch statement not yet supported" );
             return;
         }
         
         // get the switch numbers set
-        IntSetProp switchNumbers = switchScope.intsetprop;
+        SwitchProp switchNumbers = switchExpr.switchprop;
 
         // if the case number already exists
         if( !switchNumbers.add( curr.getCaseNum() ) )
