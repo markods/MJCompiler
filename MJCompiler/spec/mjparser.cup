@@ -205,6 +205,7 @@ nonterminal MethodDeclList;
 nonterminal MethodDecl;
 nonterminal rs.ac.bg.etf.pp1.Symbol MethodDeclType;
 nonterminal MethodDeclBody;
+nonterminal MethodDeclCode;
 nonterminal FormPars;
 nonterminal FormParsScope;
 nonterminal FormParsList;
@@ -335,7 +336,7 @@ MethodDeclList ::= (MethodDeclList_Empty) ;
 // void foo( int a, char c, Node Array[] ) { statement statement }
 // void foo( int a, char c, Node Array[] ) vardl vardl { }
 // void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList lbrace StatementList rbrace;
+MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
 
 // void foo
 // A foo
@@ -343,6 +344,9 @@ MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
 
 // action symbol for opening a new scope
 MethodDeclBody ::= (MethodDeclBody_Plain) ;
+
+// action symbol for the beginning of the method code
+MethodDeclCode ::= (MethodDeclCode_Plain) ;
 
 // <epsilon>
 // int ident, Node Array[], char c

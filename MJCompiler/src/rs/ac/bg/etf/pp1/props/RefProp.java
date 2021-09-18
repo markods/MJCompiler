@@ -9,5 +9,5 @@ public class RefProp<T>
 
     public T get() { return ref; }
     public T set( T ref ) { this.ref = ref; return this.ref; }
-    public T reset() { T ref = this.ref; this.ref = null; return ref; }
+    public T clear() { T ref = this.ref; this.ref = null; return ref; }
 }

@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Predicate;
 
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
@@ -83,6 +84,17 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>, 
         }
         
         return this;
+    }
+
+    // count the number of positive occurences given the match function
+    public int count( Predicate<Symbol> matcher )
+    {
+        int count = 0;
+        for( Symbol symbol : _symbols() )
+        {
+            if( matcher.test( symbol ) ) count++;
+        }
+        return count;
     }
 
     // clear the symbol map

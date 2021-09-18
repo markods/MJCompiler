@@ -9,5 +9,5 @@ public class SetProp<T>
     public boolean contains( T elem ) { return set.contains( elem ); }
     public boolean add( T elem ) { return set.add( elem ); }
     public int size() { return set.size(); }
-    public void reset() { set.clear(); }
+    public void clear() { set.clear(); }
 }

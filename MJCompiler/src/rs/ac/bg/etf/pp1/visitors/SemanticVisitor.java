@@ -2,6 +2,7 @@ package rs.ac.bg.etf.pp1.visitors;
 
 import java.util.List;
 
+import rs.ac.bg.etf.pp1.CodeGen;
 import rs.ac.bg.etf.pp1.Compiler;
 import rs.ac.bg.etf.pp1.CompilerError;
 import rs.ac.bg.etf.pp1.Symbol;
@@ -20,16 +21,20 @@ public class SemanticVisitor extends VisitorAdaptor
     private static class Context
     {
         public final BoolProp errorDetected = new BoolProp();
-        public final CountProp programVarCnt = new CountProp();
 
         public final StackProp<SyntaxNode> syntaxNodeStack = new StackProp<>();
+        // IMPORTANT: start from 1, since the location 0 must not be used (it is what the null pointer points to in the static segment)
+        public final CountProp staticSegSize = new CountProp( 1 );
         // FIX: this should also be on the syntax node stack (allows for nested classes)
         public final BoolProp isInForwardDeclMode = new BoolProp();
+
+        public final int maxFieldsInClass = 65536;
+        public final int maxLocalsInStackFrame = 256;
     }
 
 
+    public int staticVarCnt() { return context.staticSegSize.get(); }
     public boolean hasErrors() { return context.errorDetected.get(); }
-    public int getVarCount() { return context.programVarCnt.get(); }
 
     // only have a single underscore point at the start of the error tokens
     private void report_basic( SyntaxNode node, String message )
@@ -105,6 +110,9 @@ public class SemanticVisitor extends VisitorAdaptor
         {
             visit_MethodDeclBody( curr );
         }
+        
+        ////// action symbol for the beginning of the method code
+        // MethodDeclCode ::= (MethodDeclCode_Plain) ;
         
         ////// <epsilon>
         ////// int ident, Node Array[], char c
@@ -244,6 +252,8 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // remove the program node from the syntax node stack
         context.syntaxNodeStack.remove();
+        // initialize the code generator
+        CodeGen.init( context.staticSegSize.get() );
 
         Symbol left = curr.getProgramType().symbol;
         if( left.isNoSym() ) return;
@@ -268,14 +278,6 @@ public class SemanticVisitor extends VisitorAdaptor
             report_verbose( curr.getProgramType(), "Main function can't have parameters" );
         }
 
-        // update the number of variables in the program
-        // IMPORTANT: Scope's nvars field doesn't correctly count the number of variables, don't use it!
-        context.programVarCnt.reset();
-        for( Symbol symbol : left._locals() )
-        {
-            if( symbol.isVar() ) context.programVarCnt.get_inc();
-        }
-
         // if the symbol table has more or less scopes open than expected
         // +   global -> program
         if( SymbolTable._localsLevel() != 0 )
@@ -293,6 +295,9 @@ public class SemanticVisitor extends VisitorAdaptor
         {
             report_verbose( curr.getProgramType(), "Semantic visitor somehow still in forward declaration mode" );
         }
+
+        // close the program's scope
+        SymbolTable.closeScope();
     }
 
     ////// program my_program
@@ -317,7 +322,6 @@ public class SemanticVisitor extends VisitorAdaptor
         }
 
         // open the program's scope
-        // +   this scope won't be closed, so that the symbol table can return the global symbols when needed
         SymbolTable.openScope();
     }
 
@@ -393,7 +397,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
         // create the <class type> and <class type symbol>
         SymbolType classType = SymbolType.newClass( className, baseType, null );
-        curr.symbol = Symbol.newType( className, classType );
+        curr.symbol = Symbol.newType( className, classType, Symbol.NO_VALUE );
 
         // if the class cannot be added to the symbol table
         if( !SymbolTable.addSymbol( curr.symbol ) )
@@ -402,14 +406,22 @@ public class SemanticVisitor extends VisitorAdaptor
             
             // add an artificial class used for type checking later on
             classType = SymbolType.newClass( dummyName, baseType, null );
-            curr.symbol = Symbol.newType( dummyName, classType );
+            curr.symbol = Symbol.newType( dummyName, classType, Symbol.NO_VALUE );
             
             SymbolTable.addSymbol( curr.symbol );
         }
 
+        // get the class's inherited methods, and remove the virtual table pointer (so that it isn't shared between the base class and the subclass)
+        // +    save the inherited members in a new symbol map, because we don't want to modify the members list in the base class
+        SymbolMap baseMembers = new SymbolMap( classType._base()._members() );
+        baseMembers.removeSymbol( "@pVirtualTable" );
+        // add a 'virtual table pointer' field to the inherited members
+        // +   set its index to be 0, so that it is the first class field
+        Symbol pVirtualTable = Symbol.newField( "@pVirtualTable", SymbolTable.intType, Symbol.NO_VALUE, 0 );
+        baseMembers.addSymbol( pVirtualTable );
         // open the class's scope and add the class's inherited members
         SymbolTable.openScope();
-        SymbolTable.addSymbols( classType._base()._members() );
+        SymbolTable.addSymbols( baseMembers );
 
 
 
@@ -448,15 +460,29 @@ public class SemanticVisitor extends VisitorAdaptor
         idx = 0;
 
         // join all the now sorted members by category
-        SymbolMap members = staticFields;
+        SymbolMap members = new SymbolMap();
+        members.addSymbols( staticFields );
         members.addSymbols( fields );
         members.addSymbols( methods );
 
         // set the class's members in the correct order
         classType._members( members );
 
+        // if the class has more fields than the microjava virtual machine supports
+        if( fields.size() > context.maxFieldsInClass )
+        {
+            report_basic( curr, String.format( "Class has more fields than the virtual machine supports: %d (max %d)", fields.size(), context.maxFieldsInClass ) );
+        }
+
+        // save the starting address for the class's virtual table and reserve the space needed for the symbol table in the static segment
+        // +    also update the class's virtual table pointer to point to the new location
+        curr.symbol._address( context.staticSegSize.get() );
+        pVirtualTable._address( curr.symbol._address() );
+        context.staticSegSize.get_inc( curr.symbol._virtualTableSize() );
+
         // add a dummy 'this' field to the symbol table scope with the index -1
-        Symbol thisSymbol = Symbol.newConst( "this", classType, Symbol.NO_VALUE );
+        // +   set its value to be 0 (equal to the null constant)
+        Symbol thisSymbol = Symbol.newConst( "this", classType, 0 );
         SymbolTable.addSymbol( thisSymbol );
     }
 
@@ -491,6 +517,13 @@ public class SemanticVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_MethodDecl( MethodDecl_Plain curr )
     {
+        // if the method has more local variables (including parameters) in the stack frame than the microjava virtual machine supports
+        if( SymbolTable._localsSize() > context.maxLocalsInStackFrame )
+        {
+            report_basic( curr.getMethodDeclType(), String.format( "Function/method has more parameters + local variables than the virtual machine supports: %d (max %d)", SymbolTable._localsSize(), context.maxLocalsInStackFrame ) );
+        }
+
+        // close the function's scope
         context.syntaxNodeStack.remove();
         SymbolTable.closeScope();
     }
@@ -641,6 +674,9 @@ public class SemanticVisitor extends VisitorAdaptor
         SymbolTable.openScope();
         SymbolTable.addSymbols( formalParams );
     }
+
+    ////// action symbol for the beginning of the method code
+    // MethodDeclCode ::= (MethodDeclCode_Plain) ;
     
     ////// <epsilon>
     ////// int ident, Node Array[], char c
@@ -699,8 +735,7 @@ public class SemanticVisitor extends VisitorAdaptor
                 Symbol.newFormalParam(
                     String.format( "@Param[%d]", paramIdx ),
                     SymbolTable.anyType,
-                    paramIdx,
-                    SymbolTable._localsLevel()
+                    paramIdx
                 )
             );
         }
@@ -865,22 +900,25 @@ public class SemanticVisitor extends VisitorAdaptor
         // ...
         else
         {
-            report_fatal( curr, "Variable/field/<formal parameter> declaration not yet supported" );
+            report_fatal( curr, "Variable/field/<static field>/<formal parameter> declaration not yet supported" );
         }
 
         SymbolType leftType = left._type();
         SymbolType varType = ( !isArray ) ? leftType : SymbolType.newArray( String.format( "@Array<%s>", leftType._name() ), leftType );
 
         // update the current symbol
-        int varIdx = SymbolTable._localsSize();
-        int varLevel = SymbolTable._localsLevel();
+        int symLevel = SymbolTable._localsLevel();
+        int localIdx = SymbolTable._localsSize();
+        int varIdx   = SymbolTable._localsVarCount();
         
         switch( left._value() )
         {
-            case Symbol.VAR:          { curr.symbol = Symbol.newVar        ( varName, varType, Symbol.NO_VALUE, varLevel ); break; }
-            case Symbol.FIELD:        { curr.symbol = Symbol.newField      ( varName, varType, Symbol.NO_VALUE, varIdx   ); break; }
-            case Symbol.STATIC_FIELD: { curr.symbol = Symbol.newStaticField( varName, varType, Symbol.NO_VALUE, varIdx   ); break; }
-            case Symbol.FORMAL_PARAM: { curr.symbol = Symbol.newFormalParam( varName, varType, varIdx,          varLevel ); break; }
+            case Symbol.VAR:          { curr.symbol = Symbol.newVar        ( varName, varType, Symbol.NO_VALUE, symLevel, varIdx );   if( curr.symbol.isGlobal() ) curr.symbol._address( context.staticSegSize.get_inc() ); break; }
+            case Symbol.FIELD:        { curr.symbol = Symbol.newField      ( varName, varType, Symbol.NO_VALUE, localIdx         );   break; }
+            case Symbol.STATIC_FIELD: { curr.symbol = Symbol.newStaticField( varName, varType, Symbol.NO_VALUE, localIdx         );   curr.symbol._address( context.staticSegSize.get_inc() ); break; }
+            case Symbol.FORMAL_PARAM: { curr.symbol = Symbol.newFormalParam( varName, varType, localIdx                          );   break; }
+            
+            default: report_fatal( curr, "Variable/field/<static field>/<formal parameter> declaration not yet supported" );
         }
         
         // if the variable/field cannot be added to the symbol table
@@ -889,7 +927,7 @@ public class SemanticVisitor extends VisitorAdaptor
             report_verbose( curr, "A symbol with the same name already exists" );
             
             // add a dummy symbol to the symbol table, used for semantic checking later on
-            curr.symbol = curr.symbol.clone( String.format( "@Var[%d]", varIdx ) );
+            curr.symbol = curr.symbol.clone( String.format( "@Var[%d]", localIdx ) );
             SymbolTable.addSymbol( curr.symbol );
         }
 
@@ -1503,7 +1541,8 @@ public class SemanticVisitor extends VisitorAdaptor
             "@CondFact_Expr",
             SymbolTable.boolType,
             Symbol.NO_VALUE,
-            SymbolTable._localsLevel()
+            SymbolTable._localsLevel(),
+            SymbolTable._localsVarCount()
         );
 
         // if the symbol's type is not a bool
@@ -1530,7 +1569,8 @@ public class SemanticVisitor extends VisitorAdaptor
             "@CondFact_Relop",
             SymbolTable.boolType,
             Symbol.NO_VALUE,
-            SymbolTable._localsLevel()
+            SymbolTable._localsLevel(),
+            SymbolTable._localsVarCount()
         );
 
         // if the symbols are not compatible
@@ -1770,7 +1810,8 @@ public class SemanticVisitor extends VisitorAdaptor
             "@Factor_NewArray",
             SymbolType.newArray( "@Factor_NewArray", left._type() ),
             Symbol.NO_VALUE,
-            SymbolTable._localsLevel()
+            SymbolTable._localsLevel(),
+            SymbolTable._localsVarCount()
         );
 
 

@@ -50,6 +50,7 @@ public class ScopeVisitor implements Visitor
     public void visit( CaseList                       node ) { updateScope( node ); }
     public void visit( ActParsList                    node ) { updateScope( node ); }
     public void visit( DoWhileScope                   node ) { updateScope( node ); }
+    public void visit( MethodDeclCode                 node ) { updateScope( node ); }
     public void visit( GlobalDeclList                 node ) { updateScope( node ); }
     public void visit( VarDeclList                    node ) { updateScope( node ); }
     public void visit( Expr                           node ) { updateScope( node ); }
@@ -94,7 +95,7 @@ public class ScopeVisitor implements Visitor
     public void visit( Designator_Field               node ) { updateScope( node ); }
     public void visit( Designator_Null                node ) { updateScope( node ); }
     public void visit( Designator_Ident               node ) { updateScope( node ); }
-    public void visit( MethodCallScope_Plain               node ) { updateScope( node ); }
+    public void visit( MethodCallScope_Plain          node ) { updateScope( node ); }
     public void visit( Factor_Expr                    node ) { updateScope( node ); }
     public void visit( Factor_NewArray                node ) { updateScope( node ); }
     public void visit( Factor_NewVar                  node ) { updateScope( node ); }
@@ -172,6 +173,7 @@ public class ScopeVisitor implements Visitor
     public void visit( FormParsScope_Plain            node ) { updateScope( node ); }
     public void visit( FormPars_Empty                 node ) { updateScope( node ); }
     public void visit( FormPars_List                  node ) { updateScope( node ); }
+    public void visit( MethodDeclCode_Plain           node ) { updateScope( node ); }
     public void visit( MethodDeclBody_Plain           node ) { updateScope( node ); }
     public void visit( MethodDeclType_Plain           node ) { updateScope( node ); }
     public void visit( MethodDecl_Plain               node ) { updateScope( node ); }

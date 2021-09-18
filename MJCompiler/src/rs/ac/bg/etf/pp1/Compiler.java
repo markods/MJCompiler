@@ -2,7 +2,6 @@ package rs.ac.bg.etf.pp1;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -14,7 +13,6 @@ import rs.ac.bg.etf.pp1.util.Log4J;
 import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.ac.bg.etf.pp1.visitors.CodeGenVisitor;
 import rs.ac.bg.etf.pp1.visitors.SemanticVisitor;
-import rs.etf.pp1.mj.runtime.Code;
 
 public class Compiler
 {
@@ -82,12 +80,11 @@ public class Compiler
             if( fOutput != null )
             {
                 // do the semantic pass
-                SemanticVisitor semanticCheck = semanticAnalysis( syntaxRoot );
-                // if there is a semantic problem in the syntax tree, return
-                if( semanticCheck == null ) return false;
+                // +   if there is a semantic problem in the syntax tree, return
+                if( !semanticAnalysis( syntaxRoot ) ) return false;
 
                 // if the code generation failed, return
-                if( !generateCode( syntaxRoot, semanticCheck, fOutput ) ) return false;
+                if( !generateCode( syntaxRoot, fOutput ) ) return false;
             }
         }
         
@@ -301,10 +298,10 @@ public class Compiler
     }
 
     // semantic check the the syntax tree
-    private static SemanticVisitor semanticAnalysis( SyntaxNode syntaxRoot )
+    private static boolean semanticAnalysis( SyntaxNode syntaxRoot )
     {
         // if the syntax tree is missing, return
-        if( syntaxRoot == null ) return null;
+        if( syntaxRoot == null ) return false;
 
         logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ SEMANTIC" );
         logger.info( "Semantic checking:" );
@@ -325,16 +322,17 @@ public class Compiler
             logger.log( Log4J.INFO, sourceCodeToString(), true );
             logger.log( Log4J.INFO, symbolTableToString(), true );
             logger.log( Log4J.INFO, syntaxTreeToString( syntaxRoot ), true );
+            // reset the scope info list, so that the code generator can recreate it
+            // +    this doesn't close the global scope
+            SymbolTable.closeScope();
         }
 
         // if there are syntax or semantic errors, return
-        if( errors.hasErrors() ) return null;
-
-        return semanticVisitor;
+        return !errors.hasErrors();
     }
 
     // compile the given syntax tree into microjava code
-    private static boolean generateCode( SyntaxNode syntaxRoot, SemanticVisitor semanticCheck, File fOutput )
+    private static boolean generateCode( SyntaxNode syntaxRoot, File fOutput )
     {
         // if the syntax tree or output file is missing, return
         if( syntaxRoot == null || fOutput == null ) return false;
@@ -345,23 +343,26 @@ public class Compiler
         // generate code from the abstract syntax tree
         CodeGenVisitor codeGenerator = new CodeGenVisitor();
         syntaxRoot.traverseBottomUp( codeGenerator );
-        Code.dataSize = semanticCheck.getVarCount();
-        Code.mainPc = codeGenerator.getMainPc();
-        String compiledCode = compiledCodeToString();
-
-        // log the symbol table and the compiled code
-        logger.log( Log4J.INFO, symbolTableToString(), true );
-        logger.log( Log4J.INFO, compiledCode, true );
 
         // write compiler results to output file
         try( FileWriter fWriter = new FileWriter( fOutput ); )
         {
-            fWriter.write( compiledCode );
+            fWriter.write( CodeGen.compile() );
         }
         catch( IOException ex )
         {
             errors.add( CompilerError.SEMANTIC_ERROR, "Cannot open/write to output file", ex );
             return false;
+        }
+        catch( CompilerError err )
+        {}
+        finally
+        {
+            // log the updated symbol table, source code (again), the decompiled code and the compiled code
+            logger.log( Log4J.INFO, symbolTableToString(), true );
+            logger.log( Log4J.INFO, sourceCodeToString(), true );
+            logger.log( Log4J.INFO, decompiledCodeToString(), true );
+            logger.log( Log4J.INFO, compiledCodeToString(), true );
         }
 
         // return if there are errors during code generation
@@ -395,23 +396,16 @@ public class Compiler
     // return the compiled code as a string
     private static String compiledCodeToString()
     {
-        String output = null;
-
-        try( ByteArrayOutputStream buffer = new ByteArrayOutputStream(); )
-        {
-            buffer.write( "=========================COMPILED CODE==========================\n".getBytes() );
-            Code.write( buffer );
-            output = buffer.toString( "UTF-8" );
-        }
-        catch( IOException ex )
-        {
-            Compiler.errors.add( CompilerError.COMPILE_ERROR, "Error during conversion of compiled code to string", ex );
-            return null;
-        }
-
-        return output;
+        return "=========================COMPILED CODE==========================\n"
+            + CodeGen.compile();
     }
 
+    // return the decompiled code as a string
+    private static String decompiledCodeToString()
+    {
+        return "=========================DECOMPILED CODE========================\n"
+            + CodeGen.decompile( fOutput );
+    }
 
 
     // set the compiler parameters

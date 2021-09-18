@@ -35,13 +35,13 @@ public class SymbolTable
     
     // IMPORTANT: <no symbol> is returned when the symbol table cannot find a symbol
     // +   other symbols are just there for allowing their symbol types to be saved in the symbol table
-    public static final Symbol noSym   = Symbol.newType ( "@noSym", anyType  );
-    public static final Symbol anySym  = Symbol.newType ( "@any",   anyType  );
-    public static final Symbol voidSym = Symbol.newType ( "void",   voidType );
-    public static final Symbol nullSym = Symbol.newConst( "null",   nullType, Symbol.NO_VALUE );
-    public static final Symbol intSym  = Symbol.newType ( "int",    intType  );
-    public static final Symbol charSym = Symbol.newType ( "char",   charType );
-    public static final Symbol boolSym = Symbol.newType ( "bool",   boolType );
+    public static final Symbol noSym   = Symbol.newType ( "@noSym", anyType,  Symbol.NO_VALUE );
+    public static final Symbol anySym  = Symbol.newType ( "@any",   anyType,  Symbol.NO_VALUE );
+    public static final Symbol voidSym = Symbol.newType ( "void",   voidType, Symbol.NO_VALUE );
+    public static final Symbol nullSym = Symbol.newConst( "null",   nullType, 0               );
+    public static final Symbol intSym  = Symbol.newType ( "int",    intType,  Symbol.NO_VALUE );
+    public static final Symbol charSym = Symbol.newType ( "char",   charType, Symbol.NO_VALUE );
+    public static final Symbol boolSym = Symbol.newType ( "bool",   boolType, Symbol.NO_VALUE );
 
     // this value is copied over from the Tab.init() method
     private static int currScopeLevel = -2;
@@ -95,7 +95,7 @@ public class SymbolTable
         // char chr( int i );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
-            _local().addToLocals( Symbol.newFormalParam( "i", intType, 0, _localsLevel() ) );
+            _local().addToLocals( Symbol.newFormalParam( "i", intType, 0 ) );
             
             // IMPORTANT: set the method's formal parameters after all locals have been added to the current scope!
             // +   the method's formal parameters aren't automatically updated due to the way the _params function is implemented)
@@ -105,7 +105,7 @@ public class SymbolTable
         // int ord( char c );
         try( ScopeGuard guard = new ScopeGuard(); )
         {
-            _local().addToLocals( Symbol.newFormalParam( "c", charType, 0, _localsLevel() ) );
+            _local().addToLocals( Symbol.newFormalParam( "c", charType, 0 ) );
             global.addToLocals( Symbol.newFunction( "ord", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
@@ -113,7 +113,7 @@ public class SymbolTable
         try( ScopeGuard guard = new ScopeGuard(); )
         {
             SymbolType anyArrayType = SymbolType.newArray( "@anyArray", anyType );
-            _local().addToLocals( Symbol.newFormalParam( "arr", anyArrayType, 0, _localsLevel() ) );
+            _local().addToLocals( Symbol.newFormalParam( "arr", anyArrayType, 0 ) );
             global.addToLocals( Symbol.newFunction( "len", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
@@ -143,14 +143,24 @@ public class SymbolTable
     public static SymbolMap _locals() { return new SymbolMap( _local().getLocals() ); }
     // get the current scope's size
     public static int _localsSize() { return _locals().size(); }
+    // get the number of fields in the current scope
+    public static int _localsVarCount() { return _locals().count( elem -> elem.isVar() || elem.isFormalParam() ); }
     // get the current scope's level
     public static int _localsLevel() { return currScopeLevel; }
-    
+
+    // IMPORTANT: !isGlobalScope does not work as expected if the symbol's scope is an invalid value (Symbol.NO_VALUE)
+    // check if this scope is the global or program scope
+    public static boolean isGlobalScope() { return isGlobalScope( currScopeLevel ); }
+    // check if the scope with the given level is the global or program scope
+    public static boolean isGlobalScope( int scopeLevel ) { return scopeLevel == -1 || scopeLevel == 0; }
+
+
     // open a new scope
     public static Scope openScope()
     {
         Tab.openScope();
-        scopeList.add( new ScopeInfo( _local(), ++currScopeLevel ) );
+        currScopeLevel++;
+        scopeList.add( new ScopeInfo( _local(), currScopeLevel ) );
 
         return _local();
     }
@@ -159,12 +169,17 @@ public class SymbolTable
     public static Scope closeScope()
     {
         // prevent the global scope from being closed
-        if( _local() == global ) return global;
+        if( _local() == global )
+        {
+            scopeList.clear();
+            scopeList.add( new ScopeInfo( _local(), currScopeLevel ) );
+            return global;
+        }
         
         Scope curr = _local();
         Tab.closeScope();
         currScopeLevel--;
-        
+
         return curr;
     }
 
@@ -197,7 +212,12 @@ public class SymbolTable
         return false;
 
         // return if the symbol has been added to the current scope
-        return _local().addToLocals( symbol );
+        // +   restore the old symbol address, because for some reason the addToLocals() method changes the symbol's address if it is a field
+        int address = symbol._address();
+        boolean result = _local().addToLocals( symbol );
+        symbol._address( address );
+
+        return result;
     }
 
     // try to add the given symbol map to the symbol table
@@ -236,9 +256,9 @@ public class SymbolTable
 
         return ( symbol != null ) ? symbol : noSym;
     }
-    
 
-    
+
+
     // return the symbol table as string
     public static String asString()
     {
