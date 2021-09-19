@@ -20,7 +20,7 @@ public class CodeGen
     
     public static int _pc32() { return Code.pc; };
     public static void _pc32( int value_32 ) { Code.pc = value_32; };
-    private static void _pc32Inc() { Code.pc++; };
+    private static int _pc32Inc() { int pc = Code.pc; Code.pc++; return pc; };
 
     private static int _mainAddr32() { return Code.mainPc; };
     private static void _mainAddr32( int value_32 ) { Code.mainPc = value_32; };
@@ -86,7 +86,7 @@ public class CodeGen
 
             /*00*/put8( 'M' );
             /*01*/put8( 'J' );
-            /*02*/put32( _pc32() );
+            /*02*/put32( codeSize );
             /*06*/put32( _staticSize32() );
             /*10*/put32( _mainAddr32() );
 
@@ -141,6 +141,54 @@ public class CodeGen
     // convenience methods
 
 
+    // append the given byte (i8) to the code segment
+    private static void put8( int value_8 )
+    {
+        if( _pc32() >= bufsz ) report_fatal( String.format( "Code segment larger than MicroJava virtual machine permits: %d", bufsz ) );
+
+        buf[ _pc32Inc() ] = ( byte )value_8;
+    }
+    // append the given short (i16) to the code segment
+    private static void put16( int value_16 )
+    {
+        put8( ( byte )( value_16 >>> 8 ) );
+        put8( ( byte )( value_16 >>> 0 ) );
+    }
+    // overwrite the given short (i16) in the code segment with the given value
+    private static void put16( int address_16, int value_16 )
+    {
+        int pc_old = _pc32();
+        _pc32( address_16 );
+        put16( value_16 );
+        _pc32( pc_old );
+    }
+    // append the given word (i32) to the code segment
+    private static void put32( int value_32 )
+    {
+        put8( ( byte )( value_32 >>> 24 ) );
+        put8( ( byte )( value_32 >>> 16 ) );
+        put8( ( byte )( value_32 >>> 8  ) );
+        put8( ( byte )( value_32 >>> 0  ) );
+    }
+
+    // get the byte (i8) from the given address in the code segment
+    private static int get8( int address_16 )
+    {
+        return ( ( ( int )buf[ address_16 ] ) << 24 ) >>> 24;
+    }
+    // get the short (i16) from the given address in the code segment
+    private static int get16( int address_16 )
+    {
+        return ( ( ( get8( address_16 ) << 8 ) + get8( address_16+1 ) ) << 16 ) >> 16;
+    }
+    // get the word (i32) from the given address in the code segment
+    private static int get32( int address_16 )
+    {
+        return ( get16( address_16 ) << 16 ) + ( get16( address_16 + 2 ) << 16 ) >>> 16;
+    }
+
+
+
     // load the symbol's value onto the expression stack
     public static int loadSymbolValue( Symbol symbol )
     {
@@ -176,19 +224,18 @@ public class CodeGen
         // +   the <TYPE case> does nothing, since this is a way to access the class's static fields outside the class's scope
         switch( symbol._kind() )
         {
-            case Symbol.CONST:                         { return false; }
-            case Symbol.VAR:   if( symbol.isGlobal() ) { return false; }
-                               else                    { return true; }
-            case Symbol.FORMAL_PARAM:                  { return true; }
-            case Symbol.STATIC_FIELD:                  { return false; }
-            case Symbol.FIELD:                         { return true;  }
-            case Symbol.METHOD:                        { return true;  }
-            case Symbol.FUNCTION:                      { return false; }
-            case Symbol.TYPE:                          { return false; }
-            case Symbol.ARRAY_ELEM:                    { return true;  }
+            case Symbol.CONST:        { return false; }
+            case Symbol.VAR:          { return false; }
+            case Symbol.FORMAL_PARAM: { return false; }
+            case Symbol.STATIC_FIELD: { return false; }
+            case Symbol.FIELD:        { return true;  }
+            case Symbol.METHOD:       { return true;  }
+            case Symbol.FUNCTION:     { return false; }
+            case Symbol.TYPE:         { return false; }
+            case Symbol.ARRAY_ELEM:   { return true;  }
             /* miscellaneous symbol types */
-         // case Symbol.ACTIV_PARAM:                   { return /*not allowed*/; }
-         // case Symbol.PROGRAM:                       { return /*not allowed*/; }
+         // case Symbol.ACTIV_PARAM:  { return /*not allowed*/; }
+         // case Symbol.PROGRAM:      { return /*not allowed*/; }
 
             default: { report_fatal( "Symbol not supported" ); return false; }
         }
@@ -287,37 +334,6 @@ public class CodeGen
     public static void fixJumpOffset( int srcAddress_16 )
     {
         fixJumpOffset( srcAddress_16, _pc32() );
-    }
-
-
-
-    // append the given byte (i8) to the code segment
-    private static void put8( int value_8 )
-    {
-        if( _pc32() >= bufsz ) report_fatal( String.format( "Code segment larger than MicroJava virtual machine permits: %d", bufsz ) );
-
-        buf[ _pc32() ] = ( byte )( value_8 & 0xFF );
-        _pc32Inc();
-    }
-    // append the given short (i16) to the code segment
-    private static void put16( int value_16 )
-    {
-        put8( ( value_16 >> 8 ) & 0xFF );
-        put8( value_16 & 0xFF );
-    }
-    // overwrite the given short (i16) in the code segment with the given value
-    private static void put16( int address_16, int value_16 )
-    {
-        int pc_old = _pc32();
-        _pc32( address_16 );
-        put16( value_16 );
-        _pc32( pc_old );
-    }
-    // append the given word (i32) to the code segment
-    private static void put32( int value_32 )
-    {
-        put16( ( value_32 >> 16 ) & 0xFFFF );
-        put16( ( value_32 ) & 0xFFFF );
     }
 
     
@@ -655,7 +671,7 @@ public class CodeGen
         put8( i_invokevirtual );
         for( int i = 0; i < methodName.length(); i++ )
         {
-            put8( methodName.charAt( i ) );
+            put32( methodName.charAt( i ) );
         }
         // end the method name with -1, as per microjava virtual machine specification
         put8( -1 );

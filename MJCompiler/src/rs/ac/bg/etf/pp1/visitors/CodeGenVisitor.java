@@ -748,6 +748,14 @@ public class CodeGenVisitor extends VisitorAdaptor
 
     ////// expr
     // ActParam ::= (ActParam_Plain) Expr;
+    @Override
+    public void visit( ActParam_Plain curr )
+    {
+        // HACK: swap the expression's value and the class instance pointer on the expression stack
+        // +    that way, the class instance pointer always ends up at the top of the stack (similar to how bubble sort works)
+        CodeGen.i_dup_x1();   // ExprStack=[...,valA, valB -> ...,valB, valA, valB]
+        CodeGen.i_epop();     // ExprStack=[..., val -> ...]
+    }
 
 
 
@@ -781,6 +789,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( CondFact_Relop curr )
     {
                      CodeGen.i_sub();
+                     CodeGen.i_const_0();
         int pointA = CodeGen.jumpIfNot( curr.getRelop().symbol._value(), CodeGen.NO_ADDRESS );   // jump to C
                      CodeGen.loadConst( CodeGen.TRUE );
         int pointB = CodeGen.jump( CodeGen.NO_ADDRESS );   // jump to D
@@ -868,8 +877,6 @@ public class CodeGenVisitor extends VisitorAdaptor
         // if the function is a method (class member)
         if( function.isMethod() )
         {
-            // duplicate the method address on the expression stack (one address will be used to get the virtual table pointer)
-            CodeGen.i_dup();
             // push the virtual table pointer to the expression stack (#0 field in the class)
             CodeGen.i_getfield( 0 );
             // call the virtual method
@@ -878,7 +885,9 @@ public class CodeGenVisitor extends VisitorAdaptor
         // if the function is a function (in the global scope)
         else if( function.isFunction() )
         {
-            // call the method starting on the given address
+            // remove the random constant (quasi class instance pointer) from the expression stack
+            CodeGen.i_epop();
+            // call the method starting at the given address
             int pointA = CodeGen.i_call( CodeGen.NO_ADDRESS );
             CodeGen.fixJumpOffset( pointA, function._address() );
         }
@@ -918,11 +927,19 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( MethodCall_Plain curr )
     {
-     // // if the current symbol is a method
-     // if( curr.symbol.isMethod() )
-     // {
-     //     // IMPORTANT: the 'this' #0 method parameter has already been loaded by the Designator on the expression stack
-     // }
+        // if the current symbol is a method
+        if( curr.symbol.isMethod() )
+        {
+            // duplicate the method address on the expression stack (one address will be used to get the virtual table pointer)
+            CodeGen.i_dup();
+        }
+        // if the current symbol is a function
+        else if( curr.symbol.isFunction() )
+        {
+            // load a random constant on the expression stack (quasi class instace pointer)
+            // so that both the method's and the function's activation parameters are handled in the same way
+            CodeGen.i_const_0();
+        }
     }
 
     ////// null
