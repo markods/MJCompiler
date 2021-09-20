@@ -3,7 +3,9 @@
 
 # 1) Add Ant to the environment variable 'path' (if it isn't already there):
 #    +   .../NetBeans/netbeans/extide/ant/bin
-# 2) Enjoy!
+# 2) If the powershell won't run the script because of the execution policy, run this command
+#    +   Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope CurrentUser
+# 3) Enjoy!
 
 
 

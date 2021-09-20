@@ -345,7 +345,7 @@ public class Compiler
         syntaxRoot.traverseBottomUp( codeGenerator );
 
         // write compiler results to output file
-        try( FileWriter fWriter = new FileWriter( fOutput ); )
+        try( FileOutputStream fWriter = new FileOutputStream( fOutput ); )
         {
             fWriter.write( CodeGen.compile() );
         }

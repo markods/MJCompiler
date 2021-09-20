@@ -3,6 +3,9 @@ package rs.ac.bg.etf.pp1;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.etf.pp1.mj.runtime.Code;
@@ -14,13 +17,11 @@ public class CodeGen
     public static final int FALSE = 0;
     public static final int TRUE  = 1;
 
-    // IMPORTANT: copied over from the Code class, since it is private in that class for some reason (but the buffer isn't)
-    private static final int bufsz = 8192;
-    private static final byte[] buf = Code.buf;
+    private static final ByteBuffer code = ByteBuffer.wrap( Code.buf ).order( ByteOrder.BIG_ENDIAN );
     
     public static int _pc32() { return Code.pc; };
     public static void _pc32( int value_32 ) { Code.pc = value_32; };
-    private static int _pc32Inc() { int pc = Code.pc; Code.pc++; return pc; };
+    private static int _pc32Inc( int amount ) { int pc = Code.pc; Code.pc += amount; return pc; };
 
     private static int _mainAddr32() { return Code.mainPc; };
     private static void _mainAddr32( int value_32 ) { Code.mainPc = value_32; };
@@ -46,7 +47,7 @@ public class CodeGen
         // +   don't do this here, because the microjava virtual machine expects the code to start at 0 (the microjava header is prepended at the end of compilation)
         // /*00*/put8( 'M' );
         // /*01*/put8( 'J' );
-        // /*02*/put32( _pc32() );
+        // /*02*/put32( codeSize );
         // /*06*/put32( _staticSize32() );
         // /*10*/put32( _mainAddr32() );
     }
@@ -73,9 +74,9 @@ public class CodeGen
 
 
     // return the compiled code as a string
-    public static String compile()
+    public static byte[] compile()
     {
-        String output = "";
+        byte[] output = null;
         int codeSize = _pc32();
 
         try( ByteArrayOutputStream buffer = new ByteArrayOutputStream(); )
@@ -91,16 +92,16 @@ public class CodeGen
             /*10*/put32( _mainAddr32() );
 
             // write the header and actual code to the buffer
-            buffer.write( buf, codeSize, _pc32() - codeSize );
-            buffer.write( buf, 0, codeSize );
+            buffer.write( Code.buf, codeSize, _pc32() - codeSize );
+            buffer.write( Code.buf, 0, codeSize );
 
-            // return the buffer as string
-            output = buffer.toString( "UTF-8" );
+            // return the buffer as a byte array
+            output = buffer.toByteArray();
         }
         catch( IOException ex )
         {
             Compiler.logger.error( "Compilation unsuccessful", ex );
-            return "";
+            return null;
         }
         finally
         {
@@ -141,50 +142,82 @@ public class CodeGen
     // convenience methods
 
 
+    public static void main( String args[] )
+    {
+        int a = -400;
+        short b = ( short )a;
+
+        put16( 0, b );
+        int c = get16( 0 );
+        
+        System.out.println( a );
+        System.out.println( b );
+        System.out.println( c );
+    }
+    
     // append the given byte (i8) to the code segment
     private static void put8( int value_8 )
     {
-        if( _pc32() >= bufsz ) report_fatal( String.format( "Code segment larger than MicroJava virtual machine permits: %d", bufsz ) );
-
-        buf[ _pc32Inc() ] = ( byte )value_8;
+        try
+        {
+            code.put( _pc32Inc( 1/*B*/ ), ( byte )value_8 );
+        }
+        catch( BufferOverflowException ex )
+        {
+            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
+        }
     }
     // append the given short (i16) to the code segment
     private static void put16( int value_16 )
     {
-        put8( ( byte )( value_16 >>> 8 ) );
-        put8( ( byte )( value_16 >>> 0 ) );
-    }
-    // overwrite the given short (i16) in the code segment with the given value
-    private static void put16( int address_16, int value_16 )
-    {
-        int pc_old = _pc32();
-        _pc32( address_16 );
-        put16( value_16 );
-        _pc32( pc_old );
+        try
+        {
+            code.putShort( _pc32Inc( 2/*B*/ ), ( short )value_16 );
+        }
+        catch( BufferOverflowException ex )
+        {
+            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
+        }
     }
     // append the given word (i32) to the code segment
     private static void put32( int value_32 )
     {
-        put8( ( byte )( value_32 >>> 24 ) );
-        put8( ( byte )( value_32 >>> 16 ) );
-        put8( ( byte )( value_32 >>> 8  ) );
-        put8( ( byte )( value_32 >>> 0  ) );
+        try
+        {
+            code.putInt( _pc32Inc( 4/*B*/ ), value_32 );
+        }
+        catch( BufferOverflowException ex )
+        {
+            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
+        }
+    }
+    // overwrite the given short (i16) in the code segment with the given value
+    private static void put16( int address_16, int value_16 )
+    {
+        try
+        {
+            code.putShort( address_16, ( short )value_16 );
+        }
+        catch( BufferOverflowException ex )
+        {
+            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
+        }
     }
 
     // get the byte (i8) from the given address in the code segment
     private static int get8( int address_16 )
     {
-        return ( ( ( int )buf[ address_16 ] ) << 24 ) >>> 24;
+        return code.get( address_16 );
     }
     // get the short (i16) from the given address in the code segment
     private static int get16( int address_16 )
     {
-        return ( ( ( get8( address_16 ) << 8 ) + get8( address_16+1 ) ) << 16 ) >> 16;
+        return code.getShort( address_16 );
     }
     // get the word (i32) from the given address in the code segment
     private static int get32( int address_16 )
     {
-        return ( get16( address_16 ) << 16 ) + ( get16( address_16 + 2 ) << 16 ) >>> 16;
+        return code.getInt( address_16 );
     }
 
 
@@ -674,7 +707,7 @@ public class CodeGen
             put32( methodName.charAt( i ) );
         }
         // end the method name with -1, as per microjava virtual machine specification
-        put8( -1 );
+        put32( -1 );
 
         return pc32;
     }
