@@ -343,11 +343,12 @@ public class Compiler
         // generate code from the abstract syntax tree
         CodeGenVisitor codeGenerator = new CodeGenVisitor();
         syntaxRoot.traverseBottomUp( codeGenerator );
+        byte[] compiledCode = CodeGen.compile();
 
         // write compiler results to output file
         try( FileOutputStream fWriter = new FileOutputStream( fOutput ); )
         {
-            fWriter.write( CodeGen.compile() );
+            fWriter.write( compiledCode );
         }
         catch( IOException ex )
         {
@@ -358,11 +359,12 @@ public class Compiler
         {}
         finally
         {
-            // log the updated symbol table, source code (again), the decompiled code and the compiled code
+            // log the updated symbol table, source code (again), the decompiled code and the output from the microjava virtual machine
             logger.log( Log4J.INFO, symbolTableToString(), true );
             logger.log( Log4J.INFO, sourceCodeToString(), true );
             logger.log( Log4J.INFO, decompiledCodeToString(), true );
-            logger.log( Log4J.INFO, compiledCodeToString(), true );
+            logger.log( Log4J.INFO, runCodeToString( false ), true );
+            logger.log( Log4J.INFO, runCodeToString( true ), true );
         }
 
         // return if there are errors during code generation
@@ -393,18 +395,26 @@ public class Compiler
         return syntaxTree;
     }
 
-    // return the compiled code as a string
-    private static String compiledCodeToString()
-    {
-        return "=========================COMPILED CODE==========================\n"
-            + CodeGen.compile();
-    }
-
     // return the decompiled code as a string
     private static String decompiledCodeToString()
     {
         return "=========================DECOMPILED CODE========================\n"
             + CodeGen.decompile( fOutput );
+    }
+
+    // run the code in debug mode on the mj virtual machine and return the output
+    private static String runCodeToString( boolean debug )
+    {
+        if( debug )
+        {
+            return "=========================DEBUG CODE=============================\n"
+                + CodeGen.runCode( fOutput, debug );
+        }
+        else
+        {
+            return "=========================RUN CODE===============================\n"
+                + CodeGen.runCode( fOutput, debug );
+        }
     }
 
 

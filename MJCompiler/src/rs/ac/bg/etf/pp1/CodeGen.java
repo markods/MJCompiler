@@ -9,6 +9,7 @@ import java.nio.ByteOrder;
 
 import rs.ac.bg.etf.pp1.util.SystemStreamReplacer;
 import rs.etf.pp1.mj.runtime.Code;
+import rs.etf.pp1.mj.runtime.Run;
 import rs.etf.pp1.mj.runtime.disasm;
 
 public class CodeGen
@@ -18,6 +19,8 @@ public class CodeGen
     public static final int TRUE  = 1;
 
     private static final ByteBuffer code = ByteBuffer.wrap( Code.buf ).order( ByteOrder.BIG_ENDIAN );
+    // constant copied over from class Code
+    private static final int codesz = 8192;
     
     public static int _pc32() { return Code.pc; };
     public static void _pc32( int value_32 ) { Code.pc = value_32; };
@@ -44,7 +47,7 @@ public class CodeGen
         _staticSize32( staticSize );
 
         // initialize the code segment
-        // +   don't do this here, because the microjava virtual machine expects the code to start at 0 (the microjava header is prepended at the end of compilation)
+        // +   don't write the header here, because the microjava virtual machine expects the code to start at 0 (the microjava header is prepended at the end of compilation)
         // /*00*/put8( 'M' );
         // /*01*/put8( 'J' );
         // /*02*/put32( codeSize );
@@ -133,6 +136,28 @@ public class CodeGen
         
         return output;
     }
+    // run the code on the microjava virtual machine and return the output as string
+    public static String runCode( File fOutput, boolean debug )
+    {
+        String output = "";
+        
+        try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+             SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDOUT, buffer );
+        )
+        {
+            // workaround since disasm method only outputs to System.out
+            if( debug ) Run.main( new String[] { fOutput.getAbsolutePath(), "-debug" } );
+            else        Run.main( new String[] { fOutput.getAbsolutePath() } );
+            output = buffer.toString( "UTF-8" );
+        }
+        catch( Exception ex )
+        {
+            Compiler.logger.error( "Decompilation unsuccessful", ex );
+            return "";
+        }
+        
+        return output;
+    }
 
 
 
@@ -142,30 +167,18 @@ public class CodeGen
     // convenience methods
 
 
-    public static void main( String args[] )
-    {
-        int a = -400;
-        short b = ( short )a;
-
-        put16( 0, b );
-        int c = get16( 0 );
-        
-        System.out.println( a );
-        System.out.println( b );
-        System.out.println( c );
-    }
-    
     // append the given byte (i8) to the code segment
     private static void put8( int value_8 )
     {
         try
         {
             code.put( _pc32Inc( 1/*B*/ ), ( byte )value_8 );
+            if( _pc32() < codesz ) return;
         }
         catch( BufferOverflowException ex )
-        {
-            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
-        }
+        {}
+
+        report_fatal( String.format( "Code segment overflow (MJ virtual machine allows %d bytes of instructions)", codesz ) );
     }
     // append the given short (i16) to the code segment
     private static void put16( int value_16 )
@@ -173,11 +186,12 @@ public class CodeGen
         try
         {
             code.putShort( _pc32Inc( 2/*B*/ ), ( short )value_16 );
+            if( _pc32() < codesz ) return;
         }
         catch( BufferOverflowException ex )
-        {
-            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
-        }
+        {}
+
+        report_fatal( String.format( "Code segment overflow (MJ virtual machine allows %d bytes of instructions)", codesz ) );
     }
     // append the given word (i32) to the code segment
     private static void put32( int value_32 )
@@ -185,11 +199,12 @@ public class CodeGen
         try
         {
             code.putInt( _pc32Inc( 4/*B*/ ), value_32 );
+            if( _pc32() < codesz ) return;
         }
         catch( BufferOverflowException ex )
-        {
-            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
-        }
+        {}
+
+        report_fatal( String.format( "Code segment overflow (MJ virtual machine allows %d bytes of instructions)", codesz ) );
     }
     // overwrite the given short (i16) in the code segment with the given value
     private static void put16( int address_16, int value_16 )
@@ -197,11 +212,12 @@ public class CodeGen
         try
         {
             code.putShort( address_16, ( short )value_16 );
+            return;
         }
         catch( BufferOverflowException ex )
-        {
-            report_fatal( String.format( "Code segment overflow (MJ virtual machine allows 8192 bytes of instructions)" ) );
-        }
+        {}
+
+        report_fatal( String.format( "Code segment overflow (MJ virtual machine allows %d bytes of instructions)", codesz ) );
     }
 
     // get the byte (i8) from the given address in the code segment
@@ -231,7 +247,8 @@ public class CodeGen
         // +   the <TYPE case> does nothing, since this is a way to access the class's static fields outside the class's scope
         switch( symbol._kind() )
         {
-            case Symbol.CONST:                         { return loadConst  ( symbol._value()     ); }
+            case Symbol.CONST: if( symbol.isThis() )   { return loadLocal  ( symbol._value()/*0*/); }
+                               else                    { return loadConst  ( symbol._value()     ); }
             case Symbol.VAR:   if( symbol.isGlobal() ) { return i_getstatic( symbol._address()   ); }
                                else                    { return loadLocal  ( symbol._varIdx()    ); }
             case Symbol.FORMAL_PARAM:                  { return loadLocal  ( symbol._varIdx()    ); }

@@ -87,7 +87,7 @@ public class Symbol extends Obj implements Cloneable
     // METHOD, FUNCTION
     public int _paramCount() { return _params().size(); }
     // TYPE<CLASS>
-    public int _fieldCount() { return _locals().count( elem -> elem.isField() ); }
+    public int _fieldCount() { return _type()._members().count( elem -> elem.isField() ); }
     // TYPE<CLASS>
     public int _virtualTableSize() { return CodeGen.getVirtualTableSize( this ); }
 

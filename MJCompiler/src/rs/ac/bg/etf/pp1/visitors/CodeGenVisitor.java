@@ -277,7 +277,8 @@ public class CodeGenVisitor extends VisitorAdaptor
         Symbol method = ( ( MethodDecl_Plain )curr.getParent() ).getMethodDeclType().symbol;
 
         // initialize the method's stack frame
-        CodeGen.i_enter( method._paramCount(), SymbolTable._localsSize() );
+        int paramCount = ( ( method.isMethod() ) ? 1 : 0 )/*'this' param*/ + method._paramCount();
+        CodeGen.i_enter( paramCount, SymbolTable._localsSize() );
 
         // if this method is the main method
         if( method.isMain() )
@@ -907,7 +908,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Factor_NewVar curr )
     {
         // allocate space on the heap for the class instance and add the starting address to the expression stack
-        CodeGen.i_new( curr.symbol._fieldCount() );
+        CodeGen.i_new( curr.symbol._type()._fieldCount() );
         // initialize the virtual table pointer, but leave the class instance's address on the expression stack
         CodeGen.i_dup();
         CodeGen.loadConst( curr.symbol._address() );
