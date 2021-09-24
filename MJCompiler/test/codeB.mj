@@ -81,13 +81,13 @@ int niz2;
         print(inkrement(niz[2], 2));                // dvostruka vrednost treceg elementa
         
      // niz1 = niz * 2;
-        print(niz1[0]);                             // 0
-        print(niz1[1]);                             // 0
-        print(niz1[2]);                             // 0
+        print(niz[0]);                              // 0
+        print(niz[1]);                              // 0
+        print(niz[2]);                              // 0
         print(eol);                                 // prelazak u sledeci red
         
      // niz2 = niz * niz1;
-        print(niz2);                                // 0
+        print(niz[0]);                              // 0
         print(eol);                                 // prelazak u sledeci red
     }
 }

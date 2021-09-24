@@ -1253,11 +1253,18 @@ public class SemanticVisitor extends VisitorAdaptor
         // initialize the jump map
         curr.jumpprop = new JumpProp();
     }
-    // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
+    // DoWhileCondition ::= (DoWhileCondition_Plain) DoWhileConditionScope Condition;
     @Override
     public void visit( DoWhileCondition_Plain curr )
     {
         // initialize the jump instruction's address
+        curr.integer = 0;
+    }
+    // DoWhileConditionScope ::= (DoWhileConditionScope_Plain) ;
+    @Override
+    public void visit( DoWhileConditionScope curr )
+    {
+        // initialize the do-while-condition's starting address
         curr.integer = 0;
     }
 

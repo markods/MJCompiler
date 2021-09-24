@@ -62,7 +62,7 @@ int tezinaK, tezinaS;
         if(p.dohvVrstu() == 's') print('S');
         else if(p.dohvVrstu() == 'k') print('K');
 
-        print(eol); 
+        print(eol);
         print(p.dohvTezinu());
     }
         

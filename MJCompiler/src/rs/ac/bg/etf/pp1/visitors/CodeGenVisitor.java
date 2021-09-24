@@ -276,9 +276,9 @@ public class CodeGenVisitor extends VisitorAdaptor
         // get the method's symbol
         Symbol method = ( ( MethodDecl_Plain )curr.getParent() ).getMethodDeclType().symbol;
 
+        int thisParamInc = ( method.isMethod() ) ? 1 : 0;
         // initialize the method's stack frame
-        int paramCount = ( ( method.isMethod() ) ? 1 : 0 )/*'this' param*/ + method._paramCount();
-        CodeGen.i_enter( paramCount, SymbolTable._localsSize() );
+        CodeGen.i_enter( thisParamInc + method._paramCount(), thisParamInc + SymbolTable._localsSize() );
 
         // if this method is the main method
         if( method.isMain() )
@@ -457,6 +457,11 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Statement_Switch curr )
     {
         context.syntaxNodeStack.remove();
+        SwitchExpr scope = curr.getSwitchExpr();
+
+        // set the switch-statement's exit point here
+        // +    the entry! point has been set in the SwitchExpr
+        scope.jumpprop.get( "exit" )._pointAddress( CodeGen._pc32() );
     }
     // Statement ::= (Statement_Break      ) BREAK_K       semicol;
     @Override
@@ -488,12 +493,12 @@ public class CodeGenVisitor extends VisitorAdaptor
             elem -> ( elem instanceof DoWhileScope_Plain )
         );
 
-        // unconditionally jump to the beginning of the do-while-statement
+        // unconditionally jump to the beginning of the do-while-statement's condition
         // +    get the jump-instruction's starting address
         int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
 
         // mark the jump instruction's offset to be fixed later
-        scope.jumpprop.get( "enter" )._addAddressToFix( pointA );
+        scope.jumpprop.get( "condition" )._addAddressToFix( pointA );
     }
     // Statement ::= (Statement_Return     ) RETURN_K      semicol;
     @Override
@@ -542,7 +547,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( IfCondition_Plain curr )
     {
         // add the 'true' constant's value (1) to the expression stack
-        CodeGen.i_const( CodeGen.TRUE );
+        CodeGen.loadConst( CodeGen.TRUE );
         // initialize the jump instruction's address
         // +    jump if the condition is not true
         curr.integer = CodeGen.jumpIfNot( TokenCode.eq, CodeGen.NO_ADDRESS );
@@ -579,12 +584,13 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // initialize the jump map
         curr.jumpprop.add( "enter" );
+        curr.jumpprop.add( "condition" );
         curr.jumpprop.add( "exit" );
 
         // get the address of the first instruction in the do-while-statement
         curr.jumpprop.get( "enter" )._pointAddress( CodeGen._pc32() );
     }
-    // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
+    // DoWhileCondition ::= (DoWhileCondition_Plain) DoWhileConditionScope Condition;
     @Override
     public void visit( DoWhileCondition_Plain curr )
     {
@@ -594,15 +600,28 @@ public class CodeGenVisitor extends VisitorAdaptor
         );
 
         // add the 'true' constant's value (1) to the expression stack
-        CodeGen.i_const( CodeGen.TRUE );
+        CodeGen.loadConst( CodeGen.TRUE );
         // initialize the jump instruction's address
-        // +    jump if the condition is not true
-        curr.integer = CodeGen.jumpIfNot( TokenCode.eq, CodeGen.NO_ADDRESS );
+        // +    jump to the beginning of the loop if the condition is true
+        curr.integer = CodeGen.jumpIf( TokenCode.eq, CodeGen.NO_ADDRESS );
         scope.jumpprop.get( "enter" )._addAddressToFix( curr.integer );
 
         // set the do-while-statement's exit point here
         // +    the entry! point has been set in the DoWhileScope
         scope.jumpprop.get( "exit" )._pointAddress( CodeGen._pc32() );
+    }
+    // DoWhileConditionScope ::= (DoWhileConditionScope_Plain) ;
+    @Override
+    public void visit( DoWhileConditionScope_Plain curr )
+    {
+        // find the surrounding do-while statement
+        DoWhileScope_Plain scope = ( DoWhileScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof DoWhileScope_Plain )
+        );
+
+        // set the do-while-condition's entry point
+        curr.integer = CodeGen._pc32();
+        scope.jumpprop.get( "condition" )._pointAddress( curr.integer );
     }
 
     ////// action symbols for opening a new scope and the switch-statement's jump instructions
@@ -611,8 +630,6 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( SwitchExpr_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
-        // add the switch's exit point
-        curr.jumpprop.add( "exit" );
 
         // for all the switch's cases in the order they appeared (default not yet supported)
         for( JumpRecord caseRecord : curr.jumpprop )
@@ -621,8 +638,8 @@ public class CodeGenVisitor extends VisitorAdaptor
             // +    (the expression stack's top duplicate gets consumed whenever the conditional jump's condition is evaluated)
             CodeGen.i_dup();
 
-            // add the 'true' constant's value (1) to the expression stack
-            CodeGen.i_const( CodeGen.TRUE );
+            // add the case statement's value to the expression stack
+            CodeGen.loadConst( Integer.parseInt( caseRecord._pointName() ) );
 
             // initialize the jump instruction's address
             // +    jump if the condition is not true
@@ -633,8 +650,11 @@ public class CodeGenVisitor extends VisitorAdaptor
         // remove the last duplicate, since there are no more cases left (default not yet supported)
         CodeGen.i_epop();
         // jump unconditionally to the first instruction after the switch-statement
-        int pointSkipCases = CodeGen.jump( CodeGen.NO_ADDRESS );
-        curr.jumpprop.get( "exit" )._addAddressToFix( pointSkipCases );
+        int pointSkipAllCases = CodeGen.jump( CodeGen.NO_ADDRESS );
+
+        // add the switch's exit point
+        curr.jumpprop.add( "exit" );
+        curr.jumpprop.get( "exit" )._addAddressToFix( pointSkipAllCases );
     }
 
     ////// ident.ident[ expr ] = expr
@@ -712,6 +732,14 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// case 2: 
     ////// case 3: {}
     // Case ::= (Case_Plain) CaseScope StatementList;
+    @Override
+    public void visit( Case_Plain curr )
+    {
+        // add a random constant on the stack, which will be removed by the next case
+        // +   this supports cases that fall through to the next case (there is a code path that doesn't hit a break/continue/return statement in the case)
+        // +   the next case will remove this constant at the beginning (as if it were a switch-expression's value duplicate)
+        CodeGen.i_const_0();
+    }
 
     ////// action symbols for opening a new scope and the case-statement's jump instructions
     // CaseScope ::= (CaseScope_Plain) CASE_K int_lit:CaseNum colon;
@@ -768,8 +796,9 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         // HACK: if any of the inputs is one (true), their addition + one, when int divided by two ( (a+b+1)/2 ) result in a one (true)
         CodeGen.i_add();
-        CodeGen.i_load_1();
+        CodeGen.i_const_1();
         CodeGen.i_add();
+        CodeGen.i_const_2();
         CodeGen.i_div();
     }
 
@@ -789,12 +818,10 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( CondFact_Relop curr )
     {
-                     CodeGen.i_sub();
-                     CodeGen.i_const_0();
-        int pointA = CodeGen.jumpIfNot( curr.getRelop().symbol._value(), CodeGen.NO_ADDRESS );   // jump to C
-                     CodeGen.loadConst( CodeGen.TRUE );
+        int pointA = CodeGen.jumpIf( curr.getRelop().symbol._value(), CodeGen.NO_ADDRESS );   // jump to C
+                     CodeGen.loadConst( CodeGen.FALSE );
         int pointB = CodeGen.jump( CodeGen.NO_ADDRESS );   // jump to D
-        int pointC = CodeGen.loadConst( CodeGen.FALSE );
+        int pointC = CodeGen.loadConst( CodeGen.TRUE );
         
         int pointD = CodeGen._pc32();
                      
@@ -864,6 +891,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Factor_Designator curr )
     {
         // load the designator's value on the expression stack (given the previous designator where the designator evalueation stopped)
+        // +   IMPORTANT: this loads the null constant's value
         CodeGen.loadSymbolValue( curr.symbol );
     }
     // Factor ::= (Factor_MethodCall ) MethodCall lparen ActPars rparen;
@@ -908,7 +936,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Factor_NewVar curr )
     {
         // allocate space on the heap for the class instance and add the starting address to the expression stack
-        CodeGen.i_new( curr.symbol._type()._fieldCount() );
+        CodeGen.i_new( curr.symbol._type()._fieldCount()*4/*B*/ );
         // initialize the virtual table pointer, but leave the class instance's address on the expression stack
         CodeGen.i_dup();
         CodeGen.loadConst( curr.symbol._address() );
@@ -976,12 +1004,10 @@ public class CodeGenVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_Designator( Designator curr )
     {
-        // if the current designator is 'null'
-        if( curr instanceof Designator_Null )
+        // if the current designator is a class member, but does not start with 'this' (this.field)
+        if( curr instanceof Designator_Ident && curr.symbol.isClassMember() )
         {
-            // always put the 'null' symbol's value (which is 0), and never its address (because 'null' isn't a lvalue)
-            CodeGen.loadSymbolValue( curr.symbol );
-            return;
+            CodeGen.loadSymbolValue( SymbolTable.findSymbol( "this" ) );
         }
 
         // if the designator is not the last one in the sequence

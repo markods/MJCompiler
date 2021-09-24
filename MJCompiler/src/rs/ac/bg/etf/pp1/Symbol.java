@@ -148,6 +148,7 @@ public class Symbol extends Obj implements Cloneable
     public boolean isLvalue()        { return                     _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM || _kind() == FORMAL_PARAM; }
     public boolean isRvalue()        { return _kind() == CONST || _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM || _kind() == FORMAL_PARAM; }
     public boolean isGlobal()        { return SymbolTable.isGlobalScope( _scopeLevel() ); }
+    public boolean isClassMember()   { return _kind() == FIELD || _kind() == METHOD; }
     
     public boolean isThis()          { return _kind() == CONST    && "this"          .equals( _name() ); }
     public boolean ispVirtualTable() { return _kind() == FIELD    && "@pVirtualTable".equals( _name() ); }

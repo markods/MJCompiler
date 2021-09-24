@@ -2,6 +2,7 @@ package rs.ac.bg.etf.pp1;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -60,7 +61,7 @@ public class Compiler
         if( !Compiler.setParams( args ) ) return false;
         
         // if lexer output file is specified
-        if( fLex != null )
+        if( fLex != null || verbose )
         {
             // save the lex results to the output file
             TokenList tokenList = lex( fInput, fLex );
@@ -129,7 +130,7 @@ public class Compiler
                     token = ( Token )( lexer.next_token() );
 
                     output.append( token.toString() ).append( "\n" );
-                    logger.info( token.toString() );
+                    logger.log( Log4J.INFO, token.toString(), true );
 
                     if( token.isEOF() ) break;
                     
@@ -238,12 +239,15 @@ public class Compiler
                 }
                 else
                 {
-                    try( FileOutputStream fsLogger = new FileOutputStream( Log4J.getLogFile(), true );
-                         SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDERR, fsLogger );
+                    try( ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                         SystemStreamReplacer replacer = new SystemStreamReplacer( SystemStreamReplacer.STDERR, buffer );
                     )
                     {
                         // workaround since debug parse method only outputs to System.out
                         rootSymbol = parser.debug_parse();
+                        logger.info( "" );
+                        logger.info( "=========================PARSER STATES==========================" );
+                        logger.log( Log4J.INFO, buffer.toString( "UTF-8" ), true );
                     }
                 }
 
@@ -321,7 +325,7 @@ public class Compiler
             // log the source code, symbol table and the syntax tree
             logger.log( Log4J.INFO, sourceCodeToString(), true );
             logger.log( Log4J.INFO, symbolTableToString(), true );
-            logger.log( Log4J.INFO, syntaxTreeToString( syntaxRoot ), true );
+            if( verbose ) logger.log( Log4J.INFO, syntaxTreeToString( syntaxRoot ), true );
             // reset the scope info list, so that the code generator can recreate it
             // +    this doesn't close the global scope
             SymbolTable.closeScope();
@@ -363,8 +367,8 @@ public class Compiler
             logger.log( Log4J.INFO, symbolTableToString(), true );
             logger.log( Log4J.INFO, sourceCodeToString(), true );
             logger.log( Log4J.INFO, decompiledCodeToString(), true );
-            logger.log( Log4J.INFO, runCodeToString( false ), true );
-            logger.log( Log4J.INFO, runCodeToString( true ), true );
+         // logger.log( Log4J.INFO, runCodeToString( false ), true );
+         // logger.log( Log4J.INFO, runCodeToString( true ), true );
         }
 
         // return if there are errors during code generation

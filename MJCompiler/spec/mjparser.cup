@@ -235,6 +235,7 @@ nonterminal java.lang.Integer ElseStatement;      // contains the jump instructi
 
 nonterminal rs.ac.bg.etf.pp1.props.JumpProp DoWhileScope;   // contains the jump instructions' addresses
 nonterminal java.lang.Integer DoWhileCondition;             // contains the jump instruction's address
+nonterminal java.lang.Integer DoWhileConditionScope;        // contains the condition's starting address
 
 nonterminal rs.ac.bg.etf.pp1.props.JumpProp SwitchExpr;   // contains the jump instructions' addresses
 
@@ -476,7 +477,8 @@ ElseStatement ::= (ElseStatement_Plain) Statement;
 
 // action symbols for opening a new scope and the do-while-statement's jump instructions
 DoWhileScope ::= (DoWhileScope_Plain) DO_K;
-DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
+DoWhileCondition ::= (DoWhileCondition_Plain) DoWhileConditionScope Condition;
+DoWhileConditionScope ::= (DoWhileConditionScope_Plain) ;
 
 // action symbols for opening a new scope and the switch-statement's jump instructions
 SwitchExpr ::= (SwitchExpr_Plain) Expr;
