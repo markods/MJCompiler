@@ -20,6 +20,7 @@ program errorA
 
     int 'sedam[7];
     const int osam=-8;
+
 {
     int sumA(int 1z)
     {

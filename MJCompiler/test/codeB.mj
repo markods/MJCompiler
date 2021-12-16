@@ -2,14 +2,14 @@
 
 program test302
 
-const int jedan = 1;
+    const int jedan = 1;
 
-int i;
-bool ibool;
+    int i;
+    bool ibool;
 
-int niz[];
-int niz1[];
-int niz2;
+    int niz[];
+    int niz1[];
+    int niz2;
 
 {
     

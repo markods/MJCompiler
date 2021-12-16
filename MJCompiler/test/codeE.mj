@@ -1,52 +1,78 @@
 // codeE
 
 program codeE
-const int size = 10;
-class Table {
-    int pos[], neg[];
-    {
-        void putp (int a, int idx) { this.pos[idx] = a; }
-        void putn (int a, int idx) { this.neg[idx] = a; }
-        int getp (int idx) { return pos[idx]; }
-        int getn (int idx) { return neg[idx]; }
-    }
-}
 
-Table val;
+    const int size = 10;
+    class Table
+    {
+        int pos[], neg[];
+        {
+            void putp( int a, int idx ) { this.pos[ idx ] = a; }
+            void putn( int a, int idx ) { this.neg[ idx ] = a; }
+            int getp( int idx ) { return pos[ idx ]; }
+            int getn( int idx ) { return neg[ idx ]; }
+        }
+    }
+
+    record Board
+    {
+        int rows, columns;
+    }
+
+    Table val;
+    Board board;
+
 {
-    void f(char ch, int a, int arg)
-    int x;
+    void f( char ch, int a, int arg )
+        int x;
     {
         x = arg;
     }
-    void main() int x, i; char c;
+    
+    void main()
+        int x, i;
+        char c;
     {
         val = new Table;
-        val.pos = new int [size];
-        val.neg = new int [size];
+        val.pos = new int[ size ];
+        val.neg = new int[ size ];
+        read( x );
+        
+        if( x > 5 )
+        {
+            goto skip;
+        }
+        
         i = 0;
-        do{
-            val.putp(0, i);
-            val.putn(0, i);
+        do
+        {
+            val.putp( 0, i );
+            val.putn( 0, i );
             i++;
-        }while(i<size);
-
-        f(c, x, i);
-
-        read(x);
-        do{
-            if(x <= 0) break;
-            if (0 <= x && x < size)
+        }
+        while( i < size );
+        
+  skip: f( c, x, i );
+        
+        board = new Board;
+        read( board.rows );
+        x = board.rows;
+        
+        do
+        {
+            if( x <= 0 ) break;
+            if( 0 <= x && x < size )
             {
-                val.putp(x, val.getp(x)+1);
+                val.putp( val.getp( x ) + 1 );
             }
-            else if (-size < x && x < 0)
+            else if( ‐size < x && x < 0 )
             {
-                val.putn(-x, val.getn(-x)+1);
+                val.putn( val.getn( ‐x ) + 1 );
             }
-            read(x);
-        }while(true);
-
+            read( x );
+        }
+        while( true );
+        
         if( x < 0 ) print('-');  // '-' nakon sto je ucitan prvi negativan broj
         else        print('+');  // '+' nakon sto je ucitana prva nula
     }

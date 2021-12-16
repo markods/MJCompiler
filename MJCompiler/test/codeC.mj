@@ -2,59 +2,60 @@
 
 program test303
 
-const int delilac = 3;
+    const int delilac = 3;
 
-class Predmet
-{
-    int tezina;
-    char vrsta;
-
+    class Predmet
     {
-        void postaviTezinu(int tezina) {this.tezina = tezina;}  
-        void ucitajTezinu() { read(tezina); }
-        int zapremina() { return 0;}
-        int Q() {return zapremina() * tezina;}
-        void postaviVrstu(char vrsta) {this.vrsta = vrsta;}
-        char dohvVrstu() { return vrsta; }
-        int dohvTezinu() { return tezina; }
-    }
-}
+        int tezina;
+        char vrsta;
 
-class Sfera extends Predmet
-{
-    int r;
-    static int cinilac;
-    {
-        void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 's';}
-        void postaviPoluprecnik(int r) {this.r = r; postaviVrstu('s');}
-        void postaviCinilac(int c) {cinilac = c;}
-        
-        int zapremina()
-            int z;
         {
-            z = cinilac;
-            return z *(r/delilac);
+            void postaviTezinu(int tezina) {this.tezina = tezina;}
+            void ucitajTezinu() { read(tezina); }
+            int zapremina() { return 0;}
+            int Q() {return zapremina() * tezina;}
+            void postaviVrstu(char vrsta) {this.vrsta = vrsta;}
+            char dohvVrstu() { return vrsta; }
+            int dohvTezinu() { return tezina; }
         }
     }
-}
 
-class Kvadar extends Predmet
-{
-    int a, b, c;
+    class Sfera extends Predmet
     {
-        void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 'k';}
-        void postaviStranice(int a, int b, int c) {this.a = a; this.b = b; this.c = c; vrsta = 'k';}
-        int zapremina()
-            int z;
+        int r;
+        static int cinilac;
         {
-            z = a * b * c;
-            return z;
+            void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 's';}
+            void postaviPoluprecnik(int r) {this.r = r; postaviVrstu('s');}
+            void postaviCinilac(int c) {cinilac = c;}
+            
+            int zapremina()
+                int z;
+            {
+                z = cinilac;
+                return z *(r/delilac);
+            }
         }
     }
-}
 
-int zapreminaK, zapreminaS;
-int tezinaK, tezinaS;
+    class Kvadar extends Predmet
+    {
+        int a, b, c;
+        {
+            void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 'k';}
+            void postaviStranice(int a, int b, int c) {this.a = a; this.b = b; this.c = c; vrsta = 'k';}
+            int zapremina()
+                int z;
+            {
+                z = a * b * c;
+                return z;
+            }
+        }
+    }
+
+    int zapreminaK, zapreminaS;
+    int tezinaK, tezinaS;
+
 {
 
     void ispis( Predmet p)
