@@ -158,11 +158,12 @@ scan with {:
 
 
 // keywords [terminals]
-terminal PROGRAM_K, CLASS_K, /*ENUM_K,*/ EXTENDS_K;   // enum currently not supported
+terminal PROGRAM_K, CLASS_K, /*STRUCT_K,*/ RECORD_K /*,ENUM_K*/;
 terminal STATIC_K, CONST_K, VOID_K, NULL_K;
-terminal IF_K, ELSE_K, SWITCH_K, CASE_K, BREAK_K, CONTINUE_K, RETURN_K;
-terminal DO_K, WHILE_K;
-terminal NEW_K, PRINT_K, READ_K;
+terminal /*ABSTRACT_K,*/ EXTENDS_K /*,IMPLEMENTS_K*/, THIS_K, SUPER_K;
+terminal IF_K, ELSE_K, SWITCH_K, CASE_K, DO_K, WHILE_K /*,FOR_K*/;
+terminal /*DEFAULT_K,*/ BREAK_K, CONTINUE_K, RETURN_K, GOTO_K;
+terminal NEW_K, /*DELETE_K,*/ PRINT_K, READ_K;
 
 // operators [terminals]
 //       +     -      *    /    %
@@ -171,8 +172,8 @@ terminal plus, minus, mul, div, perc;
 terminal eq, ne, gt, ge, lt, le, and, or;
 //       =       ++        --
 terminal assign, plusplus, minusminus;
-//       ;        ,      .    {       }       (       )       [         ]         :
-terminal semicol, comma, dot, lbrace, rbrace, lparen, rparen, lbracket, rbracket, colon;
+//       ;        ,      .    {       }       (       )       [         ]         ?          :
+terminal semicol, comma, dot, lbrace, rbrace, lparen, rparen, lbracket, rbracket, /*qmark,*/ colon;
 
 // literals [terminals]
 terminal Integer int_lit;      // 0   10   12012
@@ -580,13 +581,17 @@ Factor ::= (Factor_Expr       ) lparen Expr rparen;
 // ident.ident[ expr ]( expr, expr, expr )
 MethodCall ::= (MethodCall_Plain) Designator;
 
-// null
 // ident
+// this.ident
+// super()
+// null
 // ident.ident
 // ident[ expr ]
 // ident.ident.ident[ expr ].ident
 // ident.ident.ident[ expr ].ident[ expr ]
 Designator ::= (Designator_Ident  ) ident:Name;
+Designator ::= (Designator_This   ) THIS_K;
+Designator ::= (Designator_Super  ) SUPER_K;
 Designator ::= (Designator_Null   ) NULL_K;
 Designator ::= (Designator_Field  ) Designator dot ident:Name;
 Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;

@@ -59,7 +59,7 @@ if( "-help" -in $args -or "--help" -in $args )
 {
     Write-Output "build   [[-]-help]   [-jflex] [-cup [-ast] [-pst]]   [-clean] [-build]   [-compile [-verbose] [-lex file] [-par file] [-o file] file]   [-disasm file] [-run [-debug] file]";
     Write-Output "";
-    Write-Output "Default:        build -jflex -ast -cup -build";
+    Write-Output "Default:        build -jflex -cup -ast -build";
     Write-Output "";
     Write-Output "Switches:";
     Write-Output "    --help      shows the help menu";

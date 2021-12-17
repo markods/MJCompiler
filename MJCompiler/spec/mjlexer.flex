@@ -72,27 +72,37 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 // keywords
 "program"    { return new_token( TokenCode.PROGRAM_K, yytext() ); }
 "class"      { return new_token( TokenCode.CLASS_K, yytext() ); }
+"struct"     { return new_token( TokenCode.invalid /*TokenCode.STRUCT_K*/, yytext() ); }
+"record"     { return new_token( TokenCode.RECORD_K, yytext() ); }
 "enum"       { return new_token( TokenCode.invalid /*TokenCode.ENUM_K*/, yytext() ); }
-"extends"    { return new_token( TokenCode.EXTENDS_K, yytext() ); }
 
 "static"     { return new_token( TokenCode.STATIC_K, yytext() ); }
 "const"      { return new_token( TokenCode.CONST_K, yytext() ); }
 "void"       { return new_token( TokenCode.VOID_K, yytext() ); }
 "null"       { return new_token( TokenCode.NULL_K, yytext() ); }
 
+"abstract"   { return new_token( TokenCode.invalid /*TokenCode.ABSTRACT_K*/, yytext() ); }
+"extends"    { return new_token( TokenCode.EXTENDS_K, yytext() ); }
+"implements" { return new_token( TokenCode.invalid /*TokenCode.IMPLEMENTS_K*/, yytext() ); }
+"this"       { return new_token( TokenCode.THIS_K, yytext() ); }
+"super"      { return new_token( TokenCode.SUPER_K, yytext() ); }
+
 "if"         { return new_token( TokenCode.IF_K, yytext() ); }
 "else"       { return new_token( TokenCode.ELSE_K, yytext() ); }
 "switch"     { return new_token( TokenCode.SWITCH_K, yytext() ); }
 "case"       { return new_token( TokenCode.CASE_K, yytext() ); }
+"do"         { return new_token( TokenCode.DO_K, yytext() ); }
+"while"      { return new_token( TokenCode.WHILE_K, yytext() ); }
+"for"        { return new_token( TokenCode.invalid /*TokenCode.FOR_K*/, yytext() ); }
+
 "default"    { return new_token( TokenCode.invalid /*TokenCode.DEFAULT_K*/, yytext() ); }
 "break"      { return new_token( TokenCode.BREAK_K, yytext() ); }
 "continue"   { return new_token( TokenCode.CONTINUE_K, yytext() ); }
 "return"     { return new_token( TokenCode.RETURN_K, yytext() ); }
-
-"do"         { return new_token( TokenCode.DO_K, yytext() ); }
-"while"      { return new_token( TokenCode.WHILE_K, yytext() ); }
+"goto"       { return new_token( TokenCode.GOTO_K, yytext() ); }
 
 "new"        { return new_token( TokenCode.NEW_K, yytext() ); }
+"delete"     { return new_token( TokenCode.invalid /*TokenCode.DELETE_K*/, yytext() ); }
 "print"      { return new_token( TokenCode.PRINT_K, yytext() ); }
 "read"       { return new_token( TokenCode.READ_K, yytext() ); }
 

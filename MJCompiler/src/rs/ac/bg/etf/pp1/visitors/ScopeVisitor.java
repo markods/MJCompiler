@@ -101,6 +101,8 @@ public class ScopeVisitor implements Visitor
     public void visit( Designator_ArrElem             node ) { updateScope( node ); }
     public void visit( Designator_Field               node ) { updateScope( node ); }
     public void visit( Designator_Null                node ) { updateScope( node ); }
+    public void visit( Designator_Super               node ) { updateScope( node ); }
+    public void visit( Designator_This                node ) { updateScope( node ); }
     public void visit( Designator_Ident               node ) { updateScope( node ); }
     public void visit( MethodCall_Plain               node ) { updateScope( node ); }
     public void visit( Factor_Expr                    node ) { updateScope( node ); }

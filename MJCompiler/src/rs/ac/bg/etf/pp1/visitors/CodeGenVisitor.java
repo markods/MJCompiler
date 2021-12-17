@@ -971,8 +971,10 @@ public class CodeGenVisitor extends VisitorAdaptor
         }
     }
 
-    ////// null
     ////// ident
+    ////// this.ident
+    ////// super()
+    ////// null
     ////// ident.ident
     ////// ident[ expr ]
     ////// ident.ident.ident[ expr ].ident
@@ -980,6 +982,18 @@ public class CodeGenVisitor extends VisitorAdaptor
     // Designator ::= (Designator_Ident  ) ident:Name;
     @Override
     public void visit( Designator_Ident curr )
+    {
+        visit_Designator( curr );
+    }
+    // Designator ::= (Designator_This   ) THIS_K;
+    @Override
+    public void visit( Designator_This curr )
+    {
+        visit_Designator( curr );
+    }
+    // Designator ::= (Designator_Super  ) SUPER_K;
+    @Override
+    public void visit( Designator_Super curr )
     {
         visit_Designator( curr );
     }
@@ -1004,6 +1018,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_Designator( Designator curr )
     {
+        // TODO: support for 'super'
+
         // if the current designator is a class member, but does not start with 'this' (this.field)
         if( curr instanceof Designator_Ident && curr.symbol.isClassMember() )
         {

@@ -1914,35 +1914,52 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_Ident curr )
     {
-        // reset the current designator's symbol
-        curr.symbol = SymbolTable.noSym;
-
-        // if the current designator is 'this'
-        if( "this".equals( curr.getName() ) )
-        {
-            // find the class declaration surrounding 'this'
-            SyntaxNode scope = context.syntaxNodeStack.find(
-                elem -> ( elem instanceof ClassDeclType )
-            );
-
-            // if the 'this' designator is not in a class declaration
-            if( scope == null )
-            {
-                report_verbose( curr, "'this' has no effect here (it must be inside a class declaration)" );
-                return;
-            }
-        }
-
         // try to find the symbol in the symbol table
         curr.symbol = SymbolTable.findSymbol( curr.getName() );
 
         // if the symbol does not exist in the symbol table
         if( curr.symbol.isNoSym() )
         {
-            if( !"this".equals( curr.getName() ) ) report_basic( curr, "This symbol has not been declared" );
-            else                                   report_fatal( curr, "Cannot find 'this' symbol in class scope" );
+            report_basic( curr, "This symbol has not been declared" );
             return;
         }
+    }
+    // Designator ::= (Designator_This   ) THIS_K;
+    @Override
+    public void visit( Designator_This curr )
+    {
+        // reset the current designator's symbol
+        curr.symbol = SymbolTable.noSym;
+
+        // find the class declaration surrounding 'this'
+        SyntaxNode scope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof ClassDeclType )
+        );
+
+        // if the 'this' designator is not in a class declaration
+        if( scope == null )
+        {
+            report_verbose( curr, "'this' has no effect here (it must be inside a class declaration)" );
+            return;
+        }
+
+        // try to find the 'this' symbol in the symbol table
+        curr.symbol = SymbolTable.findSymbol( "this" );
+
+        // if the 'this' symbol does not exist in the symbol table
+        if( curr.symbol.isNoSym() )
+        {
+            report_fatal( curr, "Cannot find 'this' symbol in class scope" );
+            return;
+        }
+    }
+    // Designator ::= (Designator_Super  ) SUPER_K;
+    @Override
+    public void visit( Designator_Super curr )
+    {
+        // reset the current designator's symbol
+        curr.symbol = SymbolTable.nullSym;
+        // TODO: 1. super must be a method; 2. only allowed inside constructor; 3. must be the first statement
     }
     // Designator ::= (Designator_Null   ) NULL_K;
     @Override
