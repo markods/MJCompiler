@@ -100,7 +100,7 @@ public class SymbolType extends Struct
     public SymbolType _members( Collection<Obj> symbols ) { setMembers( new SymbolMap( symbols ) ); return this; }
     
 
-    // TODO: dodati provere isAnyType svuda gde se koriste ove funkcije
+    // FIX: add isAnyType checks whenever these functions are used
     public boolean isAnyType()   { return _kind() == ANY_TYPE;  }
     public boolean isVoidType()  { return _kind() == VOID_TYPE; }
     public boolean isInt()       { return _kind() == INT;       }

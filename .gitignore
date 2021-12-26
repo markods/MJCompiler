@@ -15,6 +15,7 @@
 
 # generated source files
 ast/
+ast.old/
 Lexer.java
 Parser.java
 ITokenCode.java
