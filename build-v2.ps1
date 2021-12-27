@@ -113,7 +113,7 @@ Switches:
     }
 
     # invoke the stage's command
-    Invoke-Expression -Command $Command *>&1 | Write-Output;
+    Invoke-Expression -Command $Command;
     # if the command invocation failed, return
     if( $? -ne $true )
     {
@@ -134,23 +134,17 @@ Switches:
 
 # class FileUtil
 # {
-    function FileUtil_RenameItem
-    {
-        param( [string] $Path, [string] $NewName )
-
-        Rename-Item -Path $Path -NewName $NewName *>&1 | Out-Null;
-        if( $? -ne $true )
-        {
-            "Could not rename item: '{0}'" -f $Path | Write-Output;
-            $script:LastStatusCode = -1; return;
-        }
-
-        $script:LastStatusCode = 0; return;
-    }
-
     function FileUtil_MoveItem
     {
         param( [string] $Path, [string] $Destination )
+
+        [bool] $PathExists = Test-Path $Path -PathType "Any";
+        if( $? -ne $true )
+        {
+            "Could not test if item exists: '{0}'" -f $Path | Write-Output;
+            $script:LastStatusCode = -1; return;
+        }
+        if( !$PathExists ) { $script:LastStatusCode = 0; return; }
 
         Move-Item -Path $Path -Destination $Destination *>&1 | Out-Null;
         if( $? -ne $true )
@@ -186,6 +180,14 @@ Switches:
     function FileUtil_RemoveFiles
     {
         param( [string] $Path, [string] $Pattern )
+
+        [bool] $PathExists = Test-Path $Path -PathType "Container";
+        if( $? -ne $true )
+        {
+            "Could not test if folder exists: '{0}'" -f $Path | Write-Output;
+            $script:LastStatusCode = -1; return;
+        }
+        if( !$PathExists ) { $script:LastStatusCode = 0; return; }
 
         # Warning: When it is used with the Include parameter, the Recurse parameter might not delete all subfolders or all child items. This is a known issue.
         # As a workaround, try piping results of the Get-ChildItem -Recurse command to Remove-Item, as described in "Example 4" in this topic.
@@ -295,7 +297,7 @@ class Stage
       # $OutputStream | Write-Output;
       # $ErrorStream | Write-Error;
         
-        Invoke-Command -ScriptBlock $Script -ArgumentList $Stage *>&1 | Write-Output;
+        Invoke-Command -ScriptBlock $Script -ArgumentList $Stage;
     }
 # }
 
@@ -567,11 +569,10 @@ class Pipeline
             [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.obj"; }
         );
 
-        # TODO: check why files aren't removed
         foreach( $Item in $ItemsToRemove )
         {
             if( "" -eq $Item.Filter ) { FileUtil_RemoveFolder $Item.Path | Write-Output; }
-            else                      { FileUtil_RemoveFiles $Item.Path, $Item.Filter | Write-Output; }
+            else                      { FileUtil_RemoveFiles $Item.Path $Item.Filter | Write-Output; }
 
             if( $script:LastStatusCode -ne 0 ) { return; }
         }
@@ -687,7 +688,7 @@ function Build-V2
 }
 
 # call the build script
-# +   @ - array splatting operator, used to pass script arguments to function
+# +   @ - array splatting operator; used here to pass script arguments to the build function
 Build-V2 @args | Tee-Object -FilePath "${script:ProjectRoot}/build.log" -Append;
 # exit with the last exit code
 exit $script:LastStatusCode;
