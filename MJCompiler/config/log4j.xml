@@ -12,7 +12,7 @@
  -->
 
     <appender name="LogFileAppender" class="org.apache.log4j.RollingFileAppender">
-        <param name="file" value="logs/mjlog.log-temp"></param>
+        <param name="file" value=".logs/mjlog.log-temp"></param>
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern" value="%-5p %d{ABSOLUTE}   %m%n"></param>
         </layout>

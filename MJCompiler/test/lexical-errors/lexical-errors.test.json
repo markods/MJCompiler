@@ -1,0 +1,13 @@
+// IMPORTANT: all paths here should be relative to this (test batch) file!
+{
+    "BatchName": "Lexical error tests",
+    "TestGroupList": [
+        // {
+        //     "FilePath": "./errorA.mj",
+        //     "ExCompileOutput": ["???"],
+        //     "ExExitCode": -1,
+        //     "TestUnitList": [],
+        // },
+    ]
+}
+

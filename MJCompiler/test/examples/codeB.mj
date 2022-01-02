@@ -73,22 +73,12 @@ program test302
         read(niz[0]);
         read(niz[1]);
         read(niz[2]);
-        print(eol);                                 // prelazak u sledeci red
         
+        print(eol);                                 // prelazak u sledeci red
         print(sum (sum(niz[0], niz[1]), niz[2]));   // zbir tri uneta broja
             
         print(eol);                                 // prelazak u sledeci red
-        print(inkrement(niz[2], 2));                // dvostruka vrednost treceg elementa
-        
-     // niz1 = niz * 2;
-        print(niz[0]);                              // 0
-        print(niz[1]);                              // 0
-        print(niz[2]);                              // 0
-        print(eol);                                 // prelazak u sledeci red
-        
-     // niz2 = niz * niz1;
-        print(niz[0]);                              // 0
-        print(eol);                                 // prelazak u sledeci red
+        print(inkrement(niz[2], 2));                // dvostruka vrednost treceg broja
     }
 }
 

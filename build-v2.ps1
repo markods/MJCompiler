@@ -37,6 +37,7 @@
 using namespace System.Collections.Generic;
 using namespace System.Management.Automation;
 using namespace System.Collections.Specialized;
+using namespace System.Text.Json;
 
 
 
@@ -48,7 +49,7 @@ using namespace System.Collections.Specialized;
 [string] $script:ProjectRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent;
 [int] $script:LastStatusCode = 0;
 
-[string] $script:LineSeparator = "---------------------------------------------------------------------------------------------------------------- <<< {0}";
+[string] $script:LineSeparator = "------------------------------------------------------------------------------------------------------ <<< {0}";
 
 # NOTE: leave powershell array constructor ( @() ) if there is only one argument (otherwise it won't be a powershell array due to unpacking)
 [string[]] $script:DefaultArgs = "=jflex", "=cup", "=clean", "=build", "=test";
@@ -214,6 +215,8 @@ Switches:
         $script:LastStatusCode = 0; return;
     }
 # }
+
+
 
 class Stage
 {
@@ -496,7 +499,6 @@ class Pipeline
         if( $script:LastStatusCode -ne 0 ) { return; }
 
         # invoke the default stage script on this stage
-        # TODO: check why some output is missing
         Stage_ExecuteScript $script:StageScript_Default $Stage | Write-Output;
         if( $script:LastStatusCode -ne 0 )
         {
@@ -552,21 +554,22 @@ class Pipeline
         if( $script:LastStatusCode -ne 0 ) { return; }
 
         $ItemsToRemove = @(
-            # remove compiled java code directories
-            [PSCustomObject]@{ Path ="./MJCompiler/bin";   Filter=""; },
-            [PSCustomObject]@{ Path ="./MJCompiler/build"; Filter=""; },
-            [PSCustomObject]@{ Path ="./MJCompiler/dist" ; Filter=""; },
             # remove 'ast.old' directory (cleanup unused code)
             [PSCustomObject]@{ Path="./MJCompiler/rs/ac/bg/etf/pp1/ast.old"; Filter=""; },
+            # remove the generated cup specification files from the 'spec' directory
+            [PSCustomObject]@{ Path="./MJCompiler/spec"; Filter="*_astbuild.cup"; },
             # remove 'logs' directory
             [PSCustomObject]@{ Path="./MJCompiler/logs";      Filter=""; },
             [PSCustomObject]@{ Path="./MJCompiler/test/logs"; Filter=""; },
-            # remove the generated cup specification files from the 'spec' directory
-            [PSCustomObject]@{ Path="./MJCompiler/spec"; Filter="*_astbuild.cup"; },
             # remove all .lex, .par and .obj files from the test directory
+            [PSCustomObject]@{ Path="./MJCompiler/test/build"; Filter=""; },
             [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.lex"; },
             [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.par"; },
-            [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.obj"; }
+            [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.obj"; },
+            # remove compiled java code directories
+            [PSCustomObject]@{ Path ="./MJCompiler/bin";   Filter=""; },
+            [PSCustomObject]@{ Path ="./MJCompiler/build"; Filter=""; },
+            [PSCustomObject]@{ Path ="./MJCompiler/dist" ; Filter=""; }
         );
 
         foreach( $Item in $ItemsToRemove )
@@ -606,13 +609,156 @@ class Pipeline
     {
         # NOTE: command paths should be relative to the project 'test' folder
         param( [Stage] $Stage )
-    
+
         # print the stage name
         $script:LineSeparator -f $Stage.Name | Write-Output;
 
-        # TODO: implement
+        # if the subcommand doesn't accept arguments but they were given anyway (if the subcommand is simple)
+        # IMPORTANT: && and || are pipeline chain operators!, not logical operators (-and and -or)
+        $CmdArgArr = $Stage.CmdArgArr;
+        if( !$Stage.AcceptsArgs   -and   $CmdArgArr.Count -gt 0 )
+        {
+            "Subcommand does not accept arguments" | Write-Output;
+            $script:LastStatusCode = 400; return;
+        }
 
-        $script:LastStatusCode = 0; return;
+        # MicroJava compile and run scripts
+        $MJCompileScript =
+        {
+            param( [string] $MJFilePath, [string] $ObjFilePath )
+            $ScriptOutput = @( java -cp '../dist/MJCompiler.jar' 'rs.ac.bg.etf.pp1.Compiler' -o "$ObjFilePath" "$MJFilePath" *>&1 );
+            $ScriptOutput += $LASTEXITCODE;   # append the exit code to the output
+            Write-Output $ScriptOutput;
+        }
+        $MJRunScript =
+        {
+            param( [string] $ObjFilePath, [string] $TestInput )
+            $ScriptOutput = @( $TestInput | java -cp '../lib/mj-runtime-1.1.jar' 'rs.etf.pp1.mj.runtime.Run' "$ObjFilePath" *>&1 );   # make the result into an array
+            $ScriptOutput[ -1 ] = $LASTEXITCODE;   # replace the last output line (which is always present) with the exit code
+            Write-Output $ScriptOutput;
+        };
+        # some unicode symbols used in printing
+        $TestGroupSym = "❖";
+        $TestResultSym = "`u{274C}", "`u{2705}";   # "🗴", "✓"
+        # classes for working with the .json test batch
+        class TestUnit
+        {
+            [string] $TestName;         # the name of the unit test for the given file
+            [string[]] $TestInput;      # given input lines (separated by '\n')
+            [string[]] $ExTestOutput;   # expected output lines (seperated by '\n')
+            [int] $ExExitCode;          # expected exit code
+        }
+        class TestGroup
+        {
+            [string] $FilePath;            # the file which will be compiled and unit tested
+            [string[]] $ExCompileOutput;   # expected compile output
+            [int] $ExExitCode;             # expected exit code
+            [TestUnit[]] $TestUnitList;    # list of unit tests for the file
+        }
+        class TestBatch
+        {
+            [string] $BatchName;            # the name of the test batch
+            [TestGroup[]] $TestGroupList;   # list of test groups
+        }
+
+        # get the list of test batch files
+        $TestBatchFileList = Get-ChildItem -Path $Stage.WorkDir -Include "*.test.json" -File -Recurse;
+        if( $? -ne $true )
+        {
+            "Could not get list of test batch files" | Write-Output;
+            $script:LastStatusCode = -1; return;
+        }
+
+
+        # reset the last status code
+        $script:LastStatusCode = 0;
+        # for all test batches
+        foreach( $TestBatchFile in $TestBatchFileList )
+        {
+            [TestBatch] $TestBatch = $null;
+            [int] $TestBatchStatusCode = 0;
+            try
+            {
+                # setup the json serializer options
+                $JsonSerializerOptions = [JsonSerializerOptions]::new();
+                $JsonSerializerOptions.AllowTrailingCommas = $true;
+                $JsonSerializerOptions.ReadCommentHandling = [JsonCommentHandling]::Skip;
+                
+                # get the file's json contents
+                $Json = Get-Content -Raw $TestBatchFile;
+                $TestBatch = [JsonSerializer]::Deserialize( $Json, [TestBatch], $JsonSerializerOptions );
+            }
+            catch [JsonException]
+            {
+                $TestBatchStatusCode = -1;
+                continue;
+            }
+            finally
+            {
+                # print the test batch name
+                if( $TestBatchStatusCode -eq 0 )
+                {
+                    "{0} {1}`n------------------" -f $TestGroupSym, $TestBatch.BatchName | Write-Output;
+                }
+                else
+                {
+                    "{0} Test batch '{1}''s format is not valid json`n------------------" -f $TestGroupSym, $TestBatchFile.FullName | Write-Output;
+                }
+            }
+
+            # for all test groups in the test batch
+            foreach( $TestGroup in $TestBatch.TestGroupList )
+            {
+                # get the MJ file path relative to the project test folder, and the .obj file path which will be located in the .../test/build subdirectory
+                $MJFilePath = "{0}/{1}" -f $TestBatchFile.Directory, $TestGroup.FilePath;
+                $MJFilePath = [System.IO.Path]::GetRelativePath( $Stage.WorkDir, $MJFilePath ) -replace '\\', '/';
+                $ObjFilePath = $MJFilePath -replace '.mj$', '.obj';
+              # $ObjFilePath = "build/${ObjFilePath}";
+                $ObjFilePath = "${ObjFilePath}";
+                
+                # start the test group's input file compilation as a background job
+                [Job] $MJCompileJob = Start-Job -ScriptBlock $MJCompileScript -ArgumentList $MJFilePath, $ObjFilePath;
+                # wait for the compilation to finish and get the compilation output
+                Wait-Job $MJCompileJob -Timeout 1 | Out-Null;   # in seconds
+                $CompileOutput = ( $MJCompileJob | Receive-Job ) -join "`n";
+                # stop the background job if it's still running
+                Stop-Job $MJCompileJob;
+
+                # get the expected compilation output
+                $ExCompileOutput = $TestGroup.ExCompileOutput + $TestGroup.ExExitCode;
+                $ExCompileOutput = $ExCompileOutput -join "`n";
+
+                # if the compilation failed, save the status code
+                if( $MJCompileJob.Error.Count -ne 0   -or   $CompileOutput -ne $ExCompileOutput )
+                {
+                    "{0} '{1}': compilation failed" -f $TestResultSym[ $false ], $MJFilePath | Write-Output;
+                    $script:LastStatusCode = -1; continue;
+                }
+
+
+                # for all unit tests in the test group
+                foreach( $TestUnit in $TestGroup.TestUnitList )
+                {
+                    # start the test with the given input
+                    [Job] $MJRunJob = Start-Job -ScriptBlock $MJRunScript -ArgumentList $ObjFilePath, $TestUnit.TestInput;
+                    # wait for the test to finish and get its output
+                    Wait-Job $MJRunJob -Timeout 1 | Out-Null;   # in seconds
+                    $TestOutput = ( $MJRunJob | Receive-Job ) -join "`n";
+                    # stop the background job if it's still running
+                    Stop-Job $MJRunJob;
+
+                    # get the expected test output
+                    $ExTestOutput = $TestUnit.ExTestOutput + $TestGroup.ExExitCode;
+                    $ExTestOutput = $ExTestOutput -join "`n";
+                    # save the test exit code and update the stage status code
+                    $TestExitCode = ( $MJRunJob.Error.Count -ne 0 -or $TestOutput -ne $ExTestOutput ) ? -1 : 0;
+                    if( $TestExitCode -ne 0 ) { $script:LastStatusCode = -1; }
+
+                    # print the test results
+                    "{0} {1}" -f $TestResultSym[ $TestExitCode -eq 0 ], $TestUnit.TestName | Write-Output;
+                }
+            }
+        }
     },
     "${script:ProjectRoot}/MJCompiler/test",
     $false
@@ -680,10 +826,10 @@ function Build-V2
 {
     $ScriptArgs = $args.Count -ne 0 ? $args : $( "--help" );
 
-    Parser_Parse $script:Pipeline $ScriptArgs | Write-Output;
+    Parser_Parse $script:Pipeline $ScriptArgs;
     if( $script:LastStatusCode -ne 0 ) { return; }
     
-    Pipeline_Execute $script:Pipeline | Write-Output;
+    Pipeline_Execute $script:Pipeline;
     if( $script:LastStatusCode -ne 0 ) { return; }
 }
 

@@ -1,0 +1,96 @@
+// IMPORTANT: all paths here should be relative to this (test batch) file!
+{
+    "BatchName": "Example tests",
+    "TestGroupList": [
+        {
+            "FilePath": "./codeA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [
+                {
+                    "TestName": "CodeA input 1",
+                    "TestInput": ["0"],
+                    "ExTestOutput": ["966bc260-"],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "CodeA input 2",
+                    "TestInput": ["-1"],
+                    "ExTestOutput": ["966bc26-1-"],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "CodeA input 3",
+                    "TestInput": ["11"],
+                    "ExTestOutput": ["966bc2611+"],
+                    "ExExitCode": 0,
+                },
+            ],
+        },
+        {
+            "FilePath": "./codeB.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [
+                {
+                    "TestName": "CodeB input 1",
+                    "TestInput": ["1 2 3"],
+                    "ExTestOutput": ["01v65","v4","6","6"],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "CodeB input 2",
+                    "TestInput": ["1 1 1"],
+                    "ExTestOutput": ["01v65","v4","3","2"],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "CodeB input 2",
+                    "TestInput": ["-3 -2 -1"],
+                    "ExTestOutput": ["01v65","v4","-6","-2"],
+                    "ExExitCode": 0,
+                },
+            ],
+        },
+        {
+            "FilePath": "./codeC.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [
+                {
+                    "TestName": "CodeC input 1",
+                    "TestInput": ["1"],
+                    "ExTestOutput": ["4S","1S","1S","1K","1K","1K","1210","0","210","0","1","2","32","","5","","9","",""],
+                    "ExExitCode": 0,
+                },
+            ],
+        },
+        {
+            "FilePath": "./codeD.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [
+                {
+                    "TestName": "CodeD input 1",
+                    "TestInput": [""],
+                    "ExTestOutput": ["6"],
+                    "ExExitCode": 0,
+                },
+            ],
+        },
+        // {
+        //     "FilePath": "./codeE.mj",
+        //     "ExCompileOutput": [],
+        //     "ExExitCode": 0,
+        //     "TestUnitList": [
+        //         {
+        //             "TestName": "CodeE input 1",
+        //             "TestInput": ["?"],
+        //             "ExTestOutput": ["?"],
+        //             "ExExitCode": 0,
+        //         },
+        //     ],
+        // },
+    ]
+}
+
