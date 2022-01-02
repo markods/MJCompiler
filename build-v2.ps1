@@ -559,8 +559,10 @@ class Pipeline
             # remove the generated cup specification files from the 'spec' directory
             [PSCustomObject]@{ Path="./MJCompiler/spec"; Filter="*_astbuild.cup"; },
             # remove 'logs' directory
-            [PSCustomObject]@{ Path="./MJCompiler/logs";      Filter=""; },
-            [PSCustomObject]@{ Path="./MJCompiler/test/logs"; Filter=""; },
+            [PSCustomObject]@{ Path="./MJCompiler/logs";       Filter=""; },
+            [PSCustomObject]@{ Path="./MJCompiler/.logs";      Filter=""; },
+            [PSCustomObject]@{ Path="./MJCompiler/test/logs";  Filter=""; },
+            [PSCustomObject]@{ Path="./MJCompiler/test/.logs"; Filter=""; },
             # remove all .lex, .par and .obj files from the test directory
             [PSCustomObject]@{ Path="./MJCompiler/test/build"; Filter=""; },
             [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.lex"; },
