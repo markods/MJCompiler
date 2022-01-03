@@ -721,7 +721,7 @@ class Pipeline
                 # start the test group's input file compilation as a background job
                 [Job] $MJCompileJob = Start-Job -ScriptBlock $MJCompileScript -ArgumentList $MJFilePath, $ObjFilePath;
                 # wait for the compilation to finish and get the compilation output
-                Wait-Job $MJCompileJob -Timeout 1 | Out-Null;   # in seconds
+                Wait-Job $MJCompileJob -Timeout 5 | Out-Null;   # in seconds
                 $CompileOutput = ( $MJCompileJob | Receive-Job ) -join "`n";
                 # stop the background job if it's still running
                 Stop-Job $MJCompileJob;
@@ -744,7 +744,7 @@ class Pipeline
                     # start the test with the given input
                     [Job] $MJRunJob = Start-Job -ScriptBlock $MJRunScript -ArgumentList $ObjFilePath, $TestUnit.TestInput;
                     # wait for the test to finish and get its output
-                    Wait-Job $MJRunJob -Timeout 1 | Out-Null;   # in seconds
+                    Wait-Job $MJRunJob -Timeout 5 | Out-Null;   # in seconds
                     $TestOutput = ( $MJRunJob | Receive-Job ) -join "`n";
                     # stop the background job if it's still running
                     Stop-Job $MJRunJob;
