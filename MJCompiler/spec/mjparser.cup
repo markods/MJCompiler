@@ -203,6 +203,10 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ClassDeclType;
 nonterminal ClassDeclBody;
 nonterminal MethodDeclList;
 
+nonterminal RecordDecl;
+nonterminal rs.ac.bg.etf.pp1.Symbol RecordDeclType;
+nonterminal RecordDeclBody;
+
 nonterminal MethodDecl;
 nonterminal rs.ac.bg.etf.pp1.Symbol MethodDeclType;
 nonterminal MethodDeclBody;
@@ -227,12 +231,16 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ConstInit;
 
 
 // statements [nonterminals]
+nonterminal StatementList;
 nonterminal Statement;
 
-nonterminal java.lang.Integer IfCondition;        // contains the jump instruction's address
-nonterminal java.lang.Integer IfStatement;        // contains the jump instruction's address
-nonterminal java.lang.Integer ElseScope;          // contains the jump instruction's address
-nonterminal java.lang.Integer ElseStatement;      // contains the jump instruction's address
+nonterminal LabStmt;
+nonterminal Stmt;
+
+nonterminal java.lang.Integer IfCondition;   // contains the jump instruction's address
+nonterminal java.lang.Integer IfStmt;        // contains the jump instruction's address
+nonterminal java.lang.Integer ElseScope;     // contains the jump instruction's address
+nonterminal java.lang.Integer ElseStmt;      // contains the jump instruction's address
 
 nonterminal rs.ac.bg.etf.pp1.props.JumpProp DoWhileScope;   // contains the jump instructions' addresses
 nonterminal java.lang.Integer DoWhileCondition;             // contains the jump instruction's address
@@ -240,8 +248,7 @@ nonterminal java.lang.Integer DoWhileConditionScope;        // contains the cond
 
 nonterminal rs.ac.bg.etf.pp1.props.JumpProp SwitchExpr;   // contains the jump instructions' addresses
 
-nonterminal DesignatorStatement;
-nonterminal StatementList;
+nonterminal DesignatorStmt;
 
 nonterminal CaseList;
 nonterminal Case;
@@ -270,6 +277,7 @@ nonterminal rs.ac.bg.etf.pp1.Symbol Designator;
 nonterminal rs.ac.bg.etf.pp1.Symbol ReturnType;  // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Type;        // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Literal;     // value, type
+nonterminal rs.ac.bg.etf.pp1.Symbol Label;       // value, type
 
 nonterminal rs.ac.bg.etf.pp1.Symbol Assignop;
 nonterminal rs.ac.bg.etf.pp1.Symbol Relop;
@@ -309,9 +317,11 @@ GlobalDeclList ::= (GlobalDeclList_Empty) ;
 // constdl
 // vardl
 // classdl
-GlobalDecl ::= (GlobalDecl_Const) ConstDecl;
-GlobalDecl ::= (GlobalDecl_Var  ) VarDecl;
-GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
+// recorddl
+GlobalDecl ::= (GlobalDecl_Const ) ConstDecl;
+GlobalDecl ::= (GlobalDecl_Var   ) VarDecl;
+GlobalDecl ::= (GlobalDecl_Class ) ClassDecl;
+GlobalDecl ::= (GlobalDecl_Record) RecordDecl;
 
 
 
@@ -338,6 +348,20 @@ ClassDeclBody ::= (ClassDeclBody_VarsMethods) VarDeclList lbrace MethodDeclList 
 // method method method
 MethodDeclList ::= (MethodDeclList_Tail ) MethodDeclList MethodDecl;
 MethodDeclList ::= (MethodDeclList_Empty) ;
+
+
+
+// record A { }
+// record A { vardl vardl vardl vardl }
+RecordDecl ::= (RecordDecl_Plain) RecordDeclType lbrace RecordDeclBody rbrace;
+
+// record A
+RecordDeclType ::= (RecordDeclType_Plain) RECORD_K ident:RecordName;
+RecordDeclType ::= (RecordDeclType_Err  ) RECORD_K error {: parser.report_error( "Bad record declaration", null ); :};
+
+// <epsilon>
+// vardl vardl vardl vardl
+RecordDeclBody ::= (RecordDeclBody_Vars) VarDeclList;
 
 
 
@@ -433,6 +457,22 @@ ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initializatio
 
 
 
+// <epsilon>
+// labstatement statement { statement statement } statement { }
+StatementList ::= (StatementList_Tail ) StatementList Statement;
+StatementList ::= (StatementList_Empty) ;
+
+// stmt stmt label_02: stmt
+// {}
+// { label1:statement label2:statement label3:statement }
+Statement ::= (Statement_Plain) LabStmt;
+Statement ::= (Statement_Scope) lbrace StatementList rbrace;
+Statement ::= (Statement_Err  ) error {: parser.report_error( "Bad statement", null ); :};
+
+// stmt | label_01: stmt
+LabStmt ::= (LabStmt_Plain) Stmt;
+LabStmt ::= (LabStmt_Label) Label Stmt;
+
 // ident.ident[ expr ] = expr;
 // ident.ident[ expr ]( );
 // ident.ident[ expr ]( expr, expr, expr );
@@ -448,33 +488,32 @@ ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initializatio
 // continue;
 // return;
 // return expr;
+// goto label_01;
 //
 // read( ident.ident[ expr ] );
 // print( ident.ident[ expr ], 2 );
 //
-// {}
-// { statement statement statement }
-Statement ::= (Statement_Designator ) DesignatorStatement semicol;
-Statement ::= (Statement_If         ) IF_K lparen IfCondition rparen IfStatement;
-Statement ::= (Statement_IfElse     ) IF_K lparen IfCondition rparen IfStatement ElseScope ElseStatement;
-Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
-Statement ::= (Statement_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
-Statement ::= (Statement_Break      ) BREAK_K       semicol;
-Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
-Statement ::= (Statement_Return     ) RETURN_K      semicol;
-Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
-Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
-Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
-Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
-Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
-Statement ::= (Statement_Semicolon  ) semicol;
-Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
+// ;
+Stmt ::= (Stmt_Designator ) DesignatorStmt semicol;
+Stmt ::= (Stmt_If         ) IF_K lparen IfCondition rparen IfStmt;
+Stmt ::= (Stmt_IfElse     ) IF_K lparen IfCondition rparen IfStmt ElseScope ElseStmt;
+Stmt ::= (Stmt_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
+Stmt ::= (Stmt_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
+Stmt ::= (Stmt_Break      ) BREAK_K       semicol;
+Stmt ::= (Stmt_Continue   ) CONTINUE_K    semicol;
+Stmt ::= (Stmt_Return     ) RETURN_K      semicol;
+Stmt ::= (Stmt_ReturnExpr ) RETURN_K Expr semicol;
+Stmt ::= (Stmt_Goto       ) GOTO_K Label  semicol;
+Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
+Stmt ::= (Stmt_Print      ) PRINT_K lparen Expr                        rparen semicol;
+Stmt ::= (Stmt_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
+Stmt ::= (Stmt_Semicolon  ) semicol;
 
 // action symbols for opening a new scope and the if-statement's jump instructions
 IfCondition ::= (IfCondition_Plain) Condition;
-IfStatement ::= (IfStatement_Plain) Statement;
+IfStmt ::= (IfStmt_Plain) Statement;
 ElseScope ::= (ElseScope_Plain) ELSE_K;
-ElseStatement ::= (ElseStatement_Plain) Statement;
+ElseStmt ::= (ElseStmt_Plain) Statement;
 
 // action symbols for opening a new scope and the do-while-statement's jump instructions
 DoWhileScope ::= (DoWhileScope_Plain) DO_K;
@@ -489,15 +528,10 @@ SwitchExpr ::= (SwitchExpr_Plain) Expr;
 // ident.ident[ expr ]( expr, expr, expr )
 // ident.ident[ expr ]++
 // ident.ident[ expr ]--
-DesignatorStatement ::= (DesignatorStatement_Assign    ) Designator Assignop Expr;
-DesignatorStatement ::= (DesignatorStatement_Call      ) MethodCall lparen ActPars rparen;
-DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
-DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
-
-// <epsilon>
-// statement statement statement statement
-StatementList ::= (StatementList_Tail ) StatementList Statement;
-StatementList ::= (StatementList_Empty) ;
+DesignatorStmt ::= (DesignatorStmt_Assign    ) Designator Assignop Expr;
+DesignatorStmt ::= (DesignatorStmt_Call      ) MethodCall lparen ActPars rparen;
+DesignatorStmt ::= (DesignatorStmt_Plusplus  ) Designator plusplus;
+DesignatorStmt ::= (DesignatorStmt_Minusminus) Designator minusminus;
 
 // <epsilon>
 // case 1: statement statement statement   case 2: statement statement
@@ -609,6 +643,8 @@ Type ::= (Type_Ident) ident:TypeName;
 Literal ::= (Literal_Int ) int_lit :Literal;
 Literal ::= (Literal_Char) char_lit:Literal;
 Literal ::= (Literal_Bool) bool_lit:Literal;
+// label_01
+Label ::= (Label_Plain) ident:Label;
 
 // =
 Assignop ::= (Assignop_Assign) assign:Assignop;

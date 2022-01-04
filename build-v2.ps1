@@ -49,7 +49,8 @@ using namespace System.Text.Json;
 [string] $script:ProjectRoot = Split-Path -Path $MyInvocation.MyCommand.Path -Parent;
 [int] $script:LastStatusCode = 0;
 
-[string] $script:LineSeparator = "------------------------------------------------------------------------------------------------------ <<< {0}";
+[string] $script:StageSep = "------------------------------------------------------------------------------------------------------ <<< {0}";
+[string] $script:LineSep  = "------------------";
 
 # NOTE: leave powershell array constructor ( @() ) if there is only one argument (otherwise it won't be a powershell array due to unpacking)
 [string[]] $script:DefaultArgs = "=jflex", "=cup", "=clean", "=build", "=test";
@@ -99,7 +100,7 @@ Switches:
     if( $Stage.CmdPartArr.Count -eq 0 ) { $script:LastStatusCode = -1; return; }
 
     # print the stage name
-    $script:LineSeparator -f $Stage.Name | Write-Output;
+    $script:StageSep -f $Stage.Name | Write-Output;
     # print the stage command
     $Command = $Stage.GetCommand();
     $Command | Write-Output;
@@ -613,7 +614,7 @@ class Pipeline
         param( [Stage] $Stage )
 
         # print the stage name
-        $script:LineSeparator -f $Stage.Name | Write-Output;
+        $script:StageSep -f $Stage.Name | Write-Output;
 
         # if the subcommand doesn't accept arguments but they were given anyway (if the subcommand is simple)
         # IMPORTANT: && and || are pipeline chain operators!, not logical operators (-and and -or)
@@ -652,6 +653,7 @@ class Pipeline
         }
         class TestGroup
         {
+            [string] $TestGroupName;       # the name of the test group for the given file
             [string] $FilePath;            # the file which will be compiled and unit tested
             [string[]] $ExCompileOutput;   # expected compile output
             [int] $ExExitCode;             # expected exit code
@@ -700,11 +702,11 @@ class Pipeline
                 # print the test batch name
                 if( $TestBatchStatusCode -eq 0 )
                 {
-                    "{0} {1}`n------------------" -f $TestGroupSym, $TestBatch.BatchName | Write-Output;
+                    "{0}`n{1} {2}`n{0}" -f $script:LineSep, $TestGroupSym, $TestBatch.BatchName | Write-Output;
                 }
                 else
                 {
-                    "{0} Test batch '{1}''s format is not valid json`n------------------" -f $TestGroupSym, $TestBatchFile.FullName | Write-Output;
+                    "{0}`n{1} '{2}'`n{0}`n{3} Test batch's format is not valid .json" -f $script:LineSep, $TestGroupSym, $TestBatchFile.FullName, $TestResultSym[ $false ] | Write-Output;
                 }
             }
 
@@ -723,6 +725,9 @@ class Pipeline
                 # wait for the compilation to finish and get the compilation output
                 Wait-Job $MJCompileJob -Timeout 5 | Out-Null;   # in seconds
                 $CompileOutput = ( $MJCompileJob | Receive-Job ) -join "`n";
+                # HACK: if there is an error with an empty message in the error stream, when calling ToString on the error it outputs its type as string
+                # +   this happens a lot in the compiler, since it writes newlines on stderr
+                $CompileOutput = $CompileOutput -replace "System.Management.Automation.RemoteException","";
                 # stop the background job if it's still running
                 Stop-Job $MJCompileJob;
 
@@ -733,8 +738,15 @@ class Pipeline
                 # if the compilation failed, save the status code
                 if( $MJCompileJob.Error.Count -ne 0   -or   $CompileOutput -ne $ExCompileOutput )
                 {
-                    "{0} '{1}': compilation failed" -f $TestResultSym[ $false ], $MJFilePath | Write-Output;
+                    "{0} {1}" -f $TestResultSym[ $false ], $TestGroup.TestGroupName | Write-Output;
                     $script:LastStatusCode = -1; continue;
+                }
+
+                # if there are no tests in the test group, then only the compilation was tested, continue
+                if( $TestGroup.TestUnitList.Count -eq 0 )
+                {
+                    "{0} {1}" -f $TestResultSym[ $true ], $TestGroup.TestGroupName | Write-Output;
+                    continue;
                 }
 
 
@@ -746,6 +758,8 @@ class Pipeline
                     # wait for the test to finish and get its output
                     Wait-Job $MJRunJob -Timeout 5 | Out-Null;   # in seconds
                     $TestOutput = ( $MJRunJob | Receive-Job ) -join "`n";
+                    # HACK: if there is an error with an empty message in the error stream, when calling ToString on the error it outputs its type as string
+                    $TestOutput = $TestOutput -replace "System.Management.Automation.RemoteException","";
                     # stop the background job if it's still running
                     Stop-Job $MJRunJob;
 

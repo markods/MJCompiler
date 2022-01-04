@@ -333,9 +333,11 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// constdl
     ////// vardl
     ////// classdl
-    // GlobalDecl ::= (GlobalDecl_Const) ConstDecl;
-    // GlobalDecl ::= (GlobalDecl_Var  ) VarDecl;
-    // GlobalDecl ::= (GlobalDecl_Class) ClassDecl;
+    ////// recorddl
+    // GlobalDecl ::= (GlobalDecl_Const ) ConstDecl;
+    // GlobalDecl ::= (GlobalDecl_Var   ) VarDecl;
+    // GlobalDecl ::= (GlobalDecl_Class ) ClassDecl;
+    // GlobalDecl ::= (GlobalDecl_Record) RecordDecl;
 
 
 
@@ -497,6 +499,35 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// method method method
     // MethodDeclList ::= (MethodDeclList_Tail ) MethodDeclList MethodDecl;
     // MethodDeclList ::= (MethodDeclList_Empty) ;
+
+
+
+    ////// record A { }
+    ////// record A { vardl vardl vardl vardl }
+    // RecordDecl ::= (RecordDecl_Plain) RecordDeclType lbrace RecordDeclBody rbrace;
+    @Override
+    public void visit( RecordDecl_Plain curr )
+    {
+        // TODO
+    }
+
+    ////// record A
+    // RecordDeclType ::= (RecordDeclType_Plain) RECORD_K ident:RecordName;
+    @Override
+    public void visit( RecordDeclType_Plain curr )
+    {
+        // TODO
+    }
+    // RecordDeclType ::= (RecordDeclType_Err  ) RECORD_K error {: parser.report_error( "Bad record declaration", null ); :};
+
+    ////// <epsilon>
+    ////// vardl vardl vardl vardl
+    // RecordDeclBody ::= (RecordDeclBody_Vars) VarDeclList;
+    @Override
+    public void visit( RecordDeclBody_Vars curr )
+    {
+        // TODO
+    }
 
 
 
@@ -776,7 +807,6 @@ public class SemanticVisitor extends VisitorAdaptor
         curr.symbol = Symbol.newConst( "@FormParamType_Plain", paramType, Symbol.FORMAL_PARAM );
     }
 
-
     ////// <epsilon>
     ////// vardl vardl vardl vardl
     // VarDeclList ::= (VarDeclList_VarDecl) VarDeclList VarDecl;
@@ -1037,12 +1067,38 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
 
+    ////// <epsilon>
+    ////// labstatement statement { statement statement } statement { }
+    // StatementList ::= (StatementList_Tail ) StatementList Statement;
+    // StatementList ::= (StatementList_Empty) ;
+
+    ////// stmt stmt label_02: stmt
+    ////// {}
+    ////// { label1:statement label2:statement label3:statement }
+    // Statement ::= (Statement_Plain) LabStmt;
+    // Statement ::= (Statement_Scope) lbrace StatementList rbrace;
+    // Statement ::= (Statement_Err  ) error {: parser.report_error( "Bad statement", null ); :};
+
+    ////// stmt | label_01: stmt
+    // LabStmt ::= (LabStmt_Plain) Stmt;
+    @Override
+    public void visit( LabStmt_Plain curr )
+    {
+        // TODO
+    }
+    // LabStmt ::= (LabStmt_Label) Label Stmt;
+    @Override
+    public void visit( LabStmt_Label curr )
+    {
+        // TODO
+    }
+
     ////// ident.ident[ expr ] = expr;
     ////// ident.ident[ expr ]( );
     ////// ident.ident[ expr ]( expr, expr, expr );
     ////// ident.ident[ expr ]++;
     ////// ident.ident[ expr ]--;
-    //
+    //////
     ////// if( condition ) statement
     ////// if( condition ) statement else statement
     ////// do statement while( condition );
@@ -1052,24 +1108,24 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// continue;
     ////// return;
     ////// return expr;
-    //
+    ////// goto label_01;
+    //////
     ////// read( ident.ident[ expr ] );
     ////// print( ident.ident[ expr ], 2 );
-    //
-    ////// {}
-    ////// { statement statement statement }
-    // Statement ::= (Statement_Designator ) DesignatorStatement semicol;
-    // Statement ::= (Statement_If         ) IF_K lparen IfCondition rparen IfStatement;
-    // Statement ::= (Statement_IfElse     ) IF_K lparen IfCondition rparen IfStatement ElseScope ElseStatement;
-    // Statement ::= (Statement_DoWhile    ) DoWhileScope Statement WHILE_K lparen DoWhileCondition rparen semicol;
+    //////
+    ////// ;
+    // Stmt ::= (Stmt_Designator ) DesignatorStmt semicol;
+    // Stmt ::= (Stmt_If         ) IF_K lparen IfCondition rparen IfStmt;
+    // Stmt ::= (Stmt_IfElse     ) IF_K lparen IfCondition rparen IfStmt ElseScope ElseStmt;
+    // Stmt ::= (Stmt_DoWhile    ) DoWhileScope Stmt WHILE_K lparen DoWhileCondition rparen semicol;
     @Override
-    public void visit( Statement_DoWhile curr )
+    public void visit( Stmt_DoWhile curr )
     {
         context.syntaxNodeStack.remove();
     }
-    // Statement ::= (Statement_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
+    // Stmt ::= (Stmt_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
-    public void visit( Statement_Switch curr )
+    public void visit( Stmt_Switch curr )
     {
         context.syntaxNodeStack.remove();
 
@@ -1084,9 +1140,9 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Statement ::= (Statement_Break      ) BREAK_K       semicol;
+    // Stmt ::= (Stmt_Break      ) BREAK_K       semicol;
     @Override
-    public void visit( Statement_Break curr )
+    public void visit( Stmt_Break curr )
     {
         // find the surrounding do-while or switch statement
         SyntaxNode scope = context.syntaxNodeStack.find(
@@ -1101,9 +1157,9 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Statement ::= (Statement_Continue   ) CONTINUE_K    semicol;
+    // Stmt ::= (Stmt_Continue   ) CONTINUE_K    semicol;
     @Override
-    public void visit( Statement_Continue curr )
+    public void visit( Stmt_Continue curr )
     {
         // find the surrounding do-while statement
         SyntaxNode scope = context.syntaxNodeStack.find(
@@ -1117,20 +1173,20 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Statement ::= (Statement_Return     ) RETURN_K      semicol;
+    // Stmt ::= (Stmt_Return     ) RETURN_K      semicol;
     @Override
-    public void visit( Statement_Return curr )
+    public void visit( Stmt_Return curr )
     {
-        visit_Statement_Return( curr, null );
+        visit_Stmt_Return( curr, null );
     }
-    // Statement ::= (Statement_ReturnExpr ) RETURN_K Expr semicol;
+    // Stmt ::= (Stmt_ReturnExpr ) RETURN_K Expr semicol;
     @Override
-    public void visit( Statement_ReturnExpr curr )
+    public void visit( Stmt_ReturnExpr curr )
     {
-        visit_Statement_Return( curr, curr.getExpr() );
+        visit_Stmt_Return( curr, curr.getExpr() );
     }
     // IMPORTANT: helper method, not intended to be used elsewhere
-    private void visit_Statement_Return( Statement curr, Expr expr )
+    private void visit_Stmt_Return( Stmt curr, Expr expr )
     {
         // find the surrounding method declaration
         SyntaxNode scope = context.syntaxNodeStack.find(
@@ -1162,9 +1218,15 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Statement ::= (Statement_Read       ) READ_K lparen Designator rparen semicol;
+    // Stmt ::= (Stmt_Goto       ) GOTO_K Label  semicol;
     @Override
-    public void visit( Statement_Read curr )
+    public void visit( Stmt_Goto curr )
+    {
+        // TODO
+    }
+    // Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
+    @Override
+    public void visit( Stmt_Read curr )
     {
         Symbol left = curr.getDesignator().symbol;
 
@@ -1184,20 +1246,20 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Statement ::= (Statement_Print      ) PRINT_K lparen Expr                        rparen semicol;
+    // Stmt ::= (Stmt_Print      ) PRINT_K lparen Expr                        rparen semicol;
     @Override
-    public void visit( Statement_Print curr )
+    public void visit( Stmt_Print curr )
     {
-        visit_Statement_Print( curr.getExpr() );
+        visit_Stmt_Print( curr.getExpr() );
     }
-    // Statement ::= (Statement_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
+    // Stmt ::= (Stmt_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
     @Override
-    public void visit( Statement_PrintFormat curr )
+    public void visit( Stmt_PrintFormat curr )
     {
-        visit_Statement_Print( curr.getExpr() );
+        visit_Stmt_Print( curr.getExpr() );
     }
     // IMPORTANT: helper method, not intended to be used elsewhere
-    private void visit_Statement_Print( Expr curr )
+    private void visit_Stmt_Print( Expr curr )
     {
         Symbol left = curr.symbol;
 
@@ -1210,9 +1272,7 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Statement ::= (Statement_Scope      ) lbrace StatementList rbrace;
-    // Statement ::= (Statement_Semicolon  ) semicol;
-    // Statement ::= (Statement_Err        ) error {: parser.report_error( "Bad statement", null ); :};
+    // Stmt ::= (Stmt_Semicolon  ) semicol;
 
     ////// action symbols for opening a new scope and the if-statement's jump instructions
     // IfCondition ::= (IfCondition_Plain) Condition;
@@ -1222,9 +1282,9 @@ public class SemanticVisitor extends VisitorAdaptor
         // initialize the jump instruction's address
         curr.integer = 0;
     }
-    // IfStatement ::= (IfStatement_Plain) Statement;
+    // IfStmt ::= (IfStmt_Plain) Stmt;
     @Override
-    public void visit( IfStatement_Plain curr )
+    public void visit( IfStmt_Plain curr )
     {
         // initialize the jump instruction's address
         curr.integer = 0;
@@ -1236,9 +1296,9 @@ public class SemanticVisitor extends VisitorAdaptor
         // initialize the jump instruction's address
         curr.integer = 0;
     }
-    // ElseStatement ::= (ElseStatement_Plain) Statement;
+    // ElseStmt ::= (ElseStmt_Plain) Stmt;
     @Override
-    public void visit( ElseStatement_Plain curr )
+    public void visit( ElseStmt_Plain curr )
     {
         // initialize the jump instruction's address
         curr.integer = 0;
@@ -1283,9 +1343,9 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// ident.ident[ expr ]( expr, expr, expr )
     ////// ident.ident[ expr ]++
     ////// ident.ident[ expr ]--
-    // DesignatorStatement ::= (DesignatorStatement_Assign    ) Designator Assignop Expr;
+    // DesignatorStmt ::= (DesignatorStmt_Assign    ) Designator Assignop Expr;
     @Override
-    public void visit( DesignatorStatement_Assign curr )
+    public void visit( DesignatorStmt_Assign curr )
     {
         Symbol left = curr.getDesignator().symbol;
         Symbol center = curr.getAssignop().symbol;
@@ -1319,27 +1379,27 @@ public class SemanticVisitor extends VisitorAdaptor
             report_fatal( curr, "Assignment operator not yet supported" );
         }
     }
-    // DesignatorStatement ::= (DesignatorStatement_Call      ) MethodCall lparen ActPars rparen;
+    // DesignatorStmt ::= (DesignatorStmt_Call      ) MethodCall lparen ActPars rparen;
     @Override
-    public void visit( DesignatorStatement_Call curr )
+    public void visit( DesignatorStmt_Call curr )
     {
         // remove the function call's designator from the syntax node stack
         context.syntaxNodeStack.remove();
     }
-    // DesignatorStatement ::= (DesignatorStatement_Plusplus  ) Designator plusplus;
+    // DesignatorStmt ::= (DesignatorStmt_Plusplus  ) Designator plusplus;
     @Override
-    public void visit( DesignatorStatement_Plusplus curr )
+    public void visit( DesignatorStmt_Plusplus curr )
     {
-        visit_DesignatorStatement_IncrementOrDecrement( curr.getDesignator() );
+        visit_DesignatorStmt_IncrementOrDecrement( curr.getDesignator() );
     }
-    // DesignatorStatement ::= (DesignatorStatement_Minusminus) Designator minusminus;
+    // DesignatorStmt ::= (DesignatorStmt_Minusminus) Designator minusminus;
     @Override
-    public void visit( DesignatorStatement_Minusminus curr )
+    public void visit( DesignatorStmt_Minusminus curr )
     {
-        visit_DesignatorStatement_IncrementOrDecrement( curr.getDesignator() );
+        visit_DesignatorStmt_IncrementOrDecrement( curr.getDesignator() );
     }
     // IMPORTANT: helper method, not intended to be used elsewhere
-    private void visit_DesignatorStatement_IncrementOrDecrement( Designator curr )
+    private void visit_DesignatorStmt_IncrementOrDecrement( Designator curr )
     {
         Symbol left = curr.symbol;
 
@@ -1362,8 +1422,8 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// <epsilon>
     ////// statement statement statement statement
-    // StatementList ::= (StatementList_Tail ) StatementList Statement;
-    // StatementList ::= (StatementList_Empty) ;
+    // StmtList ::= (StmtList_Tail ) StmtList Stmt;
+    // StmtList ::= (StmtList_Empty) ;
 
     ////// <epsilon>
     ////// case 1: statement statement statement   case 2: statement statement
@@ -1373,7 +1433,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// case 1: statement statement statement
     ////// case 2: 
     ////// case 3: {}
-    // Case ::= (Case_Plain) CaseScope StatementList;
+    // Case ::= (Case_Plain) CaseScope StmtList;
 
     ////// action symbols for opening a new scope and the case-statement's jump instructions
     // CaseScope ::= (CaseScope_Plain) CASE_K int_lit:CaseNum colon;
@@ -2120,6 +2180,11 @@ public class SemanticVisitor extends VisitorAdaptor
     // Literal ::= (Literal_Bool) bool_lit:Literal;
     @Override
     public void visit( Literal_Bool curr ) { curr.symbol = Symbol.newConst( "@Literal_Bool", SymbolTable.boolType, ( curr.getLiteral() ) ? 1 : 0 ); }
+    
+    ////// label_01
+    // Label ::= (Label_Plain) ident:Label;
+    @Override
+    public void visit( Label_Plain curr ) { /* TODO */ }
 
     ////// =
     // Assignop ::= (Assignop_Assign) assign:Assignop;

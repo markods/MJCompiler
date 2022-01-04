@@ -3,6 +3,7 @@
     "BatchName": "Example tests",
     "TestGroupList": [
         {
+            "TestGroupName": "CodeA compilation",
             "FilePath": "./codeA.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
@@ -28,6 +29,7 @@
             ],
         },
         {
+            "TestGroupName": "CodeB compilation",
             "FilePath": "./codeB.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
@@ -45,7 +47,7 @@
                     "ExExitCode": 0,
                 },
                 {
-                    "TestName": "CodeB input 2",
+                    "TestName": "CodeB input 3",
                     "TestInput": ["-3 -2 -1"],
                     "ExTestOutput": ["01v65","v4","-6","-2"],
                     "ExExitCode": 0,
@@ -53,6 +55,7 @@
             ],
         },
         {
+            "TestGroupName": "CodeC compilation",
             "FilePath": "./codeC.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
@@ -66,6 +69,7 @@
             ],
         },
         {
+            "TestGroupName": "CodeD compilation",
             "FilePath": "./codeD.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
@@ -78,19 +82,20 @@
                 },
             ],
         },
-        // {
-        //     "FilePath": "./codeE.mj",
-        //     "ExCompileOutput": [],
-        //     "ExExitCode": 0,
-        //     "TestUnitList": [
-        //         {
-        //             "TestName": "CodeE input 1",
-        //             "TestInput": ["?"],
-        //             "ExTestOutput": ["?"],
-        //             "ExExitCode": 0,
-        //         },
-        //     ],
-        // },
+        {
+            "TestGroupName": "CodeE compilation",
+            "FilePath": "./codeE.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [
+                {
+                    "TestName": "CodeE input 1",
+                    "TestInput": ["?"],
+                    "ExTestOutput": ["?"],
+                    "ExExitCode": 0,
+                },
+            ],
+        },
     ]
 }
 
