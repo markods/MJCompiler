@@ -53,17 +53,22 @@ using namespace System.Text.Json;
 [string] $script:LineSep  = "------------------";
 
 # NOTE: leave powershell array constructor ( @() ) if there is only one argument (otherwise it won't be a powershell array due to unpacking)
-[string[]] $script:DefaultArgs = "=jflex", "=cup", "=clean", "=build", "=test";
+[string[][]] $script:DefaultArgs =
+    ( "=jflex", "=cup", "=clean", "=build", "=test" ),
+    ( "=jflex", "=cup" ),
+    ( "=clean", "=build", "=test" );
 
 [string] $script:HelpMessage = @"
-build   [[-]-help] [-def]   [=jflex ...] [=cup ...]   [=clean] [=build] [=test]   [=compile ...] [=disasm ...] [=run ...]
+build   [[-]-help] [-0][-1][-2]   [=jflex ...] [=cup ...]   [=clean] [=build] [=test]   [=compile ...] [=disasm ...] [=run ...]
 
 Default:             build   --help
 
 Switches:
     -help            show the help menu
-    -def             use the default parameters
-                     +   build $( $script:DefaultArgs -Join ' ')
+    -0               use the default parameters 0:   build $( $script:DefaultArgs[ 0 ] -Join ' ')
+    -1               use the default parameters 1:   build $( $script:DefaultArgs[ 1 ] -Join ' ')
+    -2               use the default parameters 2:   build $( $script:DefaultArgs[ 2 ] -Join ' ')
+     
 
     =cup             run the CUP tool on the cup specification and generate the abstract syntax tree
       -dump_grammar  +   shows the used parser grammar
@@ -397,13 +402,13 @@ class Pipeline
         $CurrStage = $Pipeline.Stage( "=script" );
         $CurrStageIdx = 0;
         $PrevStageIdx = 0;
-        $UseDefaultArgs = $false;
+        $DefaultArgs_Idx = -1;
 
         switch -Regex ( $TokenArr )
         {
             '^='
             {
-                if( $UseDefaultArgs -eq $true )
+                if( $DefaultArgs_Idx -ge 0 )
                 {
                     "No subcommands allowed after specifying '{0}'" -f '-def' | Write-Output;
                     $script:LastStatusCode = 400; return;
@@ -430,7 +435,24 @@ class Pipeline
             {
                 if( $CurrStageIdx -eq 0 )
                 {
-                    if( $_ -eq '-def' ) { $UseDefaultArgs = $true; continue; }
+                    if( $_ -match '-\d+' )
+                    {
+                        if( $DefaultArgs_Idx -ge 0 )
+                        {
+                            "Cannot specify more than one default parameter list: '{0}'" -f $_ | Write-Output;
+                            $script:LastStatusCode = 400; return;
+                        }
+
+                        $DefaultArgs_Idx = -( $_ -as [int] );
+                        if( $DefaultArgs_Idx -lt 0   -or  $DefaultArgs_Idx -ge $script:DefaultArgs.Count )
+                        {
+                            "Unknown parameter: '{0}'" -f $_ | Write-Output;
+                            $script:LastStatusCode = 400; return;
+                        }
+
+                        continue;
+                    }
+
                     $CurrStage.ShouldExec = $true;
                 }
 
@@ -439,9 +461,9 @@ class Pipeline
             }
         }
 
-        if( $UseDefaultArgs -eq $true )
+        if( $DefaultArgs_Idx -ge 0 )
         {
-            Parser_Parse $Pipeline $script:DefaultArgs | Write-Output;
+            Parser_Parse $Pipeline $script:DefaultArgs[ $DefaultArgs_Idx ] | Write-Output;
             return;
         }
         
