@@ -33,11 +33,11 @@ public class ScopeVisitor implements Visitor
     public void visit( Assignop                    node ) { updateScope( node ); }
     public void visit( ActParam                    node ) { updateScope( node ); }
     public void visit( RecordDeclBody              node ) { updateScope( node ); }
+    public void visit( StmtLabel                   node ) { updateScope( node ); }
     public void visit( MethodCall                  node ) { updateScope( node ); }
     public void visit( ElseStmt                    node ) { updateScope( node ); }
     public void visit( VarDeclType                 node ) { updateScope( node ); }
     public void visit( StatementList               node ) { updateScope( node ); }
-    public void visit( LabStmt                     node ) { updateScope( node ); }
     public void visit( Addop                       node ) { updateScope( node ); }
     public void visit( DesignatorStmt              node ) { updateScope( node ); }
     public void visit( Addition                    node ) { updateScope( node ); }
@@ -56,7 +56,6 @@ public class ScopeVisitor implements Visitor
     public void visit( ActParsList                 node ) { updateScope( node ); }
     public void visit( IfCondition                 node ) { updateScope( node ); }
     public void visit( DoWhileScope                node ) { updateScope( node ); }
-    public void visit( Label                       node ) { updateScope( node ); }
     public void visit( MethodDeclCode              node ) { updateScope( node ); }
     public void visit( IfStmt                      node ) { updateScope( node ); }
     public void visit( GlobalDeclList              node ) { updateScope( node ); }
@@ -98,7 +97,6 @@ public class ScopeVisitor implements Visitor
     public void visit( Relop_Ne                    node ) { updateScope( node ); }
     public void visit( Relop_Eq                    node ) { updateScope( node ); }
     public void visit( Assignop_Assign             node ) { updateScope( node ); }
-    public void visit( Label_Plain                 node ) { updateScope( node ); }
     public void visit( Literal_Bool                node ) { updateScope( node ); }
     public void visit( Literal_Char                node ) { updateScope( node ); }
     public void visit( Literal_Int                 node ) { updateScope( node ); }
@@ -167,10 +165,10 @@ public class ScopeVisitor implements Visitor
     public void visit( Stmt_IfElse                 node ) { updateScope( node ); }
     public void visit( Stmt_If                     node ) { updateScope( node ); }
     public void visit( Stmt_Designator             node ) { updateScope( node ); }
-    public void visit( LabStmt_Label               node ) { updateScope( node ); }
-    public void visit( LabStmt_Plain               node ) { updateScope( node ); }
+    public void visit( StmtLabel_Plain             node ) { updateScope( node ); }
     public void visit( Statement_Err               node ) { updateScope( node ); }
     public void visit( Statement_Scope             node ) { updateScope( node ); }
+    public void visit( Statement_Label             node ) { updateScope( node ); }
     public void visit( Statement_Plain             node ) { updateScope( node ); }
     public void visit( StatementList_Empty         node ) { updateScope( node ); }
     public void visit( StatementList_Tail          node ) { updateScope( node ); }

@@ -149,6 +149,7 @@ public class Symbol extends Obj implements Cloneable
     public boolean isRvalue()        { return _kind() == CONST || _kind() == VAR || _kind() == FIELD || _kind() == STATIC_FIELD || _kind() == ARRAY_ELEM || _kind() == FORMAL_PARAM; }
     public boolean isGlobal()        { return SymbolTable.isGlobalScope( _scopeLevel() ); }
     public boolean isClassMember()   { return _kind() == FIELD || _kind() == METHOD; }
+    public boolean isRecordMember()  { return _kind() == FIELD; }
     
     public boolean isThis()          { return _kind() == CONST    && "this"          .equals( _name() ); }
     public boolean ispVirtualTable() { return _kind() == FIELD    && "@pVirtualTable".equals( _name() ); }
@@ -218,19 +219,20 @@ public class Symbol extends Obj implements Cloneable
 
         switch( _kind() )
         {
-            case CONST:                        { result = String.format( "%s=%-4d .....   CONST         %s %s\n",   prefix, _value(),                                 typeName, _name() ); break; }
-            case VAR: if( isGlobal() )         { result = String.format( "%s&%-4d s%-4d   GLOBAL_VAR    %s %s\n",   prefix, _address(),                _scopeLevel(), typeName, _name() ); break; }
-                      else                     { result = String.format( "%ss%-4d #%-4d   VAR           %s %s\n",   prefix,             _scopeLevel(), _memberIdx(),  typeName, _name() ); break; }
-            case STATIC_FIELD:                 { result = String.format( "%s&%-4d #%-4d   STATIC_FIELD  %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
-            case FIELD:                        { result = String.format( "%s&%-4d #%-4d   FIELD         %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
-            case METHOD:                       { result = String.format( "%s&%-4d #%-4d   METHOD        %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() + localsToString( "" ) ); break; }
-            case FUNCTION:                     { result = String.format( "%s&%-4d .....   FUNCTION      %s %s\n",   prefix, _address(),                               typeName, _name() + localsToString( "" ) ); break; }
-            case FORMAL_PARAM:                 { result = String.format( "%s..... #%-4d   FORMAL_PARAM  %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
-            case ACTIV_PARAM:                  { result = String.format( "%s..... #%-4d   ACTIV_PARAM   %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
-            case TYPE: if( _type().isClass() ) { result = String.format( "%s&%-4d v%-4d   CLASS         %s %s\n%s", prefix, _address(), _virtualTableSize(),          typeName, _name(), _type().membersToString( prefix ) ); break; }
-                       else                    { result = String.format( "%s..... .....   TYPE          %s %s\n%s", prefix,                                           typeName, _name(), _type().membersToString( prefix ) ); break; }
-            case ARRAY_ELEM:                   { result = String.format( "%s..... .....   ARRAY_ELEM    %s %s\n",   prefix,                                           typeName, _name() ); break; }
-            case PROGRAM:                      { result = String.format( "%s..... .....   PROGRAM       %s %s\n%s", prefix,                                           typeName, _name(), localsToString( prefix ) ); break; }
+            case CONST:                         { result = String.format( "%s=%-4d .....   CONST         %s %s\n",   prefix, _value(),                                 typeName, _name() ); break; }
+            case VAR: if( isGlobal() )          { result = String.format( "%s&%-4d s%-4d   GLOBAL_VAR    %s %s\n",   prefix, _address(),                _scopeLevel(), typeName, _name() ); break; }
+                      else                      { result = String.format( "%ss%-4d #%-4d   VAR           %s %s\n",   prefix,             _scopeLevel(), _memberIdx(),  typeName, _name() ); break; }
+            case STATIC_FIELD:                  { result = String.format( "%s&%-4d #%-4d   STATIC_FIELD  %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
+            case FIELD:                         { result = String.format( "%s&%-4d #%-4d   FIELD         %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
+            case METHOD:                        { result = String.format( "%s&%-4d #%-4d   METHOD        %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() + localsToString( "" ) ); break; }
+            case FUNCTION:                      { result = String.format( "%s&%-4d .....   FUNCTION      %s %s\n",   prefix, _address(),                               typeName, _name() + localsToString( "" ) ); break; }
+            case FORMAL_PARAM:                  { result = String.format( "%s..... #%-4d   FORMAL_PARAM  %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
+            case ACTIV_PARAM:                   { result = String.format( "%s..... #%-4d   ACTIV_PARAM   %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
+            case TYPE: if( _type().isClass() )  { result = String.format( "%s&%-4d v%-4d   CLASS         %s %s\n%s", prefix, _address(), _virtualTableSize(),          typeName, _name(), _type().membersToString( prefix ) ); break; }
+                       if( _type().isRecord() ) { result = String.format( "%s&%-4d .....   RECORD        %s %s\n%s", prefix, _address(),                               typeName, _name(), _type().membersToString( prefix ) ); break; }
+                                                { result = String.format( "%s..... .....   TYPE          %s %s\n%s", prefix,                                           typeName, _name(), _type().membersToString( prefix ) ); break; }
+            case ARRAY_ELEM:                    { result = String.format( "%s..... .....   ARRAY_ELEM    %s %s\n",   prefix,                                           typeName, _name() ); break; }
+            case PROGRAM:                       { result = String.format( "%s..... .....   PROGRAM       %s %s\n%s", prefix,                                           typeName, _name(), localsToString( prefix ) ); break; }
         }
         return result;
     }

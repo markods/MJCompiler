@@ -44,7 +44,7 @@ parser code {:
         // ignore default messages (lr parser messages that can't be replaced without rewriting that part of the parser in the .jar file)
         if( message == null
         || "Syntax error".equals( message )
-        || "Couldn't repair and continue parse".equals( message ) )
+        || "Couldn't repair and continue parsing".equals( message ) )
         {
             message = null;
         }
@@ -168,8 +168,8 @@ terminal NEW_K, /*DELETE_K,*/ PRINT_K, READ_K;
 // operators [terminals]
 //       +     -      *    /    %
 terminal plus, minus, mul, div, perc;
-//       ==  !=  >   >=  <   <=  &&   ||
-terminal eq, ne, gt, ge, lt, le, and, or;
+//       ==  !=  >   >=  <   <=  &&   ||    !
+terminal eq, ne, gt, ge, lt, le, and, or/*, not*/;
 //       =       ++        --
 terminal assign, plusplus, minusminus;
 //       ;        ,      .    {       }       (       )       [         ]         ?          :
@@ -210,7 +210,7 @@ nonterminal RecordDeclBody;
 nonterminal MethodDecl;
 nonterminal rs.ac.bg.etf.pp1.Symbol MethodDeclType;
 nonterminal MethodDeclBody;
-nonterminal MethodDeclCode;
+nonterminal rs.ac.bg.etf.pp1.props.JumpProp MethodDeclCode;   // contains the labels' addresses
 nonterminal FormPars;
 nonterminal FormParsScope;
 nonterminal FormParsList;
@@ -233,10 +233,9 @@ nonterminal rs.ac.bg.etf.pp1.Symbol ConstInit;
 // statements [nonterminals]
 nonterminal StatementList;
 nonterminal Statement;
+nonterminal java.lang.Integer StmtLabel;     // contains the statement's starting address
 
-nonterminal LabStmt;
 nonterminal Stmt;
-
 nonterminal java.lang.Integer IfCondition;   // contains the jump instruction's address
 nonterminal java.lang.Integer IfStmt;        // contains the jump instruction's address
 nonterminal java.lang.Integer ElseScope;     // contains the jump instruction's address
@@ -277,7 +276,6 @@ nonterminal rs.ac.bg.etf.pp1.Symbol Designator;
 nonterminal rs.ac.bg.etf.pp1.Symbol ReturnType;  // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Type;        // value, type
 nonterminal rs.ac.bg.etf.pp1.Symbol Literal;     // value, type
-nonterminal rs.ac.bg.etf.pp1.Symbol Label;       // value, type
 
 nonterminal rs.ac.bg.etf.pp1.Symbol Assignop;
 nonterminal rs.ac.bg.etf.pp1.Symbol Relop;
@@ -422,7 +420,7 @@ VarDecl ::= (VarDecl_Plain) VarDeclType VarIdentList semicol;
 // static A
 VarDeclType ::= (VarDeclType_Plain )          Type;
 VarDeclType ::= (VarDeclType_Static) STATIC_K Type;
-VarDeclType ::= (VarDeclType_Err   ) error {: parser.report_error( "Bad class declaration", null ); :};
+VarDeclType ::= (VarDeclType_Err   ) error {: parser.report_error( "Bad variable type", null ); :};
 
 // a
 // a, b[], c
@@ -433,7 +431,7 @@ VarIdentList ::= (VarIdentList_Tail    ) VarIdentList comma VarIdent;
 // b[]
 VarIdent ::= (VarIdent_Ident) ident:VarName;
 VarIdent ::= (VarIdent_Array) ident:VarName lbracket rbracket;
-VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
+VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable name", null ); :};
 
 
 
@@ -462,16 +460,16 @@ ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initializatio
 StatementList ::= (StatementList_Tail ) StatementList Statement;
 StatementList ::= (StatementList_Empty) ;
 
-// stmt stmt label_02: stmt
+// stmt stmt label_01:stmt
 // {}
 // { label1:statement label2:statement label3:statement }
-Statement ::= (Statement_Plain) LabStmt;
+Statement ::= (Statement_Plain)           Stmt;
+Statement ::= (Statement_Label) StmtLabel Stmt;
 Statement ::= (Statement_Scope) lbrace StatementList rbrace;
 Statement ::= (Statement_Err  ) error {: parser.report_error( "Bad statement", null ); :};
 
-// stmt | label_01: stmt
-LabStmt ::= (LabStmt_Plain) Stmt;
-LabStmt ::= (LabStmt_Label) Label Stmt;
+// action symbol for defining a label
+StmtLabel ::= (StmtLabel_Plain) ident:Label colon;
 
 // ident.ident[ expr ] = expr;
 // ident.ident[ expr ]( );
@@ -503,7 +501,7 @@ Stmt ::= (Stmt_Break      ) BREAK_K       semicol;
 Stmt ::= (Stmt_Continue   ) CONTINUE_K    semicol;
 Stmt ::= (Stmt_Return     ) RETURN_K      semicol;
 Stmt ::= (Stmt_ReturnExpr ) RETURN_K Expr semicol;
-Stmt ::= (Stmt_Goto       ) GOTO_K Label  semicol;
+Stmt ::= (Stmt_Goto       ) GOTO_K ident:Label semicol;
 Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
 Stmt ::= (Stmt_Print      ) PRINT_K lparen Expr                        rparen semicol;
 Stmt ::= (Stmt_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
@@ -643,8 +641,6 @@ Type ::= (Type_Ident) ident:TypeName;
 Literal ::= (Literal_Int ) int_lit :Literal;
 Literal ::= (Literal_Char) char_lit:Literal;
 Literal ::= (Literal_Bool) bool_lit:Literal;
-// label_01
-Label ::= (Label_Plain) ident:Label;
 
 // =
 Assignop ::= (Assignop_Assign) assign:Assignop;

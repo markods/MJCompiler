@@ -161,6 +161,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( ClassDecl_Plain curr )
     {
+        // remove the class declaration type node from the syntax node stack
+        context.syntaxNodeStack.remove();
         // close the class's scope
         SymbolTable.closeScope();
     }
@@ -183,6 +185,9 @@ public class CodeGenVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_ClassDeclType( ClassDeclType curr )
     {
+        // add the class declaration type node to the syntax node stack
+        context.syntaxNodeStack.add( curr );
+
         // the class symbol has already been added to the symbol table in the SemanticVisitor
      // SymbolTable.addSymbol( curr.symbol );
         SymbolType classType = curr.symbol._type();
@@ -214,29 +219,14 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// record A { }
     ////// record A { vardl vardl vardl vardl }
     // RecordDecl ::= (RecordDecl_Plain) RecordDeclType lbrace RecordDeclBody rbrace;
-    @Override
-    public void visit( RecordDecl_Plain curr )
-    {
-        // TODO
-    }
 
     ////// record A
     // RecordDeclType ::= (RecordDeclType_Plain) RECORD_K ident:RecordName;
-    @Override
-    public void visit( RecordDeclType_Plain curr )
-    {
-        // TODO
-    }
     // RecordDeclType ::= (RecordDeclType_Err  ) RECORD_K error {: parser.report_error( "Bad record declaration", null ); :};
 
     ////// <epsilon>
     ////// vardl vardl vardl vardl
     // RecordDeclBody ::= (RecordDeclBody_Vars) VarDeclList;
-    @Override
-    public void visit( RecordDeclBody_Vars curr )
-    {
-        // TODO
-    }
 
 
 
@@ -248,10 +238,12 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// void foo( int a, char c, Node Array[] ) { statement statement }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList lbrace StatementList rbrace;
+    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
     @Override
     public void visit( MethodDecl_Plain curr )
     {
+        // remove the <method declaration code> node from the syntax node stack
+        context.syntaxNodeStack.remove();
         // close the method's scope
         SymbolTable.closeScope();
 
@@ -304,11 +296,13 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( MethodDeclCode_Plain curr )
     {
+        // add the <method declaration code> node to the syntax node stack
+        context.syntaxNodeStack.add( curr );
+
         // get the method's symbol
         Symbol method = ( ( MethodDecl_Plain )curr.getParent() ).getMethodDeclType().symbol;
-
-        int thisParamInc = ( method.isMethod() ) ? 1 : 0;
         // initialize the method's stack frame
+        int thisParamInc = ( method.isMethod() ) ? 1 : 0;
         CodeGen.i_enter( thisParamInc + method._paramCount(), thisParamInc + SymbolTable._localsSize() );
 
         // if this method is the main method
@@ -433,25 +427,31 @@ public class CodeGenVisitor extends VisitorAdaptor
     // StatementList ::= (StatementList_Tail ) StatementList Statement;
     // StatementList ::= (StatementList_Empty) ;
 
-    ////// stmt stmt label_02: stmt
+    ////// stmt stmt label_01:stmt
     ////// {}
     ////// { label1:statement label2:statement label3:statement }
-    // Statement ::= (Statement_Plain) LabStmt;
+    // Statement ::= (Statement_Plain)           Stmt;
+    // Statement ::= (Statement_Label) StmtLabel Stmt;
     // Statement ::= (Statement_Scope) lbrace StatementList rbrace;
     // Statement ::= (Statement_Err  ) error {: parser.report_error( "Bad statement", null ); :};
 
-    ////// stmt | label_01: stmt
-    // LabStmt ::= (LabStmt_Plain) Stmt;
+    ////// action symbol for defining a label
+    // StmtLabel ::= (StmtLabel_Plain) ident:Label;
     @Override
-    public void visit( LabStmt_Plain curr )
+    public void visit( StmtLabel_Plain curr )
     {
-        // TODO
-    }
-    // LabStmt ::= (LabStmt_Label) Label Stmt;
-    @Override
-    public void visit( LabStmt_Label curr )
-    {
-        // TODO
+        // save the current program counter as the statement's starting address
+        curr.integer = CodeGen._pc32();
+        
+        // find the surrounding method declaration
+        MethodDeclCode_Plain methodDecl = ( MethodDeclCode_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodDeclCode_Plain )
+        );
+
+        // set the label's jump point's address
+        // +   the method's labels have already been added in the semantic pass
+        String labelName = String.format( "@Label[%s]", curr.getLabel() );
+        methodDecl.jumpprop.get( labelName )._pointAddress( curr.integer );
     }
 
     ////// ident.ident[ expr ] = expr;
@@ -570,11 +570,23 @@ public class CodeGenVisitor extends VisitorAdaptor
         CodeGen.i_exit();
         CodeGen.i_return();
     }
-    // Stmt ::= (Stmt_Goto       ) GOTO_K Label  semicol;
+    // Stmt ::= (Stmt_Goto       ) GOTO_K ident:Label semicol;
     @Override
     public void visit( Stmt_Goto curr )
     {
-        // TODO
+        // find the surrounding method declaration
+        MethodDeclCode_Plain methodDecl = ( MethodDeclCode_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodDeclCode_Plain )
+        );
+
+        // unconditionally jump to the label
+        // +    get the jump-instruction's starting address
+        int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+
+        // initialize the jump instruction's address
+        // +   the actual address will be fixed once the label's address is resolved
+        String labelName = String.format( "@Label[%s]", curr.getLabel() );
+        methodDecl.jumpprop.get( labelName )._addAddressToFix( pointA );
     }
     // Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
     @Override
@@ -884,7 +896,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         int pointC = CodeGen.loadConst( CodeGen.TRUE );
         
         int pointD = CodeGen._pc32();
-                     
+
         // fix the jump addresses for the jump instructions
         CodeGen.fixJumpOffset( pointA, pointC );
         CodeGen.fixJumpOffset( pointB, pointD );
@@ -995,12 +1007,22 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Factor_NewVar curr )
     {
-        // allocate space on the heap for the class instance and add the starting address to the expression stack
-        CodeGen.i_new( curr.symbol._type()._fieldCount()*4/*B*/ );
-        // initialize the virtual table pointer, but leave the class instance's address on the expression stack
-        CodeGen.i_dup();
-        CodeGen.loadConst( curr.symbol._address() );
-        CodeGen.i_putfield( 0 );
+        // TODO: support for constructor
+        
+        // get the current symbol's type
+        SymbolType symbolType = curr.symbol._type();
+
+        // allocate space on the heap for the class/record instance and add the starting address to the expression stack
+        CodeGen.i_new( symbolType._fieldCount()*4/*B*/ );
+        
+        // if the type contains a virtual table pointer (class only)
+        if( symbolType.isClass() )
+        {
+            // initialize the virtual table pointer, but leave the class instance's address on the expression stack
+            CodeGen.i_dup();
+            CodeGen.loadConst( curr.symbol._address() );
+            CodeGen.i_putfield( 0 );
+        }
     }
     // Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
     @Override
@@ -1080,8 +1102,13 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         // TODO: support for 'super'
 
+        // check if the designator is inside a class method (in the class's scope)
+        boolean isInClassScope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof ClassDeclType )
+        ) != null;
+
         // if the current designator is a class member, but does not start with 'this' (this.field)
-        if( curr instanceof Designator_Ident && curr.symbol.isClassMember() )
+        if( isInClassScope && curr instanceof Designator_Ident && curr.symbol.isClassMember() )
         {
             CodeGen.loadSymbolValue( SymbolTable.findSymbol( "this" ) );
         }
@@ -1110,9 +1137,6 @@ public class CodeGenVisitor extends VisitorAdaptor
     // Literal ::= (Literal_Int ) int_lit :Literal;
     // Literal ::= (Literal_Char) char_lit:Literal;
     // Literal ::= (Literal_Bool) bool_lit:Literal;
-
-    ////// label_01
-    // Label ::= (Label_Plain) ident:Label;
 
     ////// =
     // Assignop ::= (Assignop_Assign) assign:Assignop;

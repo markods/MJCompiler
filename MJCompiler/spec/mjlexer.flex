@@ -42,7 +42,7 @@ Whitespace = [ \t\f]+
 // different types of comments
 // +   the line comment can be on the last line of the file, therefore not ending with a newline
 LineComment      = "//" {NotNewline}* {Newline}?
-MultilineComment = "/*" [^*] ~"*/" | "/*" "*"+ "/"
+MultilineComment = "/*" ~"*/"
 
 IntLiteral = 0 | [1-9][0-9]*
 BoolLiteral = true | false
@@ -63,8 +63,8 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 // +   the parser will filter them out (used for better error reporting)
 {Newline}           { return new_token( TokenCode.newline, yytext() ); }
 {Whitespace}        { return new_token( TokenCode.whitespace, yytext() ); }
-{LineComment}       { return new_token( TokenCode.line_comment, yytext() ); }
 {MultilineComment}  { return new_token( TokenCode.multi_comment, yytext() ); }
+{LineComment}       { return new_token( TokenCode.line_comment, yytext() ); }
 <<EOF>>             { return new_token( TokenCode.EOF ); }
 
 
@@ -126,6 +126,7 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 "<="         { return new_token( TokenCode.le, yytext() ); }
 "&&"         { return new_token( TokenCode.and, yytext() ); }
 "||"         { return new_token( TokenCode.or, yytext() ); }
+// "!"       { return new_token( TokenCode.emark, yytext() ); }
 
 "="          { return new_token( TokenCode.assign, yytext() ); }
 

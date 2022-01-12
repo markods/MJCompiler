@@ -8,8 +8,7 @@ public class StackProp<T> implements Iterable<T>
 {
     private LinkedList<T> stack = new LinkedList<>();
 
-    // return the previous element after addition
-    public T add( T elem ) { T curr = top(); stack.addFirst( elem ); return curr; }
+    public T add( T elem ) { stack.addFirst( elem ); return elem; }
     public T remove() { return ( !stack.isEmpty() ) ? stack.removeFirst() : null; }
     public T top() { return stack.peekFirst(); }
     public T find( Predicate<T> predicate )

@@ -77,7 +77,7 @@ public class SemanticVisitor extends VisitorAdaptor
     // ________________________________________________________________________________________________
     // forward class declaration visitor
 
-    private class ForwardDeclVisitor extends VisitorAdaptor
+    private class ForwardClassVisitor extends VisitorAdaptor
     {
         ////// void foo() { }
         ////// void foo() { statement statement }
@@ -87,7 +87,7 @@ public class SemanticVisitor extends VisitorAdaptor
         ////// void foo( int a, char c, Node Array[] ) { statement statement }
         ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
         ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-        // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList lbrace StatementList rbrace;
+        // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
         @Override
         public void visit( MethodDecl_Plain curr )
         {
@@ -232,6 +232,32 @@ public class SemanticVisitor extends VisitorAdaptor
         public void visit( Type_Ident curr )
         {
             visit_Type( curr, curr.getTypeName() );
+        }
+    }
+
+
+
+
+
+    // ________________________________________________________________________________________________
+    // forward label visitor
+
+    private class ForwardLabelVisitor extends VisitorAdaptor
+    {
+        ////// action symbol for defining a label
+        // StmtLabel ::= (StmtLabel_Plain) ident:Label colon;
+        @Override
+        public void visit( StmtLabel_Plain curr )
+        {
+            // create a symbol for the label
+            String labelName = String.format( "@Label[%s]", curr.getLabel() );
+            Symbol labelSymbol = Symbol.newConst( labelName, SymbolTable.intType, Symbol.NO_VALUE );
+            // if the label's symbol could not be added to the symbol table
+            if( !SymbolTable.addSymbol( labelSymbol ) )
+            {
+                report_verbose( curr, "Label already exists in the function scope" );
+                return;
+            }
         }
     }
 
@@ -428,7 +454,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
         // forward visit only the class members' declarations
-        ForwardDeclVisitor visitor = new ForwardDeclVisitor();
+        ForwardClassVisitor visitor = new ForwardClassVisitor();
         ClassDeclBody classDeclBody = ( ( ClassDecl_Plain )curr.getParent() ).getClassDeclBody();
         context.isInForwardDeclMode.set();
         classDeclBody.traverseBottomUp( visitor );
@@ -508,7 +534,10 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( RecordDecl_Plain curr )
     {
-        // TODO
+        // remove the record declaration type node from the syntax node stack
+        context.syntaxNodeStack.remove();
+        // close the record's scope
+        SymbolTable.closeScope();
     }
 
     ////// record A
@@ -516,18 +545,47 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( RecordDeclType_Plain curr )
     {
-        // TODO
+        visit_RecordDeclType( curr, curr.getRecordName() );
     }
     // RecordDeclType ::= (RecordDeclType_Err  ) RECORD_K error {: parser.report_error( "Bad record declaration", null ); :};
+    @Override
+    public void visit( RecordDeclType_Err curr )
+    {
+        visit_RecordDeclType( curr, null );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_RecordDeclType( RecordDeclType curr, String recordName )
+    {
+        // add the record declaration type node to the syntax node stack
+        context.syntaxNodeStack.add( curr );
+        String dummyName = String.format( "@Record[%d]", SymbolTable._localsSize() );
+
+        // if the record name is missing, use default values
+        if( recordName == null ) recordName = dummyName;
+        
+        // create the <record type> and <record type symbol>
+        SymbolType recordType = SymbolType.newRecord( recordName, null );
+        curr.symbol = Symbol.newType( recordName, recordType, Symbol.NO_VALUE );
+
+        // if the record cannot be added to the symbol table
+        if( !SymbolTable.addSymbol( curr.symbol ) )
+        {
+            report_verbose( curr, "A symbol with the same name already exists" );
+            
+            // add an artificial class used for type checking later on
+            recordType = SymbolType.newRecord( dummyName, null );
+            curr.symbol = Symbol.newType( dummyName, recordType, Symbol.NO_VALUE );
+            
+            SymbolTable.addSymbol( curr.symbol );
+        }
+
+        // open the record's scope
+        SymbolTable.openScope();
+    }
 
     ////// <epsilon>
     ////// vardl vardl vardl vardl
     // RecordDeclBody ::= (RecordDeclBody_Vars) VarDeclList;
-    @Override
-    public void visit( RecordDeclBody_Vars curr )
-    {
-        // TODO
-    }
 
 
 
@@ -539,7 +597,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// void foo( int a, char c, Node Array[] ) { statement statement }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList lbrace StatementList rbrace;
+    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
     @Override
     public void visit( MethodDecl_Plain curr )
     {
@@ -570,7 +628,7 @@ public class SemanticVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_MethodDeclType( MethodDeclType_Plain curr )
     {
-        SyntaxNode scope = context.syntaxNodeStack.add( curr );
+        context.syntaxNodeStack.add( curr );
 
         // if the method's symbol has already been initialized (in the forward declaration pass)
         if( curr.symbol != null )
@@ -594,6 +652,16 @@ public class SemanticVisitor extends VisitorAdaptor
         // +    update the locals later on
         Symbol left = curr.getReturnType().symbol;
 
+        // get the scope in which the function's been declared
+        SyntaxNode scope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof ProgramType )
+                 || ( elem instanceof ClassDeclType )
+        );
+        if( scope == null )
+        {
+            report_fatal( curr, "Function/method declaration not yet supported" );
+        }
+
         // if the function is in the program scope
         if( scope instanceof ProgramType )
         {
@@ -605,11 +673,6 @@ public class SemanticVisitor extends VisitorAdaptor
             curr.symbol = Symbol.newMethod( curr.getMethodName(), left._type(), Symbol.NO_VALUE, methodIdx, null );
             // add a dummy '@this' formal parameter that will be removed later (just to reserve the 0th formal parameter)
             SymbolTable.addSymbol( Symbol.newFormalParam( "@this", ( ( ClassDeclType )scope ).symbol._type(), 0 ) );
-        }
-        // ...
-        else
-        {
-            report_fatal( curr, "Function/method declaration not yet supported" );
         }
     }
 
@@ -624,7 +687,16 @@ public class SemanticVisitor extends VisitorAdaptor
     private void visit_MethodDeclBody( MethodDeclBody_Plain curr )
     {
         // get the function declaration type
-        MethodDeclType methodDeclType = ( MethodDeclType )( context.syntaxNodeStack.top() );
+        MethodDeclType methodDeclType = ( MethodDeclType )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodDeclType )
+        );
+        // if the function's type declaration is missing from the syntax node stack
+        if( methodDeclType == null )
+        {
+            report_fatal( curr, "Function/method type declaration not yet supported" );
+        }
+
+        // get the function symbol from the function/method type declaration
         Symbol function = methodDeclType.symbol;
 
         // if the method's formal parameters have already been set by the forward declaration pass
@@ -718,6 +790,27 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// action symbol for the beginning of the method code
     // MethodDeclCode ::= (MethodDeclCode_Plain) ;
+    @Override
+    public void visit( MethodDeclCode_Plain curr )
+    {
+        // initialize the jump map
+        curr.jumpprop = new JumpProp();
+
+        // forward visit only the function/method's labels' declarations
+        // +   that way, the label's symbols will be added to the symbol table before their first use
+        MethodDecl methodDecl = ( MethodDecl )curr.getParent();
+        ForwardLabelVisitor visitor = new ForwardLabelVisitor();
+        context.isInForwardDeclMode.set();
+        methodDecl.traverseBottomUp( visitor );
+        context.isInForwardDeclMode.reset();
+
+        // add the labels to the jump map
+        for( Symbol labelSymbol : SymbolTable._locals() )
+        {
+            // add the label as a jump point to the jump map
+            curr.jumpprop.add( labelSymbol._name() );
+        }
+    }
     
     ////// <epsilon>
     ////// int ident, Node Array[], char c
@@ -748,12 +841,12 @@ public class SemanticVisitor extends VisitorAdaptor
     private void visit_FormParam( FormParam curr )
     {
         // find the (possible) class declaration surrounding the symbol
-        ClassDeclType classDeclType = ( ClassDeclType )context.syntaxNodeStack.find(
+        boolean isInClassScope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof ClassDeclType )
-        );
+        ) != null;
         // if the class method's formal parameters have already been declared by the forward declaration visitor, return
         // +   if we are in a class and the forward declaration mode is finished
-        if( classDeclType != null && context.isInForwardDeclMode.false_() ) return;
+        if( isInClassScope && context.isInForwardDeclMode.false_() ) return;
 
 
 
@@ -769,16 +862,12 @@ public class SemanticVisitor extends VisitorAdaptor
             // don't do this next line since the FormParam_Err syntax node wasn't added to the syntax node stack
          // context.syntaxNodeStack.remove();
 
+            // get the formal parameter index in the formal parameter list
             int paramIdx = SymbolTable._localsSize();
 
             // add a dummy symbol as the formal parameter
-            SymbolTable.addSymbol(
-                Symbol.newFormalParam(
-                    String.format( "@Param[%d]", paramIdx ),
-                    SymbolTable.anyType,
-                    paramIdx
-                )
-            );
+            Symbol paramSymbol = Symbol.newFormalParam( String.format( "@Param[%d]", paramIdx ), SymbolTable.anyType, paramIdx );
+            SymbolTable.addSymbol( paramSymbol );
         }
         // ...
         else
@@ -828,14 +917,15 @@ public class SemanticVisitor extends VisitorAdaptor
     private void visit_VarDecl( VarDecl_Plain curr )
     {
         // find the (possible) class declaration surrounding the symbol
-        ClassDeclType classDeclType = ( ClassDeclType )context.syntaxNodeStack.find(
+        boolean isInClassScope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof ClassDeclType )
-        );
+        ) != null;
         // if the class's fields/<static fields> have already been declared by the forward declaration visitor, return
         // +   if we are in a class and the forward declaration mode is finished
-        if( classDeclType != null && context.isInForwardDeclMode.false_() ) return;
+        if( isInClassScope && context.isInForwardDeclMode.false_() ) return;
 
         // remove the VarDeclType from the syntax node stack
+        // +   works for classes and records
         context.syntaxNodeStack.remove();
     }
 
@@ -865,31 +955,40 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the symbol has already been initialized by the forward class declaration visitor, return
         if( curr.symbol != null ) return;
 
-        SyntaxNode node = context.syntaxNodeStack.add( curr );
+        context.syntaxNodeStack.add( curr );
         Symbol right = ( varDeclType != null ) ? varDeclType.symbol : SymbolTable.noSym;
         
+        // get the variable declaration's scope
+        SyntaxNode scope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof ProgramType )
+                 || ( elem instanceof ClassDeclType )
+                 || ( elem instanceof RecordDeclType )
+                 || ( elem instanceof MethodDeclType )
+        );
         // if the variable/field declaration is located outside a program/class/function/method
-        int varKind = Symbol.VAR;
-        if     ( node instanceof ProgramType    ) { varKind = Symbol.VAR;   }
-        else if( node instanceof ClassDeclType  ) { varKind = Symbol.FIELD; }
-        else if( node instanceof MethodDeclType ) { varKind = Symbol.VAR;   }
-        else
+        if( scope == null )
         {
             report_fatal( curr, "Variable/field/<static field> declaration not yet supported" );
         }
+        
+        int varKind = Symbol.VAR;
+        if     ( scope instanceof ProgramType    ) { varKind = Symbol.VAR;   }
+        else if( scope instanceof ClassDeclType  ) { varKind = Symbol.FIELD; }
+        else if( scope instanceof RecordDeclType ) { varKind = Symbol.FIELD; }
+        else if( scope instanceof MethodDeclType ) { varKind = Symbol.VAR;   }
 
         // if the static modifier is used
         if( isStatic == true )
         {
             // on a class field, that's supported
-            if( varKind == Symbol.FIELD )
+            if( scope instanceof ClassDeclType && varKind == Symbol.FIELD )
             {
                 varKind = Symbol.STATIC_FIELD;
             }
             // otherwise, the modifier cannot be applied
             else
             {
-                report_verbose( curr, "Variables cannot be static (currently only fields can be static)" );
+                report_verbose( curr, "Illegal 'static' modifier use -- only class fields can be static" );
             }
         }
 
@@ -930,18 +1029,23 @@ public class SemanticVisitor extends VisitorAdaptor
         curr.symbol = SymbolTable.noSym;
 
         // if the variable/field is declared outside a variable declaration or a formal parameter declaration
-        // if the current declaration type is not yet supported
-        SyntaxNode node = context.syntaxNodeStack.top();
-        Symbol left = SymbolTable.noSym;
-        if     ( node instanceof VarDeclType_Plain   ) left = ( ( VarDeclType_Plain   )node ).symbol;
-        else if( node instanceof VarDeclType_Static  ) left = ( ( VarDeclType_Static  )node ).symbol;
-        else if( node instanceof VarDeclType_Err     ) /* if error do nothing */;
-        else if( node instanceof FormParamType_Plain ) left = ( ( FormParamType_Plain )node ).symbol;
-        // ...
-        else
+        // +   if the current declaration type is not yet supported
+        SyntaxNode scope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof VarDeclType_Plain   )
+                 || ( elem instanceof VarDeclType_Static  )
+                 || ( elem instanceof VarDeclType_Err     )
+                 || ( elem instanceof FormParamType_Plain )
+        );
+        if( scope == null )
         {
             report_fatal( curr, "Variable/field/<static field>/<formal parameter> declaration not yet supported" );
         }
+
+        Symbol left = SymbolTable.noSym;
+        if     ( scope instanceof VarDeclType_Plain   ) { left = ( ( VarDeclType_Plain   )scope ).symbol; }
+        else if( scope instanceof VarDeclType_Static  ) { left = ( ( VarDeclType_Static  )scope ).symbol; }
+        else if( scope instanceof VarDeclType_Err     ) { /* if error do nothing */;                      }
+        else if( scope instanceof FormParamType_Plain ) { left = ( ( FormParamType_Plain )scope ).symbol; }
 
         SymbolType leftType = left._type();
         SymbolType varType = ( !isArray ) ? leftType : SymbolType.newArray( String.format( "@Array<%s>", leftType._name() ), leftType );
@@ -971,20 +1075,33 @@ public class SemanticVisitor extends VisitorAdaptor
             SymbolTable.addSymbol( curr.symbol );
         }
 
-        // if the symbol is declared inside a class, add it to the class type
+        // if the symbol is declared inside a class/record, add it to the class/record type
         if( curr.symbol.isField() || curr.symbol.isStaticField() )
         {
-            // find the class declaration surrounding the symbol
-            ClassDeclType classDeclType = ( ClassDeclType )context.syntaxNodeStack.find(
-                elem -> ( elem instanceof ClassDeclType )
+            // find the class/record declaration surrounding the symbol
+            SyntaxNode declType = context.syntaxNodeStack.find(
+                elem -> ( elem instanceof ClassDeclType  )
+                     || ( elem instanceof RecordDeclType )
             );
 
-            // if the symbol is a field/static field but not in a class scope
-            if( classDeclType == null ) report_fatal( curr, "Field/<static field> declaration not yet supported" );
+            // if the symbol is a field/static field but not in a class/record scope
+            if( declType == null ) report_fatal( curr, "Field/<static field> declaration not yet supported" );
 
             // HACK: set the top symbol table scope as the class's members (since the field/static field declaration must be in the class's scope)
             // +   used only for semantic checking while inside the class, the members will be sorted based on their category later on
-            classDeclType.symbol._type()._members( SymbolTable._locals() );
+            // +   this updates the members of the class, since there is currently no exposed method for adding new members to the list
+            if( declType instanceof ClassDeclType )
+            {
+                ClassDeclType classDeclType = ( ClassDeclType )declType;
+                classDeclType.symbol._type()._members( SymbolTable._locals() );
+                //                                    ~~~~~~~~~~~~~~~~~~~~~~~~   <--- HACK
+            }
+            else if( declType instanceof RecordDeclType )
+            {
+                RecordDeclType recordDeclType = ( RecordDeclType )declType;
+                recordDeclType.symbol._type()._members( SymbolTable._locals() );
+                //                                     ~~~~~~~~~~~~~~~~~~~~~~~~   <--- HACK
+            }
         }
     }
     // VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
@@ -1032,15 +1149,18 @@ public class SemanticVisitor extends VisitorAdaptor
         curr.symbol = SymbolTable.noSym;
 
         // if the current constant declaration is not yet supported
-        SyntaxNode node = context.syntaxNodeStack.top();
-        Symbol left = SymbolTable.noSym;
-        if     ( node instanceof ConstDeclType_Plain ) left = ( ( ConstDeclType_Plain )node ).symbol;
-        else if( node instanceof ConstDeclType_Err   ) /* if error do nothing */;
-        // ...
-        else
+        SyntaxNode scope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof ConstDeclType_Plain )
+                 || ( elem instanceof ConstDeclType_Err   )
+        );
+        if( scope == null )
         {
             report_fatal( curr, "Constant declaration not yet supported" );
         }
+
+        Symbol left = SymbolTable.noSym;
+        if     ( scope instanceof ConstDeclType_Plain ) { left = ( ( ConstDeclType_Plain )scope ).symbol; }
+        else if( scope instanceof ConstDeclType_Err   ) { /* if error do nothing */;                      }
 
         Symbol right = curr.getLiteral().symbol;
         if( right.isNoSym() ) return;
@@ -1072,26 +1192,16 @@ public class SemanticVisitor extends VisitorAdaptor
     // StatementList ::= (StatementList_Tail ) StatementList Statement;
     // StatementList ::= (StatementList_Empty) ;
 
-    ////// stmt stmt label_02: stmt
+    ////// stmt stmt label_01:stmt
     ////// {}
     ////// { label1:statement label2:statement label3:statement }
-    // Statement ::= (Statement_Plain) LabStmt;
+    // Statement ::= (Statement_Plain)           Stmt;
+    // Statement ::= (Statement_Label) StmtLabel Stmt;
     // Statement ::= (Statement_Scope) lbrace StatementList rbrace;
     // Statement ::= (Statement_Err  ) error {: parser.report_error( "Bad statement", null ); :};
 
-    ////// stmt | label_01: stmt
-    // LabStmt ::= (LabStmt_Plain) Stmt;
-    @Override
-    public void visit( LabStmt_Plain curr )
-    {
-        // TODO
-    }
-    // LabStmt ::= (LabStmt_Label) Label Stmt;
-    @Override
-    public void visit( LabStmt_Label curr )
-    {
-        // TODO
-    }
+    ////// action symbol for defining a label
+    // StmtLabel ::= (StmtLabel_Plain) ident:Label;
 
     ////// ident.ident[ expr ] = expr;
     ////// ident.ident[ expr ]( );
@@ -1218,11 +1328,19 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Stmt ::= (Stmt_Goto       ) GOTO_K Label  semicol;
+    // Stmt ::= (Stmt_Goto       ) GOTO_K ident:Label semicol;
     @Override
     public void visit( Stmt_Goto curr )
     {
-        // TODO
+        // try to find the label for the current function scope in the symbol table
+        String labelName = String.format( "@Label[%s]", curr.getLabel() );
+        Symbol labelSymbol = SymbolTable.findSymbol( labelName );
+        // if the label doesn't exist in the function scope
+        if( labelSymbol.isNoSym() )
+        {
+            report_verbose( curr, "Label does not exist in the function scope" );
+            return;
+        }
     }
     // Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
     @Override
@@ -1902,8 +2020,8 @@ public class SemanticVisitor extends VisitorAdaptor
         
         if( left.isNoSym() ) return;
         
-        // if the <type token> is not a <class type>
-        if( !left.isType() || !left._type().isClass() )
+        // if the <type token> is not a <class type> or <record type>
+        if( !left.isType() || !left._type().hasMembers() )
         {
             report_basic( curr.getType(), "Cannot instantiate a non-class type" );
             return;
@@ -2040,10 +2158,10 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the previous designator segment does not exist, an error must have been reported somewhere in the previous segments, return
         if( left.isNoSym() ) return;
 
-        // if the previous symbol is not a class (doesn't have inner methods)
-        if( !left._type().isClass() )
+        // if the previous symbol is not a class/record (doesn't have members)
+        if( !left._type().hasMembers() )
         {
-            report_basic( curr, "Expected class member, but the left designator is not a class" );
+            report_basic( curr, "Expected class/record member, but the left designator is not a class/record" );
             return;
         }
 
@@ -2053,17 +2171,17 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the previous symbol doesn't contain the current field/member
         if( member.isNoSym() )
         {
-            report_basic( curr, "The specified class does not contain this member" );
+            report_basic( curr, "The specified class/record does not contain this member" );
             return;
         }
         // if the previous designator is a type (static access) and its non-static member is accessed
         if( left.isType() && !member.isStaticField() )
         {
-            report_basic( curr, "This non-static class member cannot be accessed in a static way" );
+            report_basic( curr, "This non-static class/record member cannot be accessed in a static way" );
             return;
         }
 
-        // save the class's member -- don't modify it in the future, since it is a part of the class's definition
+        // save the class/record's member -- don't modify it in the future, since it is a part of the class/record's definition
         curr.symbol = member;
     }
     // Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
@@ -2180,11 +2298,6 @@ public class SemanticVisitor extends VisitorAdaptor
     // Literal ::= (Literal_Bool) bool_lit:Literal;
     @Override
     public void visit( Literal_Bool curr ) { curr.symbol = Symbol.newConst( "@Literal_Bool", SymbolTable.boolType, ( curr.getLiteral() ) ? 1 : 0 ); }
-    
-    ////// label_01
-    // Label ::= (Label_Plain) ident:Label;
-    @Override
-    public void visit( Label_Plain curr ) { /* TODO */ }
 
     ////// =
     // Assignop ::= (Assignop_Assign) assign:Assignop;
