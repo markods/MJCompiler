@@ -1,0 +1,43 @@
+program gotoA
+
+void point( char p )
+{
+    print(p); print(' ');
+}
+
+{
+    void main()
+        int i;
+    {
+        point('A');
+
+        i = 0;
+        A: do
+        {
+            if( i < 10 ) { point('B'); goto B; continue; }
+            else         { point('C'); goto E; break;    }
+
+            B: switch( i )
+            {
+                case 0: C: point('D'); goto D;
+                case 1: point('E'); i++;
+                case 2: ;
+                case 3: point('F'); D: if( i%2 == 0 ) goto C;
+            }
+            point('G');
+            
+            i++;
+            goto A;
+            point('H');
+        } while( false );
+        point('I');
+
+        E: ;
+
+        point('J');
+        return;
+        
+        point('K');
+        F: goto F;
+    }
+}

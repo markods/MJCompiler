@@ -1,0 +1,56 @@
+// IMPORTANT: all paths here should be relative to this (test batch) file!
+{
+    "BatchName": "Arithmetic tests",
+    "TestGroupList": [
+        {
+            "TestGroupName": "ArithmeticA compilation",
+            "FilePath": "./arithmeticA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "LogicalA compilation",
+            "FilePath": "./logicalA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "PredefinedA compilation",
+            "FilePath": "./predefinedA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "ReadprintA compilation",
+            "FilePath": "./readprintA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "ScopeA compilation",
+            "FilePath": "./scopeA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "VariableA compilation",
+            "FilePath": "./variableA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Expression mishaps",
+            "FilePath": "./errorA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+    ]
+}
+

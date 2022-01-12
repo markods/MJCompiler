@@ -1,0 +1,20 @@
+// predefined constants
+program predefinedA
+{
+    // constants
+    const int pi = 314159;
+    const int e = 271828;
+
+    void main()
+    {
+        print('e');print('o');print('l');              print('='); print('"');print( eol );print('"');   print( eol );
+        print('n');print('u');print('l');print('l');   print('='); print( null );                        print( eol );
+
+        print('0');   print('='); print(  0, 2 );   print( eol );
+        print('5');   print('='); print(  5, 2 );   print( eol );
+        print('5');   print('='); print( -5, 2 );   print( eol );
+
+        print('p');print('i');   print('='); print( pi, 6 );   print( eol );
+        print('e');              print('='); print( e,  6 );   print( eol );
+    }
+}

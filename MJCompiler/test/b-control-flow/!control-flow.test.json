@@ -1,0 +1,49 @@
+// IMPORTANT: all paths here should be relative to this (test batch) file!
+{
+    "BatchName": "Control flow tests",
+    "TestGroupList": [
+        {
+            "TestGroupName": "IfelseA compilation",
+            "FilePath": "./ifelseA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "DowhileA compilation",
+            "FilePath": "./dowhileA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "SwitchA compilation",
+            "FilePath": "./switchA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "gotoA compilation",
+            "FilePath": "./gotoA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "FlowA compilation",
+            "FilePath": "./flowA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Control flow mistakes",
+            "FilePath": "./errorA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+    ]
+}
+

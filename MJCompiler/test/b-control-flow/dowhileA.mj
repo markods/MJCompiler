@@ -1,0 +1,56 @@
+program dowhileA
+
+void point( char p )
+{
+    print(p); print(' ');
+}
+
+{
+    void main()
+        int i; bool b;
+    {
+        point('A');
+
+        i = 2;
+        if( true )
+        do
+        {
+            point('B');
+            if( i == 0 ) { point('C'); i--; continue; }
+            if( i <  0 ) { point('D'); break; }
+
+            do
+            {
+                point('E');
+
+                {
+                    point('F');
+
+                    do
+                    ;
+                    while( false );
+                    point('G');
+
+                    do
+                    {
+                        point('H');
+
+                        if( b ) { b = false; continue; }
+                        point('I');
+
+                        break;
+                        point('J');
+                    }
+                    while( true );
+
+                }
+
+                point('K');
+            } while( 5*4*3*2*1 / 4/5/3/1/2 < 1 )
+
+            i--;
+        } while( i >= 0 )
+
+        point('L');
+    }
+}

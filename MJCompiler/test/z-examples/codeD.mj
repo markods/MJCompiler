@@ -1,5 +1,3 @@
-// codeD
-
 program codeD
     int x; int y;
 {
@@ -16,5 +14,3 @@ program codeD
         print(y);        // 6
     }
 }
-
-// codeD

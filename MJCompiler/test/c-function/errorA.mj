@@ -1,0 +1,48 @@
+program errorA
+
+void foo( int arr[], bool b, char c ) { return 5; }
+
+class C
+{
+    int a-;
+    booool b;
+    char char;
+    int void;
+    void null() {}
+    void bad( intt arr[];, boolb b, chdar c,, ) {}
+    void bad( , ) {}
+
+    int foo( int arr[], bool b, char c )
+        int i;
+    {
+        i = this.foo( arr, b );
+        i = foo( arr, b );
+        return null;
+    }
+}
+
+{
+    void main()
+        int a, arr[];
+        bool b;
+        char c;
+        C c;
+    {
+        return 1;
+        c = new C;
+
+        foo();
+        foo( arr );
+        foo( arr, b, c, b );
+        foo( b, c, a );
+        foo( arr, b, c );
+        
+        c.foo();
+        c.foo( , );
+        c.foo( asdfl kajsdf lk );
+        c.fooo();
+        c.foo( b, c, a );
+        c.foo( a, b, c );
+        c.foo( arr, b, c );
+    }
+}

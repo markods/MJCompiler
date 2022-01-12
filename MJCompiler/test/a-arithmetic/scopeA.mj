@@ -1,0 +1,18 @@
+// scope support
+program scopeA
+    int k;
+{
+    void foo()
+        int k;
+    {
+        k = k*2;
+    }
+
+
+    void main()
+    {
+        k = 1;
+        foo();
+        print( k );
+    }
+}

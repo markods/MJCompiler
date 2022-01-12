@@ -1,0 +1,49 @@
+// IMPORTANT: all paths here should be relative to this (test batch) file!
+{
+    "BatchName": "Function tests",
+    "TestGroupList": [
+        {
+            "TestGroupName": "FunctionA compilation",
+            "FilePath": "./functionA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "RecursionA compilation",
+            "FilePath": "./recursionA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "RecursionB compilation",
+            "FilePath": "./recursionB.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "RecursionC compilation",
+            "FilePath": "./recursionC.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Function declaration mishaps",
+            "FilePath": "./errorA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Function return mishaps",
+            "FilePath": "./errorA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+    ]
+}
+

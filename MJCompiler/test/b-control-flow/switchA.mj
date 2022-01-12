@@ -1,0 +1,63 @@
+program switchA
+
+void point( char p )
+{
+    print(p); print(' ');
+}
+
+{
+    void main()
+        int i; bool b;
+    {
+        point('A');
+
+        i = 0;
+        b = true;
+        do
+        {
+            if( true )
+            switch( i )
+            {
+                case 1:
+                {
+                    point('B');
+                    break;
+                }
+                case 0:
+                    ;
+                case 3:
+                    point('C');
+                    switch( i )
+                    {
+                        case 3:
+                            point('D');
+                            if( b ) { b = false; i--; i--; }
+                            break;
+                        case 0;
+                            point('E');
+                            i++;
+                        case 2:
+                        {
+                            point('F');
+                            if( i == 1 ) { continue; }
+                        }
+                    }
+                case 2:
+                    point('G');
+                    break;
+                case 5:
+                    point('H');
+                    i = i + 2;
+                    continue;
+                case 6:
+                    point('I');
+                case 9:
+                    point('J');
+            }
+            
+            i++;
+        } while( i < 10 );
+
+        point('K');
+    }
+}

@@ -1,0 +1,35 @@
+program ifelseA
+
+void point( char p )
+{
+    print(p); print(' ');
+}
+
+{
+    void main()
+    {
+        point('A');
+
+        if( 5*5 == 25 )
+        {
+            point('B');
+            if( 5*4*3*2*1 / 4/5/3/1/2 < 1 )
+                ;
+            else
+                point('C');
+
+            {
+                point('D');
+                if( true ) if( false ) point('E'); else point('F');
+                if( true ) if( true  ) point('G');
+            }
+            point('H');
+        }
+        else
+        {
+            point('I');
+        }
+
+        point('J');
+    }
+}

@@ -1,6 +1,4 @@
-// codeA
-
-program test301
+program codeA
 
     const int nula = 0;
     const int jedan = 1;
@@ -58,5 +56,3 @@ program test301
         }
     }
 }
-
-// codeA

@@ -55,7 +55,7 @@ using namespace System.Text.Json;
 # NOTE: leave powershell array constructor ( @() ) if there is only one argument (otherwise it won't be a powershell array due to unpacking)
 [string[][]] $script:DefaultArgs =
     ( "=jflex", "=cup", "=clean", "=build", "=test" ),
-    ( "=jflex", "=cup" ),
+    ( "=jflex", "=cup", "=build" ),
     ( "=clean", "=build", "=test" );
 
 [string] $script:HelpMessage = @"

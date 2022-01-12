@@ -1,0 +1,63 @@
+program memberA
+
+class A
+{
+    A r;
+    int a, a_arr[];
+    bool b, b_arr[];
+    char c, c_arr[];
+}
+
+class B
+{
+    A a, a_arr[];
+}
+
+class C
+{
+    B b[];
+}
+
+{
+    void main()
+        C c;
+    {
+        c.b = new B[ 5 ];
+        c.b[ 0 ].a = new A;
+        
+        c.b[ 0 ].a.r = c.b[ 0 ].a;
+        c.b[ 0 ].a.a = 1;
+        c.b[ 0 ].a.b = true;
+        c.b[ 0 ].a.c = 'c';
+
+        c.b[ 0 ].a_arr = new A[ 25 ];
+        c.b[ 0 ].a.a_arr = new int[ 10 ];
+        c.b[ 0 ].a.b_arr = new bool[ 15 ];
+        c.b[ 0 ].a.c_arr = new char[ 20 ];
+
+        c.b[ 0 ].a_arr[ 24 ] = c.b[ 0 ].a;
+        c.b[ 0 ].a.a_arr[ 9 ] = 2;
+        c.b[ 0 ].a.b_arr[ 14 ] = false;
+        c.b[ 0 ].a.c_arr[ 19 ] = ''';
+
+        if(    c.b[ 0 ].a_arr[ 0 ] == null
+
+            && c.b[ 0 ].a_arr[ 24 ].r == c.b[ 0 ].a_arr[ 24 ]
+            && c.b[ 0 ].a_arr[ 24 ].a == 1
+            && c.b[ 0 ].a_arr[ 24 ].b == true
+            && c.b[ 0 ].a_arr[ 24 ].c == 'c'
+
+            && c.b[ 0 ].a_arr[ 24 ].a_arr[ 0 ]  == 0
+            && c.b[ 0 ].a_arr[ 24 ].a_arr[ 9 ]  == 2
+
+            && c.b[ 0 ].a_arr[ 24 ].b_arr[ 0 ]  == false
+            && c.b[ 0 ].a_arr[ 24 ].b_arr[ 14 ] == false
+
+            && c.b[ 0 ].a_arr[ 24 ].c_arr[ 0 ]  == chr( 0 );
+            && c.b[ 0 ].a_arr[ 24 ].c_arr[ 19 ] == '''
+        )
+            { print('t');print('r');print('u');print('e');print(eol); }
+        else
+            { print('f');print('a');print('l');print('s');print('e');print(eol); }
+    }
+}

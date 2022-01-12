@@ -1,6 +1,4 @@
-// codeB
-
-program test302
+program codeB
 
     const int jedan = 1;
 
@@ -81,5 +79,3 @@ program test302
         print(inkrement(niz[2], 2));                // dvostruka vrednost treceg broja
     }
 }
-
-// codeB

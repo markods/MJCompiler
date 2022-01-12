@@ -1,0 +1,27 @@
+// bad class and record declarations
+program errorA
+
+record ()rec ordR
+{
+    R r;
+}
+
+class *0A
+{
+    A a;
+    int foo( R r )
+    {
+        print('f');print('a');print('l');print('s');print('e');print(eol);
+    }
+}
+
+{
+    void main()
+        A a;
+        R r;
+    {
+        r = new R;
+        a = new A;
+        a.foo( r );
+    }
+}

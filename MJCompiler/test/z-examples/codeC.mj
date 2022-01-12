@@ -1,6 +1,4 @@
-// codeC
-
-program test303
+program codeC
 
     const int delilac = 3;
 
@@ -164,5 +162,3 @@ program test303
         }while(i<10);
     }
 }
-
-// codeC

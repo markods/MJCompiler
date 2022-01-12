@@ -1,0 +1,17 @@
+// calculate the binomial coefficient n over k
+program recursionA
+{
+    int binom( int n, int k )
+    {
+        if( k == 0 ) { return 1; }
+        if( k == 1 ) { return n; }
+        return binom( n-1, k ) + binom( n-1, k-1 );
+    }
+
+    void main()
+    {
+        print( binom( 6, 3 ) ); print( ' ' );
+        print( binom( 6, 4 ) ); print( eol );
+        return;
+    }
+}

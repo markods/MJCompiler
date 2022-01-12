@@ -1,0 +1,44 @@
+// calculate the n-th root of a positive integer
+program functionA
+
+bool init = true;
+
+{
+    int root( int k, int x )
+        int a, a_km1;
+        int i, j;
+    {
+        processed++;
+        i = 0;
+        a = 1;
+        do
+        {
+            j = 0; a_km1 = 1;
+            do
+            {
+                a_km1 = a_km1 * a;
+                j++;
+            } while( j < k-1 );
+            
+            a = ( ( k-1 )*a + x/a_km1 ) / k;
+
+            i++;
+        } while( i < 20 );
+
+        return a;
+    }
+
+    void main()
+    {
+        if( init )
+        {
+            print( root( 2, 10 ) ); print( ' ' );
+            init = false; main();
+            return;
+        }
+
+        print( root( 3, root( 2, 64 ) ) ); print( ' ' );
+        print( root( 2, 4 ), root( 2, 10 ) ) ); print( eol );
+        return;
+    }
+}

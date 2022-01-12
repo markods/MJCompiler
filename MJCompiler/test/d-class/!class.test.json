@@ -1,0 +1,63 @@
+// IMPORTANT: all paths here should be relative to this (test batch) file!
+{
+    "BatchName": "Class tests",
+    "TestGroupList": [
+        {
+            "TestGroupName": "RecordA compilation",
+            "FilePath": "./recordA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "MemberA compilation",
+            "FilePath": "./memberA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "MemberB compilation",
+            "FilePath": "./memberB.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "StaticA compilation",
+            "FilePath": "./staticA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "PolyinhA compilation",
+            "FilePath": "./polyinhA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "DesignatorA compilation",
+            "FilePath": "./designatorA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Bad class and record declarations",
+            "FilePath": "./errorA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Name clashing",
+            "FilePath": "./errorB.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+    ]
+}
+

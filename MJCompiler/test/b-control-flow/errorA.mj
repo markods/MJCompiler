@@ -1,0 +1,63 @@
+program errorA
+
+// break i continue izvan do-while i switch
+// goto na labelu u drugoj funkciji
+// switch sa vise istih case-va
+// TODO
+const int con = 5;
+
+{
+    void main( int a )
+    {
+        A: ;
+    }
+
+    void mainn()
+        int a, arr[];
+        bool b;
+        char c;
+        C c1, c2;
+    {
+        arr = new int;
+        arr = new int[false]
+        arr = new int['c'];
+        arr = new int[-5];
+
+        c1 = new C[];
+        c2 = new C;
+
+        if( 5*6 );
+        if( c1 < c2 );
+        if( c1 + c2 == null );
+        c1++;
+        c1 = -c1;
+        con++;
+        con = con*2 + 1;
+
+        read( c );
+        read( null );
+        read( 5*6 );
+        read( con );
+        print( c1 );
+
+        switch( 1 )
+        {
+            case 0: ;
+            case 'c': ;
+            case true: ;
+        }
+
+        continue;
+        break;
+        return 1;
+
+        switch( true ) {}
+        switch( 'c' ) {}
+
+        do {} while( 5*6 - true );
+        do ; while( 5*6 );
+        do while( true );
+
+        goto A;
+    }
+}

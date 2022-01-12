@@ -1,10 +1,24 @@
 // IMPORTANT: all paths here should be relative to this (test batch) file!
 {
-    "BatchName": "Lexical error tests",
+    "BatchName": "Lexer tests",
     "TestGroupList": [
         {
-            "TestGroupName": "ErrorA compilation",
-            "FilePath": "./errorA.mj",
+            "TestGroupName": "Syntax constructs A",
+            "FilePath": "./syntaxA.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Syntax constructs B",
+            "FilePath": "./syntaxB.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [],
+        },
+        {
+            "TestGroupName": "Lexer errors",
+            "FilePath": "./error.mj",
             "ExCompileOutput": [
                 "Ln 5   Col 13  SYN     Bad variable declaration",
                 "```= 0```",

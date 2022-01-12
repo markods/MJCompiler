@@ -1,0 +1,11 @@
+program errorB
+
+int foo() {}
+
+{
+    void main()
+        int a;
+    {
+        print( foo() ); print(eol);
+    }
+}

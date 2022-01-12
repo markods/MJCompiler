@@ -1,0 +1,23 @@
+// read + print support for simple types
+program readprintA
+{
+    void main()
+        int a;
+        bool b;
+        char c;
+    {
+        print('i');print('n');print('t');print(' ');   print('a');   print(' ');print('=');print(' ');
+        read( a );
+        print(a); print(eol);
+
+        print('b');print('o');print('o');print('l');print(' ');   print('b');   print(' ');print('=');print(' ');
+        read( b );
+        print(b); print(eol);
+
+        print('c');print('h');print('a');print('r');print(' ');   print('c');   print(' ');print('=');print(' ');
+        read( c );
+        print(c); print(eol);
+
+        return;
+    }
+}

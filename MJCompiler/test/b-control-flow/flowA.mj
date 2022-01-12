@@ -1,0 +1,73 @@
+program flowA
+
+void point( char p )
+{
+    print(p); print(' ');
+}
+
+{
+    void main()
+        int i;
+    {
+        point('A');
+
+        A: switch( i )
+        {
+            case 0:
+            {
+                point('B');
+                
+                A: do
+                {
+                    point('C');
+                    if( i >= 4 ) break;
+                    
+                    point('D');
+                    do
+                    {
+                        switch( i )
+                        {
+                            case 0: ;
+                            case 1: point('E'); i++; continue;
+                            case 2: point('F'); break;
+                            case 3: point('G'); i++; goto A;
+                            case 4: ;
+                        }
+                        point('H');
+                        i++;
+                    }
+                } while( i < 5 );
+                
+                point('I');
+                break;
+            }
+            case 6:
+            {
+                point('J');
+
+                B: if( i < 7 ) { point('K'); i++; goto B; }
+                switch( i )
+                {
+                    case 10: point('L'); goto A;
+                    case 8: ;
+                    case 9: point('M'); do i++ while( false );
+                    case 7: point('N'); if( i > 7 ) break;
+                }
+
+                point('O');
+                i++; goto B;
+            }
+            case 10:
+                point('P');
+                goto C;
+        }
+        point('Q');
+
+        i++; goto A;
+        point('R');
+
+        C: ;
+
+        point('S');
+    }
+}
