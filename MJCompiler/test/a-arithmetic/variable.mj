@@ -1,5 +1,5 @@
 // variable arithmetic
-program variableA
+program __variable__
     // constants
     const int pi = 314159;
     const int e = 271828;
@@ -16,7 +16,7 @@ program variableA
         // variables and constants
         c = '5';
         a = ord( c ) - ord( '0' );
-        c = char( a + ord( '0' ) );
+        c = chr( a + ord( '0' ) );
         print('a');print('=');print(a); print( eol );
         print('c');print('=');print(c); print( eol );
 

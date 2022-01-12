@@ -1,6 +1,6 @@
-//////`first comment 0123456789 `~!@#$%^&*()_+-=<>,.?/\|[]{};:'" /* random text here lorem ipsum dolor si am>/et */
+/* /* /* /* *`first comment 0123456789 `~!@#$%^&*()_+-=<>,.?/\|[]{};:'" // random text here lorem ipsum dolor si am>/et */
 
-program syntaxA
+program __all_keywords_2__
 
 class A
 {
@@ -52,19 +52,19 @@ const int pi = 314159;
 
 {
     void main()
-        //comment*/
+        /*comment*/
         int a;
         bool b;
         char c;
         int arr[];
         int i;
     {
-        //`~!@#$%^&*()_+-=<>,.?/\|[]{};:'" random text here lorem ipsum dolor si am>/et */
+        /*`~!@#$%^&*()_+-=<>,.?/\|[]{};:'" random text here lorem ipsum dolor si am>/et */
         c = '5';
 
         // some code here
         print('e');print('o');print('l');              print( '=' ); print(''');print( eol );print(''');   print( eol );
-        print('n');print('u');print('l');print('l');   print( '=' ); print( null );                        print( eol );
+     // print('n');print('u');print('l');print('l');   print( '=' ); print( null );                        print( eol );
         a = 5;
         print('a');print('=');print('5');   print( '=' ); print( a );print(';');   print( eol );
         a++;
@@ -110,11 +110,12 @@ const int pi = 314159;
     }
 
 
-    ///*/*/*/*/***`
-    //     comment alkdsjfas
-    //      0123456789 `~!@#$%^&*()_+-=<>,.?/\|[]{};:'" random text here lorem ipsum dolor si am>/et
-    //      490-2
-    //      01923 */
+    /* /* /* /* /*
+     *      comment alkdsjfas
+            0123456789 `~!@#$%^&*()_+-=<>,.?/\|[]{};:'" random text here lorem ipsum dolor si am>/et
+            490-2
+            01923 */
+    }
+}
 
-
-//last line comment 0123456789 `~!@#$%^&*()_+-=<>,.?/\|[]{};:'" /* random text here lorem ipsum dolor si am>/et   */
+/*last line comment 0123456789 `~!@#$%^&*()_+-=<>,.?/\|[]{};:'" // random text here lorem ipsum dolor si am>/et   */

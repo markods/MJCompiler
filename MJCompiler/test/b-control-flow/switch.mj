@@ -1,11 +1,10 @@
-program switchA
-
-void point( char p )
+program __switch__
 {
-    print(p); print(' ');
-}
+    void point( char p )
+    {
+        print(p); print(' ');
+    }
 
-{
     void main()
         int i; bool b;
     {
@@ -33,7 +32,7 @@ void point( char p )
                             point('D');
                             if( b ) { b = false; i--; i--; }
                             break;
-                        case 0;
+                        case 0:
                             point('E');
                             i++;
                         case 2:

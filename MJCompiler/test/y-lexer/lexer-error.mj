@@ -1,4 +1,4 @@
-program lexerrorA
+program __lexer_error__
 
     int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
     int #pet=5-;

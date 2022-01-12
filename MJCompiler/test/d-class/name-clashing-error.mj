@@ -1,0 +1,47 @@
+// name clashing
+program __name_clashing_error__
+
+static int a;
+
+class __name_clashing_error__
+{
+    static int __name_clashing_error__;
+    int a;
+    bool b;
+    char c;
+    int __name_clashing_error__;
+
+    {
+        void foo()
+            int a;
+        {
+            print('f');print('a');print('l');print('s');print('e');print(eol);
+            b++;
+            c--;
+            __name_clashing_error__ = new int[5];
+            __name_clashing_error__++;
+            __name_clashing_error__[ 0 ]++;
+        }
+    }
+}
+
+class C extends Heyy {}
+
+int a;
+
+record A
+{
+    static int a;
+    int __name_clashing_error__;
+}
+
+{
+    void main()
+        int __name_clashing_error__;
+        int a;
+        __name_clashing_error__ __name_clashing_error__;
+    {
+        __name_clashing_error__ = new __name_clashing_error__;
+        __name_clashing_error__.foo();
+    }
+}

@@ -1,0 +1,60 @@
+program __designator__
+
+class A
+{
+    int fib[];
+
+    {
+        void initA()
+            int i;
+        {
+            fib = new int[ 10 ];
+            i = 2;
+            fib[ 0 ] = 1;
+            fib[ 1 ] = 1;
+            do
+            {
+                fib[ i ] = fib[ i-1 ] + fib[ i-2 ];
+            } while( i < len( fib ) );
+        }
+    }
+}
+
+record B
+{
+    B b;
+    A a;
+}
+
+class C extends A
+{
+    static C arr[];
+    B b;
+
+    {
+        void initC()
+        {
+            if( arr == null )
+            {
+                arr = new C[ 1 ];
+                arr[ 0 ] = this;
+            }
+
+            b = new B;
+            b.b = b;
+            b.a = this;
+            this.initA();
+        }
+    }
+}
+
+{
+    void main()
+        C c;
+    {
+        c = new C;
+        c.initC();
+
+        print( C.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 2 );print( eol );
+    }
+}

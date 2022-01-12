@@ -1,5 +1,5 @@
 // calculate the ackermann function
-program recursionC
+program __recursion_3__
     int steps;
 {
     int ack( int x, int y, bool init )

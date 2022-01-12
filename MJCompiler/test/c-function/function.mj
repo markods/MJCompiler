@@ -1,14 +1,13 @@
 // calculate the n-th root of a positive integer
-program functionA
+program __function__
 
-bool init = true;
+bool inited;
 
 {
     int root( int k, int x )
         int a, a_km1;
         int i, j;
     {
-        processed++;
         i = 0;
         a = 1;
         do
@@ -30,15 +29,15 @@ bool init = true;
 
     void main()
     {
-        if( init )
+        if( inited == false )
         {
             print( root( 2, 10 ) ); print( ' ' );
-            init = false; main();
+            inited = true; main();
             return;
         }
 
         print( root( 3, root( 2, 64 ) ) ); print( ' ' );
-        print( root( 2, 4 ), root( 2, 10 ) ) ); print( eol );
+        print( root( 2, 4 ) * root( 2, 10 ), 2 ); print( eol );
         return;
     }
 }

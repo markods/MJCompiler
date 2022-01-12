@@ -1,13 +1,12 @@
 // calculate the binomial coefficient, but separated into three different recursive calls
-program recursionB
+program __recursion_2__
 {
     int f1( int n, int k )
     {
         if( k == 0 ) { return 1; }
         if( k == 1 ) { return n; }
-
-        if( n%2 == 0 ) return f1( n-1, k ) + f2( n-1, k-1 );
-        else           return f2( n-1, k ) + f3( n-1, k-1 );
+        n--; k--;
+        return f1( n, k+1 ) + f1( n, k );
     }
 
     int f2( int n, int k )
@@ -17,15 +16,16 @@ program recursionB
         if( k == 1 ) { return n; }
         n1 = n-1;
         k1 = k-1;
-        return f2( n1, k ) + f3( n1, k1 );
+        return f1( n1, k ) + f2( n1, k1 );
     }
 
     int f3( int n, int k )
     {
         if( k == 0 ) { return 1; }
         if( k == 1 ) { return n; }
-        n--; k--;
-        return f3( n, k+1 ) + f1( n, k );
+
+        if( n%2 == 0 ) return f1( n-1, k ) + f2( n-1, k-1 );
+        else           return f2( n-1, k ) + f3( n-1, k-1 );
     }
 
     void main()

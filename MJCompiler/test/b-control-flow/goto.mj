@@ -1,11 +1,10 @@
-program gotoA
-
-void point( char p )
+program __goto__
 {
-    print(p); print(' ');
-}
+    void point( char p )
+    {
+        print(p); print(' ');
+    }
 
-{
     void main()
         int i;
     {

@@ -1,0 +1,59 @@
+program __class_member_2__
+
+record Elem
+{
+    Elem next;
+    int a;
+}
+
+class Stack
+{
+    Elem head;
+    
+    {
+        void add( int a )
+            Elem t;
+        {
+            t = new Elem;
+            t.a = a;
+
+            if( head == null ) { head = t; return; }
+            t.next = head; head = t;
+        }
+
+        bool isempty()
+        {
+            if( head != null ) return true;
+            else               return false;
+        }
+
+        int top()
+        {
+            return head.a;
+        }
+
+        void pop()
+        {
+            if( head == null ) return;
+            head = head.next;
+        }
+    }
+}
+
+{
+    void main()
+        Stack stack;
+    {
+        stack.add( 1 );
+        stack.add( 2 );
+        stack.add( 3 );
+
+        do
+        {
+            if( stack.isempty() ) return;
+            print( stack.top(), 2 ); print( ' ' );
+            stack.pop();
+        } while( true );
+        print( eol );
+    }
+}

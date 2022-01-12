@@ -1,4 +1,4 @@
-program codeD
+program __codeD__
     int x; int y;
 {
     

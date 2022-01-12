@@ -1,11 +1,10 @@
-program dowhileA
-
-void point( char p )
+program __do_while__
 {
-    print(p); print(' ');
-}
-
-{
+    void point( char p )
+    {
+        print(p); print(' ');
+    }
+    
     void main()
         int i; bool b;
     {
@@ -46,10 +45,10 @@ void point( char p )
                 }
 
                 point('K');
-            } while( 5*4*3*2*1 / 4/5/3/1/2 < 1 )
+            } while( 5*4*3*2*1 / 4/5/3/1/2 < 1 );
 
             i--;
-        } while( i >= 0 )
+        } while( i >= 0 );
 
         point('L');
     }

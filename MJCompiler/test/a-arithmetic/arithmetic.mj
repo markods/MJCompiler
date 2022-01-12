@@ -1,5 +1,5 @@
 // arithmetic operators
-program arithmeticA
+program __arithmetic__
 {
     void main()
     {

@@ -1,8 +1,8 @@
-program errorB
-
-int foo() {}
+program __return_error__
 
 {
+    int foo() {}
+
     void main()
         int a;
     {

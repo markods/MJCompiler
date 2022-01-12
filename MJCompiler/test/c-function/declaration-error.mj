@@ -1,6 +1,4 @@
-program errorA
-
-void foo( int arr[], bool b, char c ) { return 5; }
+program __declaration_error__
 
 class C
 {
@@ -8,20 +6,25 @@ class C
     booool b;
     char char;
     int void;
-    void null() {}
-    void bad( intt arr[];, boolb b, chdar c,, ) {}
-    void bad( , ) {}
 
-    int foo( int arr[], bool b, char c )
-        int i;
     {
-        i = this.foo( arr, b );
-        i = foo( arr, b );
-        return null;
+        void null() {}
+        void bad( intt arr[];, boolb b, chdar c,, ) {}
+        void bad( , ) {}
+
+        int foo( int arr[], bool b, char c )
+            int i;
+        {
+            i = this.foo( arr, b );
+            i = foo( arr, b );
+            return null;
+        }
     }
 }
 
 {
+    void foo( int arr[], bool b, char c ) { return 5; }
+
     void main()
         int a, arr[];
         bool b;

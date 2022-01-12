@@ -1,5 +1,5 @@
 // scope support
-program scopeA
+program __scope__
     int k;
 {
     void foo()

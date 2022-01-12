@@ -1,11 +1,10 @@
-program flowA
-
-void point( char p )
+program __flow__
 {
-    print(p); print(' ');
-}
-
-{
+    void point( char p )
+    {
+        print(p); print(' ');
+    }
+    
     void main()
         int i;
     {
@@ -17,25 +16,23 @@ void point( char p )
             {
                 point('B');
                 
-                A: do
+                B: do
                 {
                     point('C');
                     if( i >= 4 ) break;
                     
                     point('D');
-                    do
+                    switch( i )
                     {
-                        switch( i )
-                        {
-                            case 0: ;
-                            case 1: point('E'); i++; continue;
-                            case 2: point('F'); break;
-                            case 3: point('G'); i++; goto A;
-                            case 4: ;
-                        }
-                        point('H');
-                        i++;
+                        case 0: ;
+                        case 1: point('E'); i++; continue;
+                        case 2: point('F'); break;
+                        case 3: point('G'); i++; goto B;
+                        case 4: ;
                     }
+
+                    point('H');
+                    i++;
                 } while( i < 5 );
                 
                 point('I');
@@ -45,12 +42,12 @@ void point( char p )
             {
                 point('J');
 
-                B: if( i < 7 ) { point('K'); i++; goto B; }
+                C: if( i < 7 ) { point('K'); i++; goto C; }
                 switch( i )
                 {
                     case 10: point('L'); goto A;
                     case 8: ;
-                    case 9: point('M'); do i++ while( false );
+                    case 9: point('M'); do i++; while( false );
                     case 7: point('N'); if( i > 7 ) break;
                 }
 
@@ -59,14 +56,14 @@ void point( char p )
             }
             case 10:
                 point('P');
-                goto C;
+                goto D;
         }
         point('Q');
 
         i++; goto A;
         point('R');
 
-        C: ;
+        D: ;
 
         point('S');
     }

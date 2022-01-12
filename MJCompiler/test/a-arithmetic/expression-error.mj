@@ -1,4 +1,5 @@
-program errorA
+// expression errors
+program __expression_error__
     intt nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
     int;
     int a, b, -c;

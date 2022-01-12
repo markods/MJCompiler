@@ -1,5 +1,5 @@
 // logical operators        
-program logicalA
+program __logical__
 {
     void main()
     {

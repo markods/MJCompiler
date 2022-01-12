@@ -1,4 +1,4 @@
-program codeA
+program __codeA__
 
     const int nula = 0;
     const int jedan = 1;

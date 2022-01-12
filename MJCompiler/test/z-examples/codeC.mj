@@ -1,4 +1,4 @@
-program codeC
+program __codeC__
 
     const int delilac = 3;
 

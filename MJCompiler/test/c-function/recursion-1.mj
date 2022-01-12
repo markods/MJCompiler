@@ -1,5 +1,5 @@
 // calculate the binomial coefficient n over k
-program recursionA
+program __recursion_1__
 {
     int binom( int n, int k )
     {

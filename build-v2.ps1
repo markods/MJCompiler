@@ -873,7 +873,7 @@ function Build-V2
 
 # call the build script
 # +   @ - array splatting operator; used here to pass script arguments to the build function
-Build-V2 @args | Tee-Object -FilePath "${script:ProjectRoot}/build.log" -Append;
+Build-V2 @args *>&1 | Tee-Object -FilePath "${script:ProjectRoot}/build.log" -Append;
 # exit with the last exit code
 exit $script:LastStatusCode;
 

@@ -1,5 +1,5 @@
 // read + print support for simple types
-program readprintA
+program __read_and_print__
 {
     void main()
         int a;

@@ -1,0 +1,82 @@
+program __polymorphism__
+
+class A
+{
+    char colon;
+    int a;
+
+    {
+        void foo()
+        {
+            colon = ':';
+            a = ord( 'A' );
+            
+            print(a);print(colon);print(colon);print('f');print('o');print('o');print(eol);
+            print('+');f1();
+            print('+');f2();
+        }
+        void f1()
+        {
+            print('A');print(':');print(this.colon);print('f');print('1');print(eol);
+        }
+        void f2()
+        {
+            print('A');print(':');print(':');print('f');print('2');print(eol);
+        }
+    }
+}
+
+class B extends A
+{
+    int b;
+
+    {
+        void f1()
+            char f;
+        {
+            b = ord( 'A' ) + 1;
+            f = 'f';
+            print( chr(b) );print(':');print(this.colon);print(f);print('1');print(eol);
+        }
+    }
+}
+
+class C extends A
+{
+    char c;
+
+    {
+        void f2()
+        {
+            c = 'C';
+            print(c);print(':');print(colon);print('f');print('2');print(eol);
+        }
+        void f1()
+        {
+            print('C');print(':');print(':');print('f');print('1');print(eol);
+        }
+    }
+}
+
+
+{
+    void main()
+        A arr[];
+        C c;
+        int i;
+    {
+        arr = new A[ 3 ];
+        arr[ 0 ] = new A;
+        arr[ 1 ] = new B;
+        arr[ 2 ] = new C;
+
+        // this should not work currently, since there is no casting
+     // c = arr[ 2 ];
+
+        i = 0;
+        do
+        {
+            arr[ i ].foo();
+        } while( i < len( arr ) );
+    }
+}
