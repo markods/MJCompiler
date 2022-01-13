@@ -13,15 +13,22 @@ program __recursion_3__
     }
 
     void main()
-        int i;
+        int i, j;
     {
         i = 0;
         do
         {
-            print( ack( 4, i, true ), 2 ); print( ' ' );
-            print( steps );                print( eol );
+            j = 0;
+            do
+            {
+                print( ack( i, j, true ), 2 ); print( ' ' );
+
+                j++;
+            } while( j < 4 );
+            print( eol );
+            
             i++;
-        } while( i < 5 );
+        } while( i < 4 );
 
         return;
     }

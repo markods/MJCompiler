@@ -11,12 +11,14 @@ program __do_while__
         point('A');
 
         i = 2;
+        b = true;
+
         if( true )
         do
         {
             point('B');
-            if( i == 0 ) { point('C'); i--; continue; }
-            if( i <  0 ) { point('D'); break; }
+            if( i == 1 ) { point('C'); i--; continue; }
+            if( i <  1 ) { point('D'); break; }
 
             do
             {

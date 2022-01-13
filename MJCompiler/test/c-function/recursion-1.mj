@@ -3,15 +3,31 @@ program __recursion_1__
 {
     int binom( int n, int k )
     {
-        if( k == 0 ) { return 1; }
-        if( k == 1 ) { return n; }
+        if( k > n ) { return 0; }
+        if( k == 1 || k == n-1 ) { return n; }
+        if( k == 0 || k == n   ) { return 1; }
         return binom( n-1, k ) + binom( n-1, k-1 );
     }
 
+
     void main()
+        int i, j;
     {
-        print( binom( 6, 3 ) ); print( ' ' );
-        print( binom( 6, 4 ) ); print( eol );
+        i = 0;
+        do
+        {
+            j = 0;
+            do
+            {
+                print( binom( i, j ) ); print( ' ' );
+                j++;
+            }
+            while( j <= i );
+            print( eol );
+
+            i++;
+        } while( i <= 6 );
+
         return;
     }
 }

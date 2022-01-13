@@ -2,21 +2,21 @@
 program __read_and_print__
 {
     void main()
-        int a;
-        bool b;
         char c;
+        bool b;
+        int a;
     {
-        print('i');print('n');print('t');print(' ');   print('a');   print(' ');print('=');print(' ');
-        read( a );
-        print(a); print(eol);
+        print('c');print('h');print('a');print('r');print(' ');   print('c');   print(' ');print('=');print(' ');
+        read( c );
+        print(c); print(eol);
 
         print('b');print('o');print('o');print('l');print(' ');   print('b');   print(' ');print('=');print(' ');
         read( b );
         print(b); print(eol);
 
-        print('c');print('h');print('a');print('r');print(' ');   print('c');   print(' ');print('=');print(' ');
-        read( c );
-        print(c); print(eol);
+        print('i');print('n');print('t');print(' ');   print('a');   print(' ');print('=');print(' ');
+        read( a );
+        print(a); print(eol);
 
         return;
     }

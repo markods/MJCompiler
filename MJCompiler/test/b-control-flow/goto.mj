@@ -18,8 +18,8 @@ program __goto__
 
             B: switch( i )
             {
-                case 0: C: point('D'); goto D;
-                case 1: point('E'); i++;
+                case 0: point('D'); goto D;
+                case 1: C: point('E'); i++;
                 case 2: ;
                 case 3: point('F'); D: if( i%2 == 0 ) goto C;
             }

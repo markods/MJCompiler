@@ -7,28 +7,102 @@
             "FilePath": "./function.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Function input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "3 2  6",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Recursion-1 compilation",
             "FilePath": "./recursion-1.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Recursion-1 input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "1 ",
+                        "1 1 ",
+                        "1 2 1 ",
+                        "1 3 3 1 ",
+                        "1 4 6 4 1 ",
+                        "1 5 10 10 5 1 ",
+                        "1 6 15 20 15 6 1 ",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Recursion-2 compilation",
             "FilePath": "./recursion-2.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Recursion-2 input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "1 ",
+                        "1 1 ",
+                        "1 2 1 ",
+                        "1 3 3 1 ",
+                        "1 4 6 4 1 ",
+                        "1 5 10 10 5 1 ",
+                        "1 6 15 20 15 6 1 ",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Recursion-3 compilation",
             "FilePath": "./recursion-3.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Recursion-3 input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        " 1  2  3  4 ",
+                        " 2  3  4  5 ",
+                        " 3  5  7  9 ",
+                        " 5 13 ",
+                        "-- exception at address 114: expression stack overflow",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
+        },
+        {
+            "TestGroupName": "Return-error compilation",
+            "FilePath": "./return-error.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": 0,
+            "TestUnitList": [
+                {
+                    "TestName": "Return-error input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "",
+                        "-- exception at address 29: trap(1)",
+                        "",
+                    ],
+                    "ExExitCode": -1,
+                },
+            ],
         },
         {
             "TestGroupName": "Function declaration errors",
@@ -160,13 +234,6 @@
                 "",
             ],
             "ExExitCode": -1,
-            "TestUnitList": [],
-        },
-        {
-            "TestGroupName": "Function return errors",
-            "FilePath": "./return-error.mj",
-            "ExCompileOutput": [],
-            "ExExitCode": 0,
             "TestUnitList": [],
         },
     ]

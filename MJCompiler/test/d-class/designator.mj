@@ -15,6 +15,7 @@ class A
             do
             {
                 fib[ i ] = fib[ i-1 ] + fib[ i-2 ];
+                i++;
             } while( i < len( fib ) );
         }
     }
@@ -55,6 +56,7 @@ class C extends A
         c = new C;
         c.initC();
 
-        print( C.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 2 );print( eol );
+        print( C.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 1 );print( ' ' );
+        print( c.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 1 );print( eol );
     }
 }

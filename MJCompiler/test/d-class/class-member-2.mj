@@ -11,7 +11,7 @@ class Stack
     Elem head;
     
     {
-        void add( int a )
+        Stack add( int a )
             Elem t;
         {
             t = new Elem;
@@ -19,11 +19,13 @@ class Stack
 
             if( head == null ) { head = t; return; }
             t.next = head; head = t;
+
+            return this;
         }
 
         bool isempty()
         {
-            if( head != null ) return true;
+            if( head == null ) return true;
             else               return false;
         }
 
@@ -44,14 +46,13 @@ class Stack
     void main()
         Stack stack;
     {
-        stack.add( 1 );
-        stack.add( 2 );
-        stack.add( 3 );
+        stack = new Stack;
+        stack.add( 1 ).add( 2 ).add( 3 );
 
         do
         {
             if( stack.isempty() ) return;
-            print( stack.top(), 2 ); print( ' ' );
+            print( stack.top() ); print( ' ' );
             stack.pop();
         } while( true );
         print( eol );

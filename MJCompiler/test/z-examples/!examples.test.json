@@ -87,7 +87,35 @@
             "FilePath": "./codeE.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "CodeE input 1",
+                    "TestInput": [
+                        "5",
+                        "1 2 3 0"
+                    ],
+                    "ExTestOutput": ["+"],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "CodeE input 2",
+                    "TestInput": [
+                        "5",
+                        "-2"
+                    ],
+                    "ExTestOutput": ["-"],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "CodeE input 3",
+                    "TestInput": [
+                        "6",
+                        "1 2 3 0"
+                    ],
+                    "ExTestOutput": ["+"],
+                    "ExExitCode": 0,
+                },
+            ],
         },
     ]
 }

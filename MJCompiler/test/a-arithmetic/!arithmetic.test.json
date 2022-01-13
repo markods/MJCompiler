@@ -1,4 +1,6 @@
 // IMPORTANT: all paths here should be relative to this (test batch) file!
+// TODO: fix error messages ( they omit single apostrophes: "'" )
+// TODO: pretty print error messages
 {
     "BatchName": "Arithmetic tests",
     "TestGroupList": [
@@ -7,42 +9,160 @@
             "FilePath": "./arithmetic.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Arithmetic input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "5+5=10",
+                        "5-5=0",
+                        "5*5=25",
+                        "5/5=1",
+                        "5%5=0",
+                        "-5*5=-25",
+                        "(-5)*5=-25",
+                        "5*(-5)=-25",
+                        "(-5)*(-5)=25",
+                        "1*2-3*4/5+6*7%8=2",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Logical compilation",
             "FilePath": "./logical.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Logical input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "true",
+                        "true",
+                        "true",
+                        "true",
+                        "true",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Predefined compilation",
             "FilePath": "./predefined.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Predefined input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "eol='",
+                        "'",
+                        "0= 0",
+                        "5= 5",
+                        "5=-5",
+                        "pi=314159",
+                        "e=271828",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Read-and-print compilation",
             "FilePath": "./read-and-print.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Read-and-print input 1",
+                    "TestInput": [
+                        "A 2 2"
+                    ],
+                    "ExTestOutput": [
+                        "char c = A",
+                        "bool b = 1",
+                        "int a = 2",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "Read-and-print input 2",
+                    "TestInput": [
+                        "a 0 0"
+                    ],
+                    "ExTestOutput": [
+                        "char c = a",
+                        "bool b = 0",
+                        "int a = 0",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+                {
+                    "TestName": "Read-and-print input 3",
+                    "TestInput": [
+                        "' -1 -1"
+                    ],
+                    "ExTestOutput": [
+                        "char c = '",
+                        "bool b = 1",
+                        "int a = -1",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Scope compilation",
             "FilePath": "./scope.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Scope input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "1",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Variable compilation",
             "FilePath": "./variable.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Variable input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "a=5",
+                        "c=5",
+                        "b=0",
+                        "arr[]=1,3,7,15",
+                        "a=pi=314159",
+                        "a=e=271828",
+                        "a++=271829",
+                        "a--=271828",
+                        "a=1*2+3%4+5*6%7=7",
+                        "b=false=0",
+                        "b=true=1",
+                        "",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Expression errors",

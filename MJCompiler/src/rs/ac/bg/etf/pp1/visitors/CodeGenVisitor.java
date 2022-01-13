@@ -593,7 +593,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Stmt_Read curr )
     {
         // read the value from the standard input
-        CodeGen.i_read();
+        CodeGen.read( curr.getDesignator().symbol._type() );
         // store the read value in the symbol
         CodeGen.storeSymbolValue( curr.getDesignator().symbol );
     }
@@ -602,14 +602,14 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Stmt_Print curr )
     {
         CodeGen.i_const_0();
-        CodeGen.print( curr.getExpr().symbol._type().isChar() );
+        CodeGen.print( curr.getExpr().symbol._type() );
     }
     // Stmt ::= (Stmt_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
     @Override
     public void visit( Stmt_PrintFormat curr )
     {
         CodeGen.loadConst( curr.getMinWidth() );
-        CodeGen.print( curr.getExpr().symbol._type().isChar() );
+        CodeGen.print( curr.getExpr().symbol._type() );
     }
     // Stmt ::= (Stmt_Semicolon  ) semicol;
 

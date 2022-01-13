@@ -3,8 +3,10 @@ program __recursion_2__
 {
     int f1( int n, int k )
     {
-        if( k == 0 ) { return 1; }
-        if( k == 1 ) { return n; }
+        if( k > n ) { return 0; }
+        if( k == 1 || k == n-1 ) { return n; }
+        if( k == 0 || k == n   ) { return 1; }
+
         n--; k--;
         return f1( n, k+1 ) + f1( n, k );
     }
@@ -12,8 +14,10 @@ program __recursion_2__
     int f2( int n, int k )
         int n1, k1;
     {
-        if( k == 0 ) { return 1; }
-        if( k == 1 ) { return n; }
+        if( k > n ) { return 0; }
+        if( k == 1 || k == n-1 ) { return n; }
+        if( k == 0 || k == n   ) { return 1; }
+
         n1 = n-1;
         k1 = k-1;
         return f1( n1, k ) + f2( n1, k1 );
@@ -21,18 +25,33 @@ program __recursion_2__
 
     int f3( int n, int k )
     {
-        if( k == 0 ) { return 1; }
-        if( k == 1 ) { return n; }
+        if( k > n ) { return 0; }
+        if( k == 1 || k == n-1 ) { return n; }
+        if( k == 0 || k == n   ) { return 1; }
 
         if( n%2 == 0 ) return f1( n-1, k ) + f2( n-1, k-1 );
         else           return f2( n-1, k ) + f3( n-1, k-1 );
     }
 
+
     void main()
+        int i, j;
     {
-        print( f1( 6, 3 ) ); print( ' ' );
-        print( f2( 6, 3 ) ); print( ' ' );
-        print( f3( 6, 4 ) ); print( eol );
+        i = 0;
+        do
+        {
+            j = 0;
+            do
+            {
+                print( f3( i, j ) ); print( ' ' );
+                j++;
+            }
+            while( j <= i );
+            print( eol );
+
+            i++;
+        } while( i <= 6 );
+
         return;
     }
 }

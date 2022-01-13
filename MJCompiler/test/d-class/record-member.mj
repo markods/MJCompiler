@@ -22,7 +22,10 @@ record C
     void main()
         C c;
     {
+        c = new C;
+
         c.b = new B[ 5 ];
+        c.b[ 0 ] = new B;
         c.b[ 0 ].a = new A;
         
         c.b[ 0 ].a.r = c.b[ 0 ].a;

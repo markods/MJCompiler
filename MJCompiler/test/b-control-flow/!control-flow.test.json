@@ -7,48 +7,93 @@
             "FilePath": "./if-else.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "If-else input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "A B C D F G H J ",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Do-while compilation",
             "FilePath": "./do-while.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Do-while input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "A B E F G H H I K B C B D L ",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Switch compilation",
             "FilePath": "./switch.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Switch input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "A C E F B G C D G G C D G H J K ",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Goto compilation",
             "FilePath": "./goto.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Goto input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "A B D E F G B F E F G B G B G B G B G B G B G C J ",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Flow compilation",
             "FilePath": "./flow.mj",
             "ExCompileOutput": [],
             "ExExitCode": 0,
-            "TestUnitList": [],
+            "TestUnitList": [
+                {
+                    "TestName": "Flow input 1",
+                    "TestInput": [],
+                    "ExTestOutput": [
+                        "A B C D E C D E C D F H C D G C I Q Q J K N O M N O L P S ",
+                    ],
+                    "ExExitCode": 0,
+                },
+            ],
         },
         {
             "TestGroupName": "Flow errors",
             "FilePath": "./flow-error.mj",
             "ExCompileOutput": [
                 "Ln 20  Col 8   SYN     Bad expression",
-                "```arr = new int[c```",
+                "```arr = new int['c'```",
                 "Ln 23  Col 19  SYN     Bad expression",
                 "```]```",
                 "Ln 36  Col 14  SYN     Bad statement",
                 "```5*6 )```",
                 "Ln 43  Col 17  SYN     Bad expression",
-                "```c: ;",
+                "```'c': ;",
                 "            case true: ;",
                 "        }",
                 "        switch( 1```",
@@ -93,7 +138,7 @@
                 "Ln 52  Col 16  SEM     Switch expression must result in an int",
                 "```true```",
                 "Ln 53  Col 16  SEM     Switch expression must result in an int",
-                "```c```",
+                "```'c'```",
                 "Ln 55  Col 27  SEM     The right side of the addition is not an int",
                 "```true```",
                 "Ln 55  Col 21  SEM     This expression must result in a bool",

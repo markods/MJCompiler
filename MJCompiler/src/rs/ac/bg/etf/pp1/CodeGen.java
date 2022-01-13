@@ -743,16 +743,38 @@ public class CodeGen
     public static int i_bprint() { int pc32 = _pc32(); put8( i_bprint ); return pc32; }
 
     // convenience method for reading from input to the expression stack
-    public static int input( boolean isChar )
+    public static int read( SymbolType symbolType )
     {
-        if( !isChar ) return i_read();
-        else          return i_bread();
+        if( symbolType.isInt()  ) { return i_read();  }
+        if( symbolType.isChar() ) { return i_bread(); }
+        if( symbolType.isBool() )
+        {
+            int pointA = i_read();
+                         loadConst( FALSE );
+            int pointB = jumpIf( TokenCode.ne, NO_ADDRESS );   // jump to D
+                         loadConst( FALSE );
+            int pointC = jump( NO_ADDRESS );   // jump to E
+            int pointD = loadConst( TRUE );
+            
+            int pointE = _pc32();
+
+            // fix the jump addresses for the jump instructions
+            fixJumpOffset( pointB, pointD );
+            fixJumpOffset( pointC, pointE );
+
+            return pointA;
+        }
+
+        report_fatal( "Cannot read non-primitive type" ); return _pc32();
     }
     // convenience method for writing from the expression stack to output
-    public static int print( boolean isChar )
+    public static int print( SymbolType symbolType )
     {
-        if( !isChar ) return i_print();
-        else          return i_bprint();
+        if( symbolType.isInt()  ) { return i_print();  }
+        if( symbolType.isChar() ) { return i_bprint(); }
+        if( symbolType.isBool() ) { return i_print();  }
+
+        report_fatal( "Cannot print non-primitive type" ); return _pc32();
     }
 
     // 57   trap b

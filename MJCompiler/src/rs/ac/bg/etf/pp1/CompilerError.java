@@ -62,7 +62,7 @@ public class CompilerError extends Error
                 for( int i = tokenFromIdx; i < tokenToIdx; i++ )
                 {
                     Token token = Compiler.tokens.get( i );
-                    builder.append( token.getValue() );
+                    builder.append( token.valueToString() );
                 }
                 builder.append( "```" );
     

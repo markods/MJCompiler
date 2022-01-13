@@ -6,7 +6,7 @@ program __predefined__
 {
     void main()
     {
-        print('e');print('o');print('l');              print('='); print('"');print( eol );print('"');   print( eol );
+        print('e');print('o');print('l');              print('='); print(''');print( eol );print(''');   print( eol );
      // print('n');print('u');print('l');print('l');   print('='); print( null );                        print( eol );
 
         print('0');   print('='); print(  0, 2 );   print( eol );

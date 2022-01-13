@@ -11,9 +11,10 @@ class A
             colon = ':';
             a = ord( 'A' );
             
-            print(a);print(colon);print(colon);print('f');print('o');print('o');print(eol);
+            print(chr(a));print(colon);print(colon);print('f');print('o');print('o');print(eol);
             print('+');f1();
             print('+');f2();
+            print( eol );
         }
         void f1()
         {
@@ -77,6 +78,7 @@ class C extends A
         do
         {
             arr[ i ].foo();
+            i++;
         } while( i < len( arr ) );
     }
 }

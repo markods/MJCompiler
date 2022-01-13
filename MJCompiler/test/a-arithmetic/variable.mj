@@ -29,8 +29,9 @@ program __variable__
         do
         {
             k = 2*k + 1;
-            arr[ i ] = k; i++;
-        } while( k < 10 );
+            arr[ i ] = k;
+            i++;
+        } while( i < len( arr ) );
         print('a');print('r');print('r');print('[');print(']');print('=');
             print(arr[0]);print(',');
             print(arr[1]);print(',');
@@ -41,22 +42,22 @@ program __variable__
 
         // slightly more advanced arithmetic
         a = pi;
-        print('a');print('=');print('p');print('i');   print( '=' ); print( a );print(';');   print( eol );
+        print('a');print('=');print('p');print('i');   print( '=' ); print( a );   print( eol );
         a = e;
-        print('a');print('=');print('e');   print( '=' ); print( a );print(';');   print( eol );
+        print('a');print('=');print('e');   print( '=' ); print( a );   print( eol );
         a++;
-        print('a');print('+');print('+');   print( '=' ); print( a );print(';');   print( eol );
+        print('a');print('+');print('+');   print( '=' ); print( a );   print( eol );
         a--;
-        print('a');print('-');print('-');   print( '=' ); print( a );print(';');   print( eol );
+        print('a');print('-');print('-');   print( '=' ); print( a );   print( eol );
         a = 1*2 + 3%4 + 5*6%7;
         print('a');print('=');
             print('1');print('*');print('2');print('+');
             print('3');print('%');print('4');print('+');
-            print('5');print('*');print('6');print('%');print('7');print(';');
+            print('5');print('*');print('6');print('%');print('7');
                                             print( '=' ); print( a );   print( eol );
         b = false;
-        print('b');print('=');print('f');print('a');print('l');print('s');print('e');print(';');   print( '=' ); print( b );   print( eol );
+        print('b');print('=');print('f');print('a');print('l');print('s');print('e');   print( '=' ); print( b );   print( eol );
         b = true;
-        print('b');print('=');print('t');print('r');print('u');print('e');print(';');              print( '=' ); print( b );   print( eol );
+        print('b');print('=');print('t');print('r');print('u');print('e');              print( '=' ); print( b );   print( eol );
     }
 }

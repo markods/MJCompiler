@@ -52,7 +52,7 @@ program __flow__
                 }
 
                 point('O');
-                i++; goto B;
+                i++; goto C;
             }
             case 10:
                 point('P');
