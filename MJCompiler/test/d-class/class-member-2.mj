@@ -17,7 +17,7 @@ class Stack
             t = new Elem;
             t.a = a;
 
-            if( head == null ) { head = t; return; }
+            if( head == null ) { head = t; return this; }
             t.next = head; head = t;
 
             return this;
@@ -47,7 +47,9 @@ class Stack
         Stack stack;
     {
         stack = new Stack;
-        stack.add( 1 ).add( 2 ).add( 3 );
+        stack.add( 1 );
+        stack.add( 2 );
+        stack.add( 3 );
 
         do
         {

@@ -108,12 +108,18 @@
                     "TestName": "Designator input 1",
                     "TestInput": [],
                     "ExTestOutput": [
-                        "5 5",
+                        "5",
                         "",
                     ],
                     "ExExitCode": 0,
                 },
             ],
+        },
+        {
+            "TestGroupName": "Designator error",
+            "FilePath": "./designator-error.mj",
+            "ExCompileOutput": [],
+            "ExExitCode": -1,
         },
         {
             "TestGroupName": "Class and record declaration error",

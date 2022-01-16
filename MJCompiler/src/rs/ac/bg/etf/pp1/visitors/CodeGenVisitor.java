@@ -196,7 +196,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         SymbolTable.openScope();
         SymbolTable.addSymbols( classType._members() );
 
-        // add a dummy 'this' field to the symbol table scope with the index -1
+        // add a dummy 'this' constant to the symbol table scope
         // +   set its value to be 0 (equal to the null constant)
         Symbol thisSymbol = Symbol.newConst( "this", classType, 0 );
         SymbolTable.addSymbol( thisSymbol );

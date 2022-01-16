@@ -508,8 +508,8 @@ public class SemanticVisitor extends VisitorAdaptor
         pVirtualTable._address( curr.symbol._address() );
         context.staticSegSize.get_inc( curr.symbol._virtualTableSize() );
 
-        // add a dummy 'this' field to the symbol table scope with the index -1
-        // +   set its value to be zero -- very important , since it will be the 0th method call's formal parameter
+        // add a dummy 'this' constant to the symbol table scope
+        // +   set its value to be zero -- very important, since it will be the 0th method call's formal parameter
         Symbol thisSymbol = Symbol.newConst( "this", classType, 0 );
         SymbolTable.addSymbol( thisSymbol );
     }
@@ -671,8 +671,8 @@ public class SemanticVisitor extends VisitorAdaptor
         else if( scope instanceof ClassDeclType )
         {
             curr.symbol = Symbol.newMethod( curr.getMethodName(), left._type(), Symbol.NO_VALUE, methodIdx, null );
-            // add a dummy '@this' formal parameter that will be removed later (just to reserve the 0th formal parameter)
-            SymbolTable.addSymbol( Symbol.newFormalParam( "@this", ( ( ClassDeclType )scope ).symbol._type(), 0 ) );
+            // add a dummy 'this' formal parameter that will be removed later (just to reserve the 0th formal parameter)
+            SymbolTable.addSymbol( Symbol.newFormalParam( "this", ( ( ClassDeclType )scope ).symbol._type(), 0 ) );
         }
     }
 
@@ -698,9 +698,11 @@ public class SemanticVisitor extends VisitorAdaptor
 
         // get the function symbol from the function/method type declaration
         Symbol function = methodDeclType.symbol;
+        // used if the function is a method (inside a class)
+        SymbolType classType = null;
 
         // if the method's formal parameters have already been set by the forward declaration pass
-        if( context.isInForwardDeclMode.false_() && function.isMethod() )
+        if( function.isMethod() && context.isInForwardDeclMode.false_() )
         {
             // do nothing, as the method scope was already set up by <MethodDeclType>
             // +   the scope currently contains the method's formal parameters, but it will contain its locals in the future
@@ -710,8 +712,8 @@ public class SemanticVisitor extends VisitorAdaptor
         // get the function's formal parameters from the symbol table and also close the formal parameter scope
         SymbolMap formalParams = SymbolTable._locals();
         SymbolTable.closeScope();
-        // remove the dummy '@this' symbol from the method's formal parameters
-        formalParams.removeSymbol( "@this" );
+        // remove the dummy 'this' symbol from the method's formal parameters
+        formalParams.removeSymbol( "this" );
         
         // update the function's formal parameters
         function._params( formalParams );
@@ -725,15 +727,19 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the function is a method
         if( function.isMethod() )
         {
+            // get the function symbol from the method type declaration
             Symbol method = function;
+
             // get the method's surrounding class
             ClassDeclType classDeclType = ( ClassDeclType )context.syntaxNodeStack.find(
                 elem -> ( elem instanceof ClassDeclType )
             );
             // if the method is not declared in a class scope
             if( classDeclType == null ) report_fatal( curr, "Method declaration not yet supported" );
+
             // get the class type from the class declaration
-            SymbolType classType = classDeclType.symbol._type();
+            classType = classDeclType.symbol._type();
+
             
             // find the inherited method from the class's superclass, if such a method exists
             Symbol baseMethod = classType._base()._members().findSymbol( method._name() );
@@ -783,8 +789,19 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
         
-        // restore the formal parameter scope, in which the function's locals will be declared in the future
+        // reopen the method's scope
+        // +   the function's locals will be declared in it in the future
         SymbolTable.openScope();
+
+        // if the function is a method
+        if( function.isMethod() )
+        {
+            // add a dummy 'this' constant to the symbol table scope
+            // +   set its value to be zero -- very important, since it will be the 0th method call's formal parameter
+            Symbol thisSymbol = Symbol.newConst( "this", classType, 0 );
+            SymbolTable.addSymbol( thisSymbol );
+        }
+        // restore the formal parameters
         SymbolTable.addSymbols( formalParams );
     }
 
@@ -2143,7 +2160,7 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( Designator_Null curr )
     {
-        // reset the current designator's symbol
+        // set the current designator's symbol to be the 'null' symbol
         curr.symbol = SymbolTable.nullSym;
     }
     // Designator ::= (Designator_Field  ) Designator dot ident:Name;
@@ -2178,6 +2195,12 @@ public class SemanticVisitor extends VisitorAdaptor
         if( left.isType() && !member.isStaticField() )
         {
             report_basic( curr, "This non-static class/record member cannot be accessed in a static way" );
+            return;
+        }
+        // if the previous designator is not a type (non-static access) and its type's static member is accessed
+        if( !left.isType() && member.isStaticField() )
+        {
+            report_basic( curr, "This static class/record member cannot be accessed in a non-static way" );
             return;
         }
 

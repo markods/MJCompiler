@@ -144,7 +144,7 @@ public class SymbolTable
     // get the current scope's size
     public static int _localsSize() { return _locals().size(); }
     // get the number of fields in the current scope
-    public static int _localsVarCount() { return _locals().count( elem -> elem.isVar() || elem.isFormalParam() ); }
+    public static int _localsVarCount() { return _locals().count( elem -> elem.isVar() || elem.isFormalParam() || elem.isThis() ); }
     // get the current scope's level
     public static int _localsLevel() { return currScopeLevel; }
 

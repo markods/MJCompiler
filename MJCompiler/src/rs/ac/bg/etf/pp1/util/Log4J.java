@@ -1,7 +1,6 @@
 package rs.ac.bg.etf.pp1.util;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -48,7 +47,7 @@ public class Log4J
         File fRenLog = new File( fnameRenLog );
 
         // five retries for renaming log file
-        for( int i = 0; i < 5; i++ )
+        for( int i = 1; i <= 5; i++ )
         {
             if( fLog.exists() && !fLog.renameTo( fRenLog ) && i == 5 )
             {

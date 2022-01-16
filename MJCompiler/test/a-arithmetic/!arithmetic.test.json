@@ -1,6 +1,4 @@
 // IMPORTANT: all paths here should be relative to this (test batch) file!
-// TODO: fix error messages ( they omit single apostrophes: "'" )
-// TODO: pretty print error messages
 {
     "BatchName": "Arithmetic tests",
     "TestGroupList": [

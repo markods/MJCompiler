@@ -56,7 +56,6 @@ class C extends A
         c = new C;
         c.initC();
 
-        print( C.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 1 );print( ' ' );
-        print( c.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 1 );print( eol );
+        print( C.arr[ 0 ].b.b.b.b.a.fib[ 4 ], 1 );print( eol );
     }
 }
