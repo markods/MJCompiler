@@ -1,13 +1,18 @@
 program __codeB__
 
-    const int jedan = 1;
+const int jedan = 1;
 
-    int i;
-    bool ibool;
+int i;
+bool ibool;
 
+int niz2;
+
+record Test {
     int niz[];
-    int niz1[];
-    int niz2;
+    int a;
+}
+
+Test t1, t2;
 
 {
     
@@ -28,12 +33,12 @@ program __codeB__
     bool verify() {
         print('v');
         return false;
-    }	
+    }
     
     void main()
     {
         if(1!=1) print(-6);
-        else print(0);                       // 0
+        else print(0);
             
         ibool = false;
         i = 0;
@@ -43,17 +48,18 @@ program __codeB__
         }while(i < 5);
         
         if(ibool)
-            if(i == 5) print(1);             // 1
-            else print(-1);
-        
-        niz = new int[3];
-        niz[0] = 1;
-        niz[1] = 2;
-        niz[2] = sum(niz[1], niz[0]) + 1;
-        if(verify() || niz[2] == 4) print(ord('A'));    // 'v', 65
+            if(i == 5) print(1);
+            else print(-1); 
+        t1 = new Test;
+        t1.a = 2;
+        t1.niz = new int[3];
+        t1.niz[0] = 1 * t1.a;
+        t1.niz[1] = 2 * t1.a;
+        t1.niz[2] = sum(t1.niz[1], t1.niz[0]) * t1.a + 1;
+        if(verify() || t1.niz[2] == 4) print(ord('A')); 
         else print(ord('a'));
         
-        print(eol);              // prelazak u sledeci red
+        print(eol);
         i = 0;
         do{
             if(i == 3)
@@ -65,17 +71,40 @@ program __codeB__
             i = inkrement(i, 1);
         }while(i < 10);
         
-        if(i == 3 && verify()) print(-4);  // 'v'
-        else print(4);                     // 4
+        if(i == 3 && verify()) print(-4);
+        else print(4);
         
-        read(niz[0]);
-        read(niz[1]);
-        read(niz[2]);
+        read(t1.niz[0]);
+        read(t1.niz[1]);
+        read(t1.niz[2]);
+        print(eol);
         
-        print(eol);                                 // prelazak u sledeci red
-        print(sum (sum(niz[0], niz[1]), niz[2]));   // zbir tri uneta broja
-            
-        print(eol);                                 // prelazak u sledeci red
-        print(inkrement(niz[2], 2));                // dvostruka vrednost treceg broja
+        print(sum (sum(t1.niz[0], t1.niz[1]), t1.niz[2])); 
+        
+        print(eol); 
+        print(inkrement(t1.niz[2], 2));
+        
+        t2 = new Test;
+        t2.a = 3;
+        t2.niz = new int[3];
+        i = 0;
+        do{
+            t2.niz[i] = t1.niz[i] * 2 * t2.a;
+            i++;
+        }while (i < 3);
+        print(t2.niz[0]);
+        print(t2.niz[1]);
+        print(t2.niz[2]);
+        print(eol);
+        
+        i = 0;
+        niz2 = 0;
+        do{
+            niz2 = niz2 + t1.niz[i] * t2.niz[i];
+            i++;
+        }while (i < 3);
+        print(niz2);
+        print(eol);
     }
 }
+

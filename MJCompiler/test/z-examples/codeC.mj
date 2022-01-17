@@ -1,89 +1,110 @@
 program __codeC__
 
-    const int delilac = 3;
+const int cinilac = 4, delilac = 3;
 
-    class Predmet
+class Predmet
+{
+    int tezina;
+    int koefTezine;
+    char vrsta;
+
     {
-        int tezina;
-        char vrsta;
-
-        {
-            void postaviTezinu(int tezina) {this.tezina = tezina;}
-            void ucitajTezinu() { read(tezina); }
-            int zapremina() { return 0;}
-            int Q() {return zapremina() * tezina;}
-            void postaviVrstu(char vrsta) {this.vrsta = vrsta;}
-            char dohvVrstu() { return vrsta; }
-            int dohvTezinu() { return tezina; }
+        Predmet(){
+            koefTezine = 1;
+        }
+        void postaviTezinu(int tezina) { this.tezina = tezina * koefTezine; }
+        void ucitajTezinu() { read(tezina); }
+        int zapremina() { return 0; }
+        int Q() {return zapremina() * tezina;}
+        void postaviVrstu( char vrsta ) { this.vrsta = vrsta; }
+        char dohvVrstu() { return vrsta; }
+        int dohvTezinu() { return tezina; }
+        void ispisi()
+		{
+            print(vrsta);
+            print(Q());
         }
     }
+}
 
-    class Sfera extends Predmet
+class Sfera extends Predmet
+{
+    int r;
     {
-        int r;
-        static int cinilac;
+        Sfera() {
+            super();
+            vrsta = 's';
+        }
+        
+        void postaviPoluprecnik(int r) {this.r = r; }
+         
+        int zapremina()
+            int z;
         {
-            void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 's';}
-            void postaviPoluprecnik(int r) {this.r = r; postaviVrstu('s');}
-            void postaviCinilac(int c) {cinilac = c;}
-            
-            int zapremina()
-                int z;
-            {
-                z = cinilac;
-                return z *(r/delilac);
-            }
+            z = cinilac;
+            return z *(r/delilac);
+        }
+        
+        void ispisi(){
+            super();
+            print(r);
+            print(eol);
         }
     }
+}
 
-    class Kvadar extends Predmet
+class Kvadar extends Predmet
+{
+     int a, b, c;
     {
-        int a, b, c;
+        Kvadar() {
+            super();
+            vrsta = 'k';
+        }
+        
+         void postaviStranice(int a, int b, int c) {this.a = a; this.b = b; this.c = c;}
+         int zapremina()
+            int z;
         {
-            void postaviTezinu(int tezina) {this.tezina = tezina; vrsta = 'k';}
-            void postaviStranice(int a, int b, int c) {this.a = a; this.b = b; this.c = c; vrsta = 'k';}
-            int zapremina()
-                int z;
-            {
-                z = a * b * c;
-                return z;
-            }
+            z = a * b * c;
+            return z;
+        }
+        void ispisi(){
+            super();
+            print(a);
+            print(b);
+            print(c);
+            print(eol);
         }
     }
+}
 
-    int zapreminaK, zapreminaS;
-    int tezinaK, tezinaS;
-
+int zapreminaK, zapreminaS;
+int tezinaK, tezinaS;
 {
 
     void ispis( Predmet p)
     {
-        if(p.dohvVrstu() == 's') print('S');
-        else if(p.dohvVrstu() == 'k') print('K');
-
-        print(eol);
+        p.ispisi();
+        print(eol); 
         print(p.dohvTezinu());
     }
         
     void main() Predmet predmeti[]; int i; Sfera s1, s2, s3; Kvadar k1, k2, k3; int t;
-    {	
+    {    
         predmeti = new Predmet[6];
         s1 = new Sfera;
         s2 = new Sfera;
         s3 = new Sfera;
         
-        k1 = null;
         k1 = new Kvadar;
         k2 = new Kvadar;
         k3 = new Kvadar;
         
-        Sfera.cinilac = 4;
-
         s1.postaviPoluprecnik(1);
         s2.postaviPoluprecnik(2);
         s3.postaviPoluprecnik(3);
         
-        print(Sfera.cinilac);
 
         k1.postaviStranice(1,2,3);
         k2.postaviStranice(2,3,4);
@@ -99,7 +120,7 @@ program __codeC__
         read(t);
         i=0;
         do{
-            predmeti[i].postaviTezinu(t);	
+            predmeti[i].postaviTezinu(t);
             i++;
         }while(i<6);
         
@@ -113,7 +134,7 @@ program __codeC__
             }
             zapreminaS = zapreminaS + predmeti[i - 1].zapremina();
             tezinaS = tezinaS + predmeti[i - 1].Q();
-            ispis(predmeti[i - 1]);                    // 'S', prelazak u novi red, tezina sfere
+            ispis(predmeti[i - 1]);
             i++;
         }while(i<=6);
         
@@ -128,37 +149,14 @@ program __codeC__
             }
             zapreminaS = zapreminaS + predmeti[i - 1].zapremina();
             tezinaS = tezinaS + predmeti[i - 1].Q();
-            ispis(predmeti[i - 1]);                    // 'K', prelazak u novi red, tezina kvadra
+            ispis(predmeti[i - 1]);
             i++;
         }while(i<=6);
         
-        print(zapreminaS); print(eol);   // zapremina svih sfera i kvadara, zatim prelazak u novi red
-        print(zapreminaK); print(eol);   // 0, zatim prelazak u novi red
-        print(tezinaS); print(eol);      // zbirna tezina svih sfera i kvadara, zatim prelazak u novi red
-        print(tezinaK); print(eol);      // 0, zatim prelazak u novi red
-        
-        i = 0;
-        do{
-            switch(i+1){
-                case 1:
-                    print(1);
-                    break;
-                case 3:
-                    print(3);
-                case 2:
-                    print(2);
-                    break;
-                case 5:
-                    print(5);
-                    i = i + 2;
-                    continue;
-                case 6:
-                    print(6);
-                case 9:
-                    print(9);
-            }
-            print(eol);
-            i++;
-        }while(i<10);
+        print(zapreminaS); print(eol);
+        print(zapreminaK); print(eol);
+        print(tezinaS); print(eol);
+        print(tezinaK); print(eol);
+
     }
 }

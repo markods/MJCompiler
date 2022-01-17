@@ -8,7 +8,7 @@ program __codeA__
     char nizch[];
     
 {
-    void main()	
+    void main()
         int bodovi;
         bool bt;
     {
@@ -40,19 +40,9 @@ program __codeA__
         bodovi = bodovi + (pet * jedan - 1) * bodovi - (3 % 2 + 3 * 2 - 3); 
         print(bodovi);                     // 26
             
-        read(bodovi);
-        bt = true;
-        
-        if(bt) {
-            print(bodovi);                 // ucitani bodovi
-        } else {
-            print(bodovi + 10);
-        }                            
-        
-        if(bodovi > 10) {
-            print('+');                    // '+' ako su ucitani bodovi veci od 10
-        } else {
-            print('-');                    // '-' ako su ucitani bodovi manji ili jednaki 10
-        }
+        read(bodovi);                      // ucitani bodovi
+        print(bodovi);                     // ispisani bodovi
     }
 }
+
+
