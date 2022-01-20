@@ -97,6 +97,10 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // initialize the predefined methods' addresses and add their code to the code segment
         {
+            // reserve the null address with dummy code (so that methods don't start at null)
+            CodeGen.i_const_0();
+            CodeGen.i_epop();
+
             ////// char chr( int i );
             SymbolTable.findSymbol( "chr" )._address( CodeGen._pc32() );
             CodeGen.i_enter( 1, 1 );
@@ -234,6 +238,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// void foo() { statement statement }
     ////// void foo() vardl vardl { }
     ////// void foo() vardl vardl { statement statement }
+    //////      foo() vardl vardl { statement statement }   -- constructor
     ////// void foo( int a, char c, Node Array[] ) { }
     ////// void foo( int a, char c, Node Array[] ) { statement statement }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
@@ -254,7 +259,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( method.isMain() || method._type().isVoidType() )
         {
             // add an exit instruction at the end of the method, followed by a return instruction
-            // +    used to gracefully stop the program execution for main
+            // +    used to gracefully stop the program execution for main and functions that don't return anything
             CodeGen.i_exit(); CodeGen.i_return();
         }
         else
@@ -267,9 +272,21 @@ public class CodeGenVisitor extends VisitorAdaptor
 
     ////// void foo
     ////// A foo
+    ////// foo   -- constructor
     // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
     @Override
     public void visit( MethodDeclType_Plain curr )
+    {
+        visit_MethodDeclType( curr );
+    }
+    // MethodDeclType ::= (MethodDeclType_Empty)            ident:MethodName;
+    @Override
+    public void visit( MethodDeclType_Empty curr )
+    {
+        visit_MethodDeclType( curr );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_MethodDeclType( MethodDeclType curr )
     {
         // open the function/method scope and add the function/method's members to the scope
         SymbolTable.openScope();
@@ -303,7 +320,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         Symbol method = ( ( MethodDecl_Plain )curr.getParent() ).getMethodDeclType().symbol;
         // initialize the method's stack frame
         int thisParamInc = ( method.isMethod() ) ? 1 : 0;
-        CodeGen.i_enter( thisParamInc + method._paramCount(), thisParamInc + SymbolTable._localsSize() );
+        CodeGen.i_enter( thisParamInc + method._paramCount(), thisParamInc + SymbolTable._localsStackFrameSize() );
 
         // if this method is the main method
         if( method.isMain() )
@@ -427,7 +444,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     // StatementList ::= (StatementList_Tail ) StatementList Statement;
     // StatementList ::= (StatementList_Empty) ;
 
-    ////// stmt stmt label_01:stmt
+    ////// label_01:stmt
     ////// {}
     ////// { label1:statement label2:statement label3:statement }
     // Statement ::= (Statement_Plain)           Stmt;
@@ -450,7 +467,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // set the label's jump point's address
         // +   the method's labels have already been added in the semantic pass
-        String labelName = String.format( "@Label[%s]", curr.getLabel() );
+        String labelName = String.format( "@Label_%s", curr.getLabel() );
         methodDecl.jumpprop.get( labelName )._pointAddress( curr.integer );
     }
 
@@ -585,7 +602,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // initialize the jump instruction's address
         // +   the actual address will be fixed once the label's address is resolved
-        String labelName = String.format( "@Label[%s]", curr.getLabel() );
+        String labelName = String.format( "@Label_%s", curr.getLabel() );
         methodDecl.jumpprop.get( labelName )._addAddressToFix( pointA );
     }
     // Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
@@ -744,7 +761,14 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( DesignatorStmt_Call curr )
     {
-        visit_MethodOrFunctionCall( curr, curr.getMethodCall().symbol, false );
+        // get the <designator> from the <method call> syntax node
+        MethodCall methodCall = curr.getMethodCall();
+        Designator methodDesign = null;
+        if( methodCall instanceof MethodCall_Plain ) methodDesign = ( ( MethodCall_Plain )methodCall ).getDesignator();
+        else                                         report_fatal( curr, "Method call type not yet supported" );
+
+        // call the function/method/static_method and discard its return value from the expression stack (if it exists)
+        visit_MethodOrFunctionCall( curr, methodDesign, methodCall.symbol, false );
     }
     // DesignatorStmt ::= (DesignatorStmt_Plusplus  ) Designator plusplus;
     @Override
@@ -970,25 +994,94 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Factor_MethodCall curr )
     {
-        visit_MethodOrFunctionCall( curr, curr.getMethodCall().symbol, true );
+        // get the <designator> from the <method call> syntax node
+        MethodCall methodCall = curr.getMethodCall();
+        Designator methodDesign = null;
+        if( methodCall instanceof MethodCall_Plain ) methodDesign = ( ( MethodCall_Plain )methodCall ).getDesignator();
+        else                                         report_fatal( curr, "Method call type not yet supported" );
+
+        // call the function/method/static_method and keep its return value on the expression stack (if it exists)
+        visit_MethodOrFunctionCall( curr, methodDesign, methodCall.symbol, true );
     }
     // IMPORTANT: helper method, not intended to be used elsewhere
-    private void visit_MethodOrFunctionCall( SyntaxNode curr, Symbol function, boolean saveReturnValueIfItExists )
+    private void visit_MethodOrFunctionCall( SyntaxNode curr, Designator functionDesign, Symbol function, boolean saveReturnValueIfItExists )
     {
-        // if the function is a method (class member)
-        if( function.isMethod() )
+        // if the function is a placeholder function (with no code), don't call it
+        // NOTE: this works for the dummy default constructor
+        if( function.isPlaceholder() )
+        {
+            // check if the function returns anything and its return value is wanted
+            if( saveReturnValueIfItExists && !function._type().isVoidType() )
+            {
+                report_fatal( curr, "Placeholder function/method cannot be called since its return type is not 'void' and its return value is requested" );
+            }
+
+            // don't call the placeholder function
+            return;
+        }
+
+        // get if the method should be called virtually or not (through the virtual table)
+        boolean isVirtualCall = false;
+        // static method calls and function calls are definitely non-virtual
+        // NOTE: constructor is a method, so don't swap the if and else-if conditions
+        if( function.isStaticMethod() || function.isFunction() || function.isConstructor() )
+        {
+            // this works for 'super();' as well, since the <'super' symbol> was replaced with the <supertype constructors' symbol> that it aliases
+        }
+        // methods are always virtual except when accessed through the 'super' keyword
+        // HACK: use do-while to allow break statements
+        else if( function.isMethod() ) do
+        {
+            // if the last designator is implicitly called from 'this'
+            if( functionDesign instanceof Designator_Ident )
+            {
+                isVirtualCall = true;
+                break;
+            }
+            // if the last designator is a method call (could be called from 'this' or 'super')
+            else if( functionDesign instanceof Designator_Member )
+            {
+                // if the method call is through the 'super' keyword then it is non-virtual
+                Designator prev = ( ( Designator_Member )functionDesign ).getDesignator();
+                if( prev instanceof Designator_Super )
+                {
+                    break;
+                }
+                
+                // the method exists in the virtual table and is invoked virtually
+                isVirtualCall = true;
+            }
+            // if the last designator is not a function
+            else
+            {
+                report_fatal( curr, "Function designator type not yet supported" );
+                break;
+            }
+        } while( false );
+    
+        
+        // if the function should be called virtually
+        if( isVirtualCall )
         {
             // push the virtual table pointer to the expression stack (#0 field in the class)
             CodeGen.i_getfield( 0 );
             // call the virtual method
             CodeGen.i_invokevirtual( function._name() );
         }
-        // if the function is a function (in the global scope)
-        else if( function.isFunction() )
+        // if the function should be called non-virtually
+        else
         {
+            // should currently never happen, but just in case
+            if( !function.hasValidAddress() )
+            {
+                report_fatal( curr, "Illegal function call -- starting address must be positive and non-null" );
+            }
+
             // remove the random constant (quasi class instance pointer) from the expression stack
+            // NOTE: this works for the constructor, as it still leaves the 'this' formal parameter in the zeroth place
             CodeGen.i_epop();
-            // call the method starting at the given address
+            // call the function/static method starting at the given address
+            // NOTE: this works for super() and super.foo(), as their addresses are set inside the superclass, which will have been visited before the subclass
             int pointA = CodeGen.i_call( CodeGen.NO_ADDRESS );
             CodeGen.fixJumpOffset( pointA, function._address() );
         }
@@ -1007,8 +1100,6 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Factor_NewVar curr )
     {
-        // TODO: support for constructor
-        
         // get the current symbol's type
         SymbolType symbolType = curr.symbol._type();
 
@@ -1022,6 +1113,17 @@ public class CodeGenVisitor extends VisitorAdaptor
             CodeGen.i_dup();
             CodeGen.loadConst( curr.symbol._address() );
             CodeGen.i_putfield( 0 );
+
+            // if the class contains a non-placeholder constructor, call it
+            Symbol constructor = symbolType._members().findSymbol( "@Constructor" );
+            if( constructor.isNoSym() || constructor.isPlaceholder() ) return;
+
+            // copy the class instance's address on the expression stack
+            // +   set the implicit 'this' as the zeroth constructor argument
+            CodeGen.i_dup();
+            // call the constructor starting at the given address
+            int pointA = CodeGen.i_call( CodeGen.NO_ADDRESS );
+            CodeGen.fixJumpOffset( pointA, constructor._address() );
         }
     }
     // Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
@@ -1041,13 +1143,13 @@ public class CodeGenVisitor extends VisitorAdaptor
         // if the current symbol is a method
         if( curr.symbol.isMethod() )
         {
-            // duplicate the method address on the expression stack (one address will be used to get the virtual table pointer)
+            // duplicate the method address on the expression stack (the first address will be used to get the virtual table pointer)
             CodeGen.i_dup();
         }
-        // if the current symbol is a function
-        else if( curr.symbol.isFunction() )
+        // if the current symbol is a static method or function
+        else if( curr.symbol.isStaticMethod() || curr.symbol.isFunction() )
         {
-            // load a random constant on the expression stack (quasi class instace pointer)
+            // load a random constant on the expression stack (quasi class instance pointer)
             // so that both the method's and the function's activation parameters are handled in the same way
             CodeGen.i_const_0();
         }
@@ -1085,9 +1187,9 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         visit_Designator( curr );
     }
-    // Designator ::= (Designator_Field  ) Designator dot ident:Name;
+    // Designator ::= (Designator_Member ) Designator dot ident:Name;
     @Override
-    public void visit( Designator_Field curr )
+    public void visit( Designator_Member curr )
     {
         visit_Designator( curr );
     }
@@ -1100,16 +1202,16 @@ public class CodeGenVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_Designator( Designator curr )
     {
-        // TODO: support for 'super'
-
         // check if the designator is inside a class method (in the class's scope)
         boolean isInClassScope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof ClassDeclType )
         ) != null;
 
         // if the current designator is a class member, but does not start with 'this' (this.field)
-        if( isInClassScope && curr instanceof Designator_Ident && curr.symbol.isClassMember() )
+        // NOTE: this won't be done for 'this' and 'super', since they aren't Designator_Ident
+        if( curr instanceof Designator_Ident && isInClassScope && curr.symbol.isClassMember() )
         {
+            // load the instance pointer on the expression stack
             CodeGen.loadSymbolValue( SymbolTable.findSymbol( "this" ) );
         }
 
@@ -1119,6 +1221,14 @@ public class CodeGenVisitor extends VisitorAdaptor
         {
             // load its value on the expression stack
             CodeGen.loadSymbolValue( curr.symbol );
+        }
+        
+        // if the designator is a call to the supertype's constructor ('super()')
+        if( curr instanceof Designator_Super && !hasNext )
+        {
+            // load the instance pointer on the expression stack
+            // NOTE: this loads the zeroth constructor's formal parameter, which wouln't be done otherwise
+            CodeGen.loadSymbolValue( SymbolTable.findSymbol( "this" ) );
         }
     }
 

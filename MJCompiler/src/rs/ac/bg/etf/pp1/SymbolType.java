@@ -20,6 +20,7 @@ public class SymbolType extends Struct
     public static final int RECORD    = 10;
     public static final int CLASS     = Struct.Class;
     public static final int INTERFACE = Struct.Interface;
+    public static final int PROGRAM   = 11;
 
     ////// None, Int, Char, Array, Class, Record, Bool, Enum, Interface
     // private int kind;
@@ -53,11 +54,12 @@ public class SymbolType extends Struct
 
     // NONE, INT, CHAR, BOOL, ARRAY, ENUM, CLASS, INTERFACE, RECORD
     public static SymbolType newPrimitive( String name, int kind )                           { return new SymbolType( kind,                 name, null, null    ); }
-    public static SymbolType newArray    ( String name, SymbolType type )                    { return new SymbolType( SymbolType.ARRAY,     name, type, null    )._members(  new SymbolMap(){{ addSymbol( Symbol.newArrayElem( "@elem", type ) ); }}  ); }
+    public static SymbolType newArray    ( String name, SymbolType type )                    { return new SymbolType( SymbolType.ARRAY,     name, type, null    )._members(  new SymbolMap(){{ addSymbol( Symbol.newArrayElem( "@Element", type ) ); }}  ); }
     public static SymbolType newEnum     ( String name, SymbolMap members )                  { return new SymbolType( SymbolType.ENUM,      name, null, members ); }
     public static SymbolType newRecord   ( String name, SymbolMap members )                  { return new SymbolType( SymbolType.RECORD,    name, null, members ); }
     public static SymbolType newClass    ( String name, SymbolType base, SymbolMap members ) { return new SymbolType( SymbolType.CLASS,     name, base, members ); }
     public static SymbolType newInterface( String name, SymbolType base, SymbolMap members ) { return new SymbolType( SymbolType.INTERFACE, name, base, members ); }
+    public static SymbolType newProgram  ( String name, SymbolMap members )                  { return new SymbolType( SymbolType.PROGRAM,   name, null, members ); }
 
 
     // <symbol type>'s kind
@@ -94,7 +96,7 @@ public class SymbolType extends Struct
     // CLASS, RECORD: number of non-static fields
     public int _fieldCount() { return getNumberOfFields(); }
 
-    // CLASS, INTERFACE: fields and methods
+    // CLASS, INTERFACE: static fields, static methods, fields, methods
     // ENUM: constants
     // RECORD: fields
     public SymbolMap _members() { return ( SymbolMap )getMembersTable(); }
@@ -102,6 +104,15 @@ public class SymbolType extends Struct
     public SymbolType _members( SymbolDataStructure symbols ) { setMembers( new SymbolMap( symbols ) ); return this; }
     public SymbolType _members( Collection<Obj> symbols ) { setMembers( new SymbolMap( symbols ) ); return this; }
     
+    // CLASS, INTERFACE: fields, methods (+constructor)
+    // RECORD: fields
+    public SymbolMap _nonStaticMembers() { return _members().filter( sym -> sym.isField() || sym.isMethod() ); }
+    // CLASS, INTERFACE: fields
+    // RECORD: fields
+    public SymbolMap _fields() { return _members().filter( sym -> sym.isField() ); }
+    // CLASS, INTERFACE: methods
+    public SymbolMap _methods() { return _members().filter( sym -> sym.isMethod() ); }
+
 
     // FIX: add isAnyType checks whenever these functions are used
     public boolean isAnyType()   { return _kind() == ANY_TYPE;  }
@@ -115,6 +126,7 @@ public class SymbolType extends Struct
     public boolean isRecord()    { return _kind() == RECORD;    }
     public boolean isClass()     { return _kind() == CLASS;     }
     public boolean isInterface() { return _kind() == INTERFACE; }
+    public boolean isProgram()   { return _kind() == PROGRAM;   }
 
 
     public boolean isNullType()      { return this == SymbolTable.nullType; }
@@ -215,6 +227,7 @@ public class SymbolType extends Struct
             case RECORD:    result = String.format( "%sRECORD        %s %s\n%s\n", prefix, _base(), _name(), membersToString( prefix ) ); break;
             case CLASS:     result = String.format( "%sCLASS         %s %s\n%s\n", prefix, _base(), _name(), membersToString( prefix ) ); break;
             case INTERFACE: result = String.format( "%sINTERFACE     %s %s\n%s\n", prefix, _base(), _name(), membersToString( prefix ) ); break;
+            case PROGRAM:   result = String.format( "%sPROGRAM       %s %s\n%s\n", prefix, _base(), _name(), membersToString( prefix ) ); break;
         }
         return result;
     }
@@ -233,6 +246,7 @@ public class SymbolType extends Struct
             case RECORD:    return _name();
             case CLASS:     return _name();
             case INTERFACE: return _name();
+            case PROGRAM:   return _name();
             default: return "<typename>";
         }
     }
@@ -245,6 +259,7 @@ public class SymbolType extends Struct
             case RECORD:    break;
             case CLASS:     break;
             case INTERFACE: break;
+            case PROGRAM:   break;
             default:        return "";
         }
         

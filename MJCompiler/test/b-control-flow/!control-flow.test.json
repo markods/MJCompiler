@@ -115,7 +115,7 @@
                 "```c1```",
                 "Ln 28  Col 17  SEM     The right side of the addition is not an int",
                 "```c2```",
-                "Ln 29  Col 8   SEM     This designator must be of type int to be incremented/decremented",
+                "Ln 29  Col 8   SEM     This designator must be of type int to allow being incremented/decremented",
                 "```c1```",
                 "Ln 30  Col 14  SEM     This signed expression must result in an int",
                 "```c1```",

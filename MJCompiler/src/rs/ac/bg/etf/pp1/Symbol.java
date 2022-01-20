@@ -11,17 +11,18 @@ public class Symbol extends Obj implements Cloneable
 {
     public static final int NO_VALUE = -999;
 
-    public static final int CONST        = Obj.Con;
-    public static final int VAR          = Obj.Var;
-    public static final int TYPE         = Obj.Type;
-    public static final int METHOD       = Obj.Meth;
-    public static final int FIELD        = Obj.Fld;
-    public static final int ARRAY_ELEM   = Obj.Elem;
-    public static final int PROGRAM      = Obj.Prog;
-    public static final int STATIC_FIELD = 10;
-    public static final int FUNCTION     = 11;
-    public static final int FORMAL_PARAM = 12;
-    public static final int ACTIV_PARAM  = 13;
+    public static final int CONST         = Obj.Con;
+    public static final int VAR           = Obj.Var;
+    public static final int TYPE          = Obj.Type;
+    public static final int METHOD        = Obj.Meth;
+    public static final int FIELD         = Obj.Fld;
+    public static final int ARRAY_ELEM    = Obj.Elem;
+    public static final int PROGRAM       = Obj.Prog;
+    public static final int STATIC_FIELD  = 10;
+    public static final int STATIC_METHOD = 11;
+    public static final int FUNCTION      = 12;
+    public static final int FORMAL_PARAM  = 13;
+    public static final int ACTIV_PARAM   = 14;
 
     // // symbol name
     // private String name;
@@ -56,20 +57,21 @@ public class Symbol extends Obj implements Cloneable
     }
 
     // CONST, VAR, STATIC_FIELD, FIELD, METHOD, FUNCTION, FORMAL_PARAM, ACTIV_PARAM, TYPE, ARRAY_ELEM, PROGRAM
-    public static Symbol newConst      ( String name, SymbolType type, int value )                                    { return new Symbol( CONST,        name, type, value,    NO_VALUE,   NO_VALUE,  null   ); }
-    public static Symbol newVar        ( String name, SymbolType type, int address, int scopeLevel, int varIdx )      { return new Symbol( VAR,          name, type, address,  scopeLevel, varIdx,    null   ); }
-    public static Symbol newStaticField( String name, SymbolType type, int address, int memberIdx )                   { return new Symbol( STATIC_FIELD, name, type, address,  NO_VALUE,   memberIdx, null   ); }
-    public static Symbol newField      ( String name, SymbolType type, int address, int memberIdx )                   { return new Symbol( FIELD,        name, type, address,  NO_VALUE,   memberIdx, null   ); }
-    public static Symbol newMethod     ( String name, SymbolType type, int address, int memberIdx, SymbolMap params ) { return new Symbol( METHOD,       name, type, address,  NO_VALUE,   memberIdx, params ); }
-    public static Symbol newFunction   ( String name, SymbolType type, int address, SymbolMap params )                { return new Symbol( FUNCTION,     name, type, address,  NO_VALUE,   NO_VALUE,  params ); }
-    public static Symbol newFormalParam( String name, SymbolType type, int paramIdx )                                 { return new Symbol( FORMAL_PARAM, name, type, NO_VALUE, NO_VALUE,   paramIdx,  null   ); }
-    public static Symbol newActivParam ( String name, SymbolType type, int paramIdx )                                 { return new Symbol( ACTIV_PARAM,  name, type, NO_VALUE, NO_VALUE,   paramIdx,  null   ); }
-    public static Symbol newType       ( String name, SymbolType type, int address )                                  { return new Symbol( TYPE,         name, type, address,  NO_VALUE,   NO_VALUE,  null   ); }
-    public static Symbol newArrayElem  ( String name, SymbolType type )                                               { return new Symbol( ARRAY_ELEM,   name, type, NO_VALUE, NO_VALUE,   NO_VALUE,  null   ); }
-    public static Symbol newProgram    ( String name, SymbolType type, SymbolMap locals )                             { return new Symbol( PROGRAM,      name, type, NO_VALUE, NO_VALUE,   NO_VALUE,  locals ); }
+    public static Symbol newConst       ( String name, SymbolType type, int value )                                    { return new Symbol( CONST,         name, type, value,    NO_VALUE,   NO_VALUE,  null   ); }
+    public static Symbol newVar         ( String name, SymbolType type, int address, int scopeLevel, int varIdx )      { return new Symbol( VAR,           name, type, address,  scopeLevel, varIdx,    null   ); }
+    public static Symbol newField       ( String name, SymbolType type, int address, int memberIdx )                   { return new Symbol( FIELD,         name, type, address,  NO_VALUE,   memberIdx, null   ); }
+    public static Symbol newStaticField ( String name, SymbolType type, int address, int memberIdx )                   { return new Symbol( STATIC_FIELD,  name, type, address,  NO_VALUE,   memberIdx, null   ); }
+    public static Symbol newMethod      ( String name, SymbolType type, int address, int memberIdx, SymbolMap params ) { return new Symbol( METHOD,        name, type, address,  NO_VALUE,   memberIdx, params ); }
+    public static Symbol newStaticMethod( String name, SymbolType type, int address, int memberIdx, SymbolMap params ) { return new Symbol( STATIC_METHOD, name, type, address,  NO_VALUE,   memberIdx, params ); }
+    public static Symbol newFunction    ( String name, SymbolType type, int address, SymbolMap params )                { return new Symbol( FUNCTION,      name, type, address,  NO_VALUE,   NO_VALUE,  params ); }
+    public static Symbol newFormalParam ( String name, SymbolType type, int paramIdx )                                 { return new Symbol( FORMAL_PARAM,  name, type, NO_VALUE, NO_VALUE,   paramIdx,  null   ); }
+    public static Symbol newActivParam  ( String name, SymbolType type, int paramIdx )                                 { return new Symbol( ACTIV_PARAM,   name, type, NO_VALUE, NO_VALUE,   paramIdx,  null   ); }
+    public static Symbol newType        ( String name, SymbolType type, int address )                                  { return new Symbol( TYPE,          name, type, address,  NO_VALUE,   NO_VALUE,  null   ); }
+    public static Symbol newArrayElem   ( String name, SymbolType type )                                               { return new Symbol( ARRAY_ELEM,    name, type, NO_VALUE, NO_VALUE,   NO_VALUE,  null   ); }
+    public static Symbol newProgram     ( String name, SymbolType type, SymbolMap locals )                             { return new Symbol( PROGRAM,       name, type, NO_VALUE, NO_VALUE,   NO_VALUE,  locals ); }
     
 
-    // CONST, VAR, STATIC_FIELD, FIELD, METHOD, FUNCTION, FORMAL_PARAM, ACTIV_PARAM, TYPE, ARRAY_ELEM, PROGRAM
+    // CONST, VAR, FIELD, STATIC_FIELD, METHOD, STATIC_METHOD, FUNCTION, FORMAL_PARAM, ACTIV_PARAM, TYPE, ARRAY_ELEM, PROGRAM
     public int _kind() { return getKind(); }
     public String _name() { return getName(); }
     public SymbolType _type() { return ( SymbolType )getType(); }
@@ -77,14 +79,14 @@ public class Symbol extends Obj implements Cloneable
     // CONST
     public int _value() { return getAdr(); }
     public Symbol _value( int value ) { setAdr( value ); return this; }
-    // VAR, STATIC_FIELD, FIELD, METHOD, FUNCTION, TYPE<CLASS>
+    // VAR, FIELD, STATIC_FIELD, METHOD, STATIC_METHOD, FUNCTION, TYPE<CLASS>
     public int _address() { return getAdr(); }
     public Symbol _address( int address ) { setAdr( address ); return this; }
 
     // VAR
     public int _scopeLevel() { return getLevel(); }
     public Symbol _scopeLevel( int scopeLevel ) { setLevel( scopeLevel ); return this; }
-    // METHOD, FUNCTION
+    // METHOD, STATIC_METHOD, FUNCTION
     public int _paramCount() { return _params().size(); }
     // TYPE<CLASS>
     public int _fieldCount() { return _type()._members().count( elem -> elem.isField() ); }
@@ -97,11 +99,11 @@ public class Symbol extends Obj implements Cloneable
     // FORMAL_PARAM, ACTIV_PARAM
     public int _paramIdx() { return getFpPos(); }
     public Symbol _paramIdx( int paramIdx ) { setFpPos( paramIdx ); return this; }
-    // STATIC FIELD, FIELD, METHOD
+    // FIELD, STATIC_FIELD, METHOD, STATIC_METHOD
     public int _memberIdx() { return getFpPos(); }
     public Symbol _memberIdx( int memberIdx ) { setFpPos( memberIdx ); return this; }
     
-    // METHOD, FUNCTION
+    // METHOD, STATIC_METHOD, FUNCTION
     public SymbolMap _params() { return _symbols(); }
     public Symbol _params( SymbolMap params ) { return _symbols( params ); }
     public Symbol _params( SymbolDataStructure params ) { return _symbols( params ); }
@@ -130,17 +132,18 @@ public class Symbol extends Obj implements Cloneable
     }
 
 
-    public boolean isConst()         { return _kind() == CONST;        }
-    public boolean isVar()           { return _kind() == VAR;          }
-    public boolean isStaticField()   { return _kind() == STATIC_FIELD; }
-    public boolean isField()         { return _kind() == FIELD;        }
-    public boolean isMethod()        { return _kind() == METHOD;       }
-    public boolean isFunction()      { return _kind() == FUNCTION;     }
-    public boolean isFormalParam()   { return _kind() == FORMAL_PARAM; }
-    public boolean isActivParam()    { return _kind() == ACTIV_PARAM;  }
-    public boolean isType()          { return _kind() == TYPE;         }
-    public boolean isArrayElem()     { return _kind() == ARRAY_ELEM;   }
-    public boolean isProgram()       { return _kind() == PROGRAM;      }
+    public boolean isConst()         { return _kind() == CONST;         }
+    public boolean isVar()           { return _kind() == VAR;           }
+    public boolean isField()         { return _kind() == FIELD;         }
+    public boolean isStaticField()   { return _kind() == STATIC_FIELD;  }
+    public boolean isMethod()        { return _kind() == METHOD;        }
+    public boolean isStaticMethod()  { return _kind() == STATIC_METHOD; }
+    public boolean isFunction()      { return _kind() == FUNCTION;      }
+    public boolean isFormalParam()   { return _kind() == FORMAL_PARAM;  }
+    public boolean isActivParam()    { return _kind() == ACTIV_PARAM;   }
+    public boolean isType()          { return _kind() == TYPE;          }
+    public boolean isArrayElem()     { return _kind() == ARRAY_ELEM;    }
+    public boolean isProgram()       { return _kind() == PROGRAM;       }
 
     public boolean isNoSym()         { return this == SymbolTable.noSym;  }
     public boolean isAnySym()        { return this == SymbolTable.anySym; }
@@ -150,9 +153,16 @@ public class Symbol extends Obj implements Cloneable
     public boolean isGlobal()        { return SymbolTable.isGlobalScope( _scopeLevel() ); }
     public boolean isClassMember()   { return _kind() == FIELD || _kind() == METHOD; }
     public boolean isRecordMember()  { return _kind() == FIELD; }
+    public boolean isCallable()      { return _kind() == METHOD || _kind() == STATIC_METHOD || _kind() == FUNCTION; }
+    // IMPORTANT: use CodeGen.NO_ADDRESS (0) instead of Symbol.NO_VALUE (-999 or something) for the placeholder constructor
+    //            in order to differentiate placeholder functions from functions whose starting addresses aren't yet initialized
+    public boolean isPlaceholder()   { return _address() == CodeGen.NO_ADDRESS; }
+    public boolean hasValidAddress() { return _address() >  CodeGen.NO_ADDRESS; }
     
     public boolean isThis()          { return _kind() == CONST    && "this"          .equals( _name() ); }
+    public boolean isSuper()         { return _kind() == CONST    && "super"         .equals( _name() ); }
     public boolean ispVirtualTable() { return _kind() == FIELD    && "@pVirtualTable".equals( _name() ); }
+    public boolean isConstructor()   { return _kind() == METHOD   && "@Constructor"  .equals( _name() ); }
     public boolean isMain()          { return _kind() == FUNCTION && "main"          .equals( _name() ); }
 
 
@@ -219,20 +229,21 @@ public class Symbol extends Obj implements Cloneable
 
         switch( _kind() )
         {
-            case CONST:                         { result = String.format( "%s=%-4d .....   CONST         %s %s\n",   prefix, _value(),                                 typeName, _name() ); break; }
-            case VAR: if( isGlobal() )          { result = String.format( "%s&%-4d s%-4d   GLOBAL_VAR    %s %s\n",   prefix, _address(),                _scopeLevel(), typeName, _name() ); break; }
-                      else                      { result = String.format( "%ss%-4d #%-4d   VAR           %s %s\n",   prefix,             _scopeLevel(), _memberIdx(),  typeName, _name() ); break; }
-            case STATIC_FIELD:                  { result = String.format( "%s&%-4d #%-4d   STATIC_FIELD  %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
-            case FIELD:                         { result = String.format( "%s&%-4d #%-4d   FIELD         %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
-            case METHOD:                        { result = String.format( "%s&%-4d #%-4d   METHOD        %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() + localsToString( "" ) ); break; }
-            case FUNCTION:                      { result = String.format( "%s&%-4d .....   FUNCTION      %s %s\n",   prefix, _address(),                               typeName, _name() + localsToString( "" ) ); break; }
-            case FORMAL_PARAM:                  { result = String.format( "%s..... #%-4d   FORMAL_PARAM  %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
-            case ACTIV_PARAM:                   { result = String.format( "%s..... #%-4d   ACTIV_PARAM   %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
-            case TYPE: if( _type().isClass() )  { result = String.format( "%s&%-4d v%-4d   CLASS         %s %s\n%s", prefix, _address(), _virtualTableSize(),          typeName, _name(), _type().membersToString( prefix ) ); break; }
-                       if( _type().isRecord() ) { result = String.format( "%s&%-4d .....   RECORD        %s %s\n%s", prefix, _address(),                               typeName, _name(), _type().membersToString( prefix ) ); break; }
-                                                { result = String.format( "%s..... .....   TYPE          %s %s\n%s", prefix,                                           typeName, _name(), _type().membersToString( prefix ) ); break; }
-            case ARRAY_ELEM:                    { result = String.format( "%s..... .....   ARRAY_ELEM    %s %s\n",   prefix,                                           typeName, _name() ); break; }
-            case PROGRAM:                       { result = String.format( "%s..... .....   PROGRAM       %s %s\n%s", prefix,                                           typeName, _name(), localsToString( prefix ) ); break; }
+            case CONST:                         { result = String.format( "%s=%-4d .....   CONST          %s %s\n",   prefix, _value(),                                 typeName, _name() ); break; }
+            case VAR: if( isGlobal() )          { result = String.format( "%s&%-4d s%-4d   GLOBAL_VAR     %s %s\n",   prefix, _address(),                _scopeLevel(), typeName, _name() ); break; }
+                      else                      { result = String.format( "%ss%-4d #%-4d   VAR            %s %s\n",   prefix,             _scopeLevel(), _memberIdx(),  typeName, _name() ); break; }
+            case FIELD:                         { result = String.format( "%s&%-4d #%-4d   FIELD          %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
+            case STATIC_FIELD:                  { result = String.format( "%s&%-4d #%-4d   STATIC_FIELD   %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
+            case METHOD:                        { result = String.format( "%s&%-4d #%-4d   METHOD         %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() + localsToString( "" ) ); break; }
+            case STATIC_METHOD:                 { result = String.format( "%s&%-4d #%-4d   STATIC_METHOD  %s %s\n",   prefix, _address(), _memberIdx(),                 typeName, _name() ); break; }
+            case FUNCTION:                      { result = String.format( "%s&%-4d .....   FUNCTION       %s %s\n",   prefix, _address(),                               typeName, _name() + localsToString( "" ) ); break; }
+            case FORMAL_PARAM:                  { result = String.format( "%s..... #%-4d   FORMAL_PARAM   %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
+            case ACTIV_PARAM:                   { result = String.format( "%s..... #%-4d   ACTIV_PARAM    %s %s\n",   prefix,             _paramIdx(),                  typeName, _name() ); break; }
+            case TYPE: if( _type().isClass() )  { result = String.format( "%s&%-4d v%-4d   CLASS          %s %s\n%s", prefix, _address(), _virtualTableSize(),          typeName, _name(), _type().membersToString( prefix ) ); break; }
+                       if( _type().isRecord() ) { result = String.format( "%s&%-4d .....   RECORD         %s %s\n%s", prefix, _address(),                               typeName, _name(), _type().membersToString( prefix ) ); break; }
+                                                { result = String.format( "%s..... .....   TYPE           %s %s\n%s", prefix,                                           typeName, _name(), _type().membersToString( prefix ) ); break; }
+            case ARRAY_ELEM:                    { result = String.format( "%s..... .....   ARRAY_ELEM     %s %s\n",   prefix,                                           typeName, _name() ); break; }
+            case PROGRAM:                       { result = String.format( "%s..... .....   PROGRAM        %s %s\n%s", prefix,                                           typeName, _name(), localsToString( prefix ) ); break; }
         }
         return result;
     }
@@ -243,6 +254,7 @@ public class Symbol extends Obj implements Cloneable
         switch( _kind() )
         {
             case METHOD:
+            case STATIC_METHOD:
             case FUNCTION:
             {
                 List<Symbol> locals = _locals()._sorted();

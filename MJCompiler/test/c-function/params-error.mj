@@ -1,0 +1,44 @@
+program __params_error__
+
+class C
+{
+    int a;
+    bool b;
+
+    {
+        int foo( int arr[], bool b, char c )
+            int i;
+        {
+            i = this.foo( arr, b );
+            i = foo( arr, b );
+            return null;
+        }
+    }
+}
+
+{
+    void foo( int arr[], bool b, char c ) { return 5; }
+
+    void main()
+        int a, arr[];
+        bool b;
+        C c;
+    {
+        return 1;
+        c = new C;
+
+        c.foo();
+        c.fooo();
+        c.foo( b, c, a );
+        c.foo( a, b, c );
+        c.foo( arr, b, c );
+        c.foo( arr, b, c, b );
+
+        foo();
+        foo( arr );
+        foo( arr, b, c, b );
+        foo( b, c, a );
+        foo( arr, b, c );
+        
+    }
+}

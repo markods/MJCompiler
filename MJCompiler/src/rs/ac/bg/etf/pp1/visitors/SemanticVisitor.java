@@ -29,7 +29,7 @@ public class SemanticVisitor extends VisitorAdaptor
         public final BoolProp isInForwardDeclMode = new BoolProp();
 
         public final int maxFieldsInClass = 65536;
-        public final int maxLocalsInStackFrame = 256;
+        public final int maxStackFrameSize = 256;
     }
 
 
@@ -83,6 +83,7 @@ public class SemanticVisitor extends VisitorAdaptor
         ////// void foo() { statement statement }
         ////// void foo() vardl vardl { }
         ////// void foo() vardl vardl { statement statement }
+        //////      foo() vardl vardl { statement statement }   -- constructor
         ////// void foo( int a, char c, Node Array[] ) { }
         ////// void foo( int a, char c, Node Array[] ) { statement statement }
         ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
@@ -96,9 +97,16 @@ public class SemanticVisitor extends VisitorAdaptor
 
         ////// void foo
         ////// A foo
+        ////// foo   -- constructor
         // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
         @Override
         public void visit( MethodDeclType_Plain curr )
+        {
+            visit_MethodDeclType( curr );
+        }
+        // MethodDeclType ::= (MethodDeclType_Empty)            ident:MethodName;
+        @Override
+        public void visit( MethodDeclType_Empty curr )
         {
             visit_MethodDeclType( curr );
         }
@@ -250,7 +258,7 @@ public class SemanticVisitor extends VisitorAdaptor
         public void visit( StmtLabel_Plain curr )
         {
             // create a symbol for the label
-            String labelName = String.format( "@Label[%s]", curr.getLabel() );
+            String labelName = String.format( "@Label_%s", curr.getLabel() );
             Symbol labelSymbol = Symbol.newConst( labelName, SymbolTable.intType, Symbol.NO_VALUE );
             // if the label's symbol could not be added to the symbol table
             if( !SymbolTable.addSymbol( labelSymbol ) )
@@ -333,17 +341,17 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // add the program node to the syntax node stack
         context.syntaxNodeStack.add( curr );
-        SymbolType programType = SymbolType.newClass( "@prog", SymbolTable.anyType, null );
+        SymbolType programType = SymbolType.newProgram( "@Program", null );
         curr.symbol = Symbol.newProgram( curr.getProgramName(), programType, null );
 
         // if the program cannot be added to the symbol table
         if( !SymbolTable.addSymbol( curr.symbol ) )
         {
             // NOTE: currently this should never happen since there is only one program
-            report_verbose( curr, "A symbol with the same name already exists" );
+            report_verbose( curr, "Program cannot be added since a symbol with the same name already exists" );
             
             // just a precaution
-            curr.symbol = curr.symbol.clone( String.format( "@Program[%d]", SymbolTable._globalsSizeNoPredef() ) );
+            curr.symbol = curr.symbol.clone( String.format( "@Program_%d", SymbolTable._globalsProgramCount() ) );
             SymbolTable.addSymbol( curr.symbol );
         }
 
@@ -406,7 +414,7 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // add the class declaration type node to the syntax node stack
         context.syntaxNodeStack.add( curr );
-        String dummyName = String.format( "@Class[%d]", SymbolTable._localsSize() );
+        String dummyName = String.format( "@Class_%d", SymbolTable._localsClassCount() );
 
         // if the class name or the extends type is missing, use default values
         if( className == null ) className = dummyName;
@@ -430,7 +438,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the class cannot be added to the symbol table
         if( !SymbolTable.addSymbol( curr.symbol ) )
         {
-            report_verbose( curr, "A symbol with the same name already exists" );
+            report_verbose( curr, "Class cannot be added since a symbol with the same name already exists" );
             
             // add an artificial class used for type checking later on
             classType = SymbolType.newClass( dummyName, baseType, null );
@@ -439,16 +447,17 @@ public class SemanticVisitor extends VisitorAdaptor
             SymbolTable.addSymbol( curr.symbol );
         }
 
-        // get the class's inherited methods, and remove the virtual table pointer (so that it isn't shared between the base class and the subclass)
+        // open the class's scope
+        SymbolTable.openScope();
+        // get the class's inherited (non-static) members, and remove the virtual table pointer (so that it isn't shared between the base class and the subclass)
         // +    save the inherited members in a new symbol map, because we don't want to modify the members list in the base class
-        SymbolMap baseMembers = new SymbolMap( classType._base()._members() );
+        SymbolMap baseMembers = new SymbolMap( classType._base()._nonStaticMembers() );
         baseMembers.removeSymbol( "@pVirtualTable" );
         // add a 'virtual table pointer' field to the inherited members
         // +   set its index to be 0, so that it is the first class field
         Symbol pVirtualTable = Symbol.newField( "@pVirtualTable", SymbolTable.intType, Symbol.NO_VALUE, 0 );
         baseMembers.addSymbol( pVirtualTable );
-        // open the class's scope and add the class's inherited members
-        SymbolTable.openScope();
+        // add the class's inherited members (this includes the constructor)
         SymbolTable.addSymbols( baseMembers );
 
 
@@ -466,30 +475,36 @@ public class SemanticVisitor extends VisitorAdaptor
         // update the class members' indexes by category
         SymbolMap methods = new SymbolMap();
         SymbolMap fields = new SymbolMap();
+        SymbolMap staticMethods = new SymbolMap();
         SymbolMap staticFields = new SymbolMap();
         for( Symbol member : classMembers )
         {
-            if     ( member.isMethod()      ) methods.addSymbol( member );
-            else if( member.isField()       ) fields.addSymbol( member );
-            else if( member.isStaticField() ) staticFields.addSymbol( member );
-            else                              report_fatal( curr, String.format( "Class member not yet supported: %s", member._name() ) );
+            if     ( member.isMethod()       ) methods      .addSymbol( member );
+            else if( member.isField()        ) fields       .addSymbol( member );
+            else if( member.isStaticMethod() ) staticMethods.addSymbol( member );
+            else if( member.isStaticField()  ) staticFields .addSymbol( member );
+            else                               report_fatal( curr, String.format( "Class member not yet supported: %s", member._name() ) );
         }
 
         // sort the methods and fields based on their member indexes
         methods._symbols( methods._sorted() );
         fields._symbols( fields._sorted() );
+        staticMethods._symbols( staticMethods._sorted() );
         staticFields._symbols( staticFields._sorted() );
         
         int idx = 0;
         // compact the <methods>', <fields>' and <static fields>' indexes
-        idx = 0;   for( Symbol member : methods      ) { member._memberIdx( idx++ ); }
-        idx = 0;   for( Symbol member : fields       ) { member._memberIdx( idx++ ); }
-        idx = 0;   for( Symbol member : staticFields ) { member._memberIdx( idx++ ); }
+        // HACK: the constructor's index is -1, as it isn't present in the virtual table
+        idx = -1;  for( Symbol member : methods       ) { member._memberIdx( idx++ ); }
+        idx = 0;   for( Symbol member : fields        ) { member._memberIdx( idx++ ); }
+        idx = 0;   for( Symbol member : staticMethods ) { member._memberIdx( idx++ ); }
+        idx = 0;   for( Symbol member : staticFields  ) { member._memberIdx( idx++ ); }
         idx = 0;
 
         // join all the now sorted members by category
         SymbolMap members = new SymbolMap();
-        members.addSymbols( staticFields );
+        members.addSymbols( staticFields  );
+        members.addSymbols( staticMethods );
         members.addSymbols( fields );
         members.addSymbols( methods );
 
@@ -558,7 +573,7 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // add the record declaration type node to the syntax node stack
         context.syntaxNodeStack.add( curr );
-        String dummyName = String.format( "@Record[%d]", SymbolTable._localsSize() );
+        String dummyName = String.format( "@Record_%d", SymbolTable._localsRecordCount() );
 
         // if the record name is missing, use default values
         if( recordName == null ) recordName = dummyName;
@@ -570,7 +585,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the record cannot be added to the symbol table
         if( !SymbolTable.addSymbol( curr.symbol ) )
         {
-            report_verbose( curr, "A symbol with the same name already exists" );
+            report_verbose( curr, "Record cannot be added since a symbol with the same name already exists" );
             
             // add an artificial class used for type checking later on
             recordType = SymbolType.newRecord( dummyName, null );
@@ -593,6 +608,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// void foo() { statement statement }
     ////// void foo() vardl vardl { }
     ////// void foo() vardl vardl { statement statement }
+    //////      foo() vardl vardl { statement statement }   -- constructor
     ////// void foo( int a, char c, Node Array[] ) { }
     ////// void foo( int a, char c, Node Array[] ) { statement statement }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
@@ -606,12 +622,6 @@ public class SemanticVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_MethodDecl( MethodDecl_Plain curr )
     {
-        // if the method has more local variables (including parameters) in the stack frame than the microjava virtual machine supports
-        if( SymbolTable._localsSize() > context.maxLocalsInStackFrame )
-        {
-            report_basic( curr.getMethodDeclType(), String.format( "Function/method has more parameters + local variables than the virtual machine supports: %d (max %d)", SymbolTable._localsSize(), context.maxLocalsInStackFrame ) );
-        }
-
         // close the function's scope
         context.syntaxNodeStack.remove();
         SymbolTable.closeScope();
@@ -619,14 +629,21 @@ public class SemanticVisitor extends VisitorAdaptor
 
     ////// void foo
     ////// A foo
+    ////// foo   -- constructor
     // MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
     @Override
     public void visit( MethodDeclType_Plain curr )
     {
         visit_MethodDeclType( curr );
     }
+    // MethodDeclType ::= (MethodDeclType_Empty)            ident:MethodName;
+    @Override
+    public void visit( MethodDeclType_Empty curr )
+    {
+        visit_MethodDeclType( curr );
+    }
     // IMPORTANT: helper method, not intended to be used elsewhere
-    private void visit_MethodDeclType( MethodDeclType_Plain curr )
+    private void visit_MethodDeclType( MethodDeclType curr )
     {
         context.syntaxNodeStack.add( curr );
 
@@ -644,17 +661,33 @@ public class SemanticVisitor extends VisitorAdaptor
         }
 
         // get the method index in its scope
-        int methodIdx = SymbolTable._localsSize();
+        int methodIdx = SymbolTable._localsMethodCount();
         // open a scope for the function's formal parameters
         SymbolTable.openScope();
         
-        // create a function symbol
+        // get the function/method name and its return type
         // +    update the locals later on
-        Symbol left = curr.getReturnType().symbol;
+        String functionName = null;
+        SymbolType returnType = null;
+
+        if( curr instanceof MethodDeclType_Plain )
+        {
+            functionName = ( ( MethodDeclType_Plain )curr ).getMethodName();
+            returnType   = ( ( MethodDeclType_Plain )curr ).getReturnType().symbol._type();
+        }
+        else if( curr instanceof MethodDeclType_Empty )
+        {
+            functionName = ( ( MethodDeclType_Empty )curr ).getMethodName();
+            returnType   = null;
+        }
+        else
+        {
+            report_fatal( curr, "Function/method declaration not yet supported" );
+        }
 
         // get the scope in which the function's been declared
         SyntaxNode scope = context.syntaxNodeStack.find(
-            elem -> ( elem instanceof ProgramType )
+            elem -> ( elem instanceof ProgramType   )
                  || ( elem instanceof ClassDeclType )
         );
         if( scope == null )
@@ -662,15 +695,42 @@ public class SemanticVisitor extends VisitorAdaptor
             report_fatal( curr, "Function/method declaration not yet supported" );
         }
 
+        // get the scope's symbol
+        SymbolType scopeType = null;
+        if     ( scope instanceof ProgramType   ) scopeType = ( ( ProgramType   ) scope ).symbol._type();
+        else if( scope instanceof ClassDeclType ) scopeType = ( ( ClassDeclType ) scope ).symbol._type();
+
+        // if the function/method doesn't have a return type but isn't a constructor (isn't in class scope or doesn't have the same name as the class)
+        if( returnType == null   &&   !( scopeType.isClass() && functionName.equals( scopeType._name() ) )
+        )
+        {
+            report_basic( curr, "Function/method must have a return type" );
+            // set its return type to be void
+            returnType = SymbolTable.voidType;
+        }
+
+        
         // if the function is in the program scope
         if( scope instanceof ProgramType )
         {
-            curr.symbol = Symbol.newFunction( curr.getMethodName(), left._type(), Symbol.NO_VALUE, null );
+            // create the function's symbol
+            curr.symbol = Symbol.newFunction( functionName, returnType, Symbol.NO_VALUE, null );
         }
-        // if the function is in the class scope (a method then)
+        // if the function is in the class scope (a method)
         else if( scope instanceof ClassDeclType )
         {
-            curr.symbol = Symbol.newMethod( curr.getMethodName(), left._type(), Symbol.NO_VALUE, methodIdx, null );
+            // if the method is a constructor
+            if( returnType == null )
+            {
+                // set the constructor's return type to be void
+                returnType = SymbolTable.voidType;
+                // set the constructor's name to be a reserved keyword
+                // +   that way the constructor can't be explicitly called (like in C++)
+                functionName = "@Constructor";
+            }
+
+            // create the method's symbol
+            curr.symbol = Symbol.newMethod( functionName, returnType, Symbol.NO_VALUE, methodIdx, null );
             // add a dummy 'this' formal parameter that will be removed later (just to reserve the 0th formal parameter)
             SymbolTable.addSymbol( Symbol.newFormalParam( "this", ( ( ClassDeclType )scope ).symbol._type(), 0 ) );
         }
@@ -717,10 +777,13 @@ public class SemanticVisitor extends VisitorAdaptor
         
         // update the function's formal parameters
         function._params( formalParams );
-        // prepare the function index and its dummy name
+        // prepare the function's dummy name
         // +   IMPORTANT: get the function's index here, in its containing scope, not after the function's scope is reopened
-        int functionIdx = SymbolTable._localsSize();
-        String dummyName = String.format( "@Method[%d]", functionIdx );
+        String dummyName = null;
+        if     ( function.isMethod()       ) { dummyName = String.format( "@Method_%d",       SymbolTable._localsMethodCount()       ); }
+        else if( function.isStaticMethod() ) { dummyName = String.format( "@StaticMethod_%d", SymbolTable._localsStaticMethodCount() ); }
+        else if( function.isFunction()     ) { dummyName = String.format( "@Function_%d",     SymbolTable._localsFunctionCount()     ); }
+        else                                 { report_fatal( curr, "Function/method type declaration not yet supported" ); }
 
 
 
@@ -778,7 +841,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // +   if the function/method cannot be added to the symbol table
         if( !SymbolTable.addSymbol( function ) )
         {
-            report_verbose( methodDeclType, "A symbol with the same name already exists" );
+            report_verbose( methodDeclType, "Function/method cannot be added since a symbol with the same name already exists" );
             // give the function a new dummy name, guaranteed not to cause collisions in the symbol table
             function = function.clone( dummyName );
             // update the <method declaration>'s symbol with the dummy function
@@ -812,6 +875,25 @@ public class SemanticVisitor extends VisitorAdaptor
     {
         // initialize the jump map
         curr.jumpprop = new JumpProp();
+
+        // get the function/method's type
+        MethodDeclType methodDeclType = ( MethodDeclType )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof MethodDeclType )
+        );
+
+        // if the function/method has more local variables (including parameters) in the stack frame than the microjava virtual machine supports
+        int stackFrameSize = SymbolTable._localsStackFrameSize();
+        if( stackFrameSize > context.maxStackFrameSize )
+        {
+            report_basic( methodDeclType, String.format( "Function/method has more parameters + local variables than the virtual machine supports: %d (max %d)", stackFrameSize, context.maxStackFrameSize ) );
+        }
+
+        // if the constructor has formal parameters
+        Symbol method = methodDeclType.symbol;
+        if( method.isConstructor() && SymbolTable._localsFormalParamCount() > 0 )
+        {
+            report_basic( methodDeclType, String.format( "The constructor doesn't currently support having parameters" ) );
+        }
 
         // forward visit only the function/method's labels' declarations
         // +   that way, the label's symbols will be added to the symbol table before their first use
@@ -880,10 +962,10 @@ public class SemanticVisitor extends VisitorAdaptor
          // context.syntaxNodeStack.remove();
 
             // get the formal parameter index in the formal parameter list
-            int paramIdx = SymbolTable._localsSize();
+            int paramIdx = SymbolTable._localsFormalParamCount();
 
             // add a dummy symbol as the formal parameter
-            Symbol paramSymbol = Symbol.newFormalParam( String.format( "@Param[%d]", paramIdx ), SymbolTable.anyType, paramIdx );
+            Symbol paramSymbol = Symbol.newFormalParam( String.format( "@Param_%d", paramIdx ), SymbolTable.anyType, paramIdx );
             SymbolTable.addSymbol( paramSymbol );
         }
         // ...
@@ -1068,9 +1150,10 @@ public class SemanticVisitor extends VisitorAdaptor
         SymbolType varType = ( !isArray ) ? leftType : SymbolType.newArray( String.format( "@Array<%s>", leftType._name() ), leftType );
 
         // update the current symbol
+        // HACK: don't worry about the class member's local index here, it will be fixed in <ClassDeclType ::= ...>
         int symLevel = SymbolTable._localsLevel();
         int localIdx = SymbolTable._localsSize();
-        int varIdx   = SymbolTable._localsVarCount();
+        int varIdx   = SymbolTable._localsStackFrameSize();
         
         switch( left._value() )
         {
@@ -1085,10 +1168,10 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the variable/field cannot be added to the symbol table
         if( !SymbolTable.addSymbol( curr.symbol ) )
         {
-            report_verbose( curr, "A symbol with the same name already exists" );
+            report_verbose( curr, "Variable/field cannot be added since a symbol with the same name already exists" );
             
             // add a dummy symbol to the symbol table, used for semantic checking later on
-            curr.symbol = curr.symbol.clone( String.format( "@Var[%d]", localIdx ) );
+            curr.symbol = curr.symbol.clone( String.format( "@Var_%d", SymbolTable._localsVarCount() ) );
             SymbolTable.addSymbol( curr.symbol );
         }
 
@@ -1193,7 +1276,7 @@ public class SemanticVisitor extends VisitorAdaptor
         curr.symbol = Symbol.newConst( curr.getIdentName(), left._type(), right._value() );
         if( !SymbolTable.addSymbol( curr.symbol ) )
         {
-            report_verbose( curr, "A symbol with the same name already exists" );
+            report_verbose( curr, "Constant cannot be added since a symbol with the same name already exists" );
             return;
         }
     }
@@ -1209,7 +1292,7 @@ public class SemanticVisitor extends VisitorAdaptor
     // StatementList ::= (StatementList_Tail ) StatementList Statement;
     // StatementList ::= (StatementList_Empty) ;
 
-    ////// stmt stmt label_01:stmt
+    ////// label_01:stmt
     ////// {}
     ////// { label1:statement label2:statement label3:statement }
     // Statement ::= (Statement_Plain)           Stmt;
@@ -1328,7 +1411,8 @@ public class SemanticVisitor extends VisitorAdaptor
         }
 
         Symbol left = SymbolTable.noSym;
-        if( scope instanceof MethodDeclType_Plain ) left = ( ( MethodDeclType_Plain )scope ).symbol;
+        if     ( scope instanceof MethodDeclType_Plain ) left = ( ( MethodDeclType_Plain )scope ).symbol;
+        else if( scope instanceof MethodDeclType_Empty ) left = ( ( MethodDeclType_Empty )scope ).symbol;
         // if the method type is not yet supported
         else
         {
@@ -1350,7 +1434,7 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Stmt_Goto curr )
     {
         // try to find the label for the current function scope in the symbol table
-        String labelName = String.format( "@Label[%s]", curr.getLabel() );
+        String labelName = String.format( "@Label_%s", curr.getLabel() );
         Symbol labelSymbol = SymbolTable.findSymbol( labelName );
         // if the label doesn't exist in the function scope
         if( labelSymbol.isNoSym() )
@@ -1550,7 +1634,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the designator is not an int
         if( !left._type().isInt() )
         {
-            report_verbose( curr, "This designator must be of type int to be incremented/decremented" );
+            report_verbose( curr, "This designator must be of type int to allow being incremented/decremented" );
             return;
         }
     }
@@ -1642,10 +1726,10 @@ public class SemanticVisitor extends VisitorAdaptor
         {
             return;
         }
-        // if the designator is not a function or class member method
+        // if the designator is not a function/method
         if( !design.isFunction() && !design.isMethod() )
         {
-            report_verbose( MethodCall, "Expected function or class member method" );
+            report_verbose( MethodCall, "Expected function or method" );
             MethodCall.symbol = SymbolTable.noSym;
             return;
         }
@@ -1668,7 +1752,7 @@ public class SemanticVisitor extends VisitorAdaptor
     private void visit_ActParam( SyntaxNode curr, Expr currExpression )
     {
         // the current activation parameter's index in the function/method declaration
-        int actParamIdx = SymbolTable._localsSize();
+        int actParamIdx = SymbolTable._localsActivParamCount();
         ActParam actParamNode = null;
 
         // if this node has an associated expression (is an ActParam and not an ActPars_Empty), reset its symbol
@@ -1686,7 +1770,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the method call scope doesn't exist
         if( MethodCall == null )
         {
-            report_fatal( curr, "Method call not yet supported" );
+            report_fatal( curr, "Function/method call not yet supported" );
             return;
         }
         // if there was an error in the method call scope (either designator error, or one of the formal parameters reported an error that should stop the next formal parameters' checking)
@@ -1702,7 +1786,7 @@ public class SemanticVisitor extends VisitorAdaptor
             // but the function has formal parameters
             if( !formParams.isEmpty() )
             {
-                report_basic( MethodCall, "Less parameters given than expected in function call" );
+                report_basic( MethodCall, "Less parameters given than expected in function/method call" );
                 MethodCall.symbol = SymbolTable.noSym;
             }
             
@@ -1712,7 +1796,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if more activation parameters are given than expected in the function declaration
         if( actParamIdx >= formParams.size() )
         {
-            report_basic( currExpression, "More parameters given than expected in function call" );
+            report_basic( currExpression, "More parameters given than expected in function/method call" );
             MethodCall.symbol = SymbolTable.noSym;
             return;
         }
@@ -1721,7 +1805,7 @@ public class SemanticVisitor extends VisitorAdaptor
         boolean hasNext = ( /*Expr*/curr.getParent() ).getParent() instanceof ActParsList;
         if( !hasNext && actParamIdx != formParams.size()-1 )
         {
-            report_basic( MethodCall, "Less parameters given than expected in function call" );
+            report_basic( MethodCall, "Less parameters given than expected in function/method call" );
             MethodCall.symbol = SymbolTable.noSym;
             // IMPORTANT: don't return here, because the current parameter hasn't yet been checked
          // return;
@@ -1732,14 +1816,14 @@ public class SemanticVisitor extends VisitorAdaptor
         Symbol actParam = currExpression.symbol;
         if( !formParam.isNoSym() && !actParam.isNoSym() && !SymbolType.isAssignableFrom( formParam._type(), actParam._type() ) )
         {
-            report_verbose( currExpression, "This expression is incompatible with the function's formal parameter" );
+            report_verbose( currExpression, "This expression is incompatible with the function/method's formal parameter" );
             // IMPORTANT: don't return here, because the next parameter's index hasn't yet been set (by adding the activation parameter to the symbol table)
          // return;
         }
 
         // add an activation parameter to the symbol table
         // +   only used for setting the next activation parameter's index
-        actParamNode.symbol = Symbol.newActivParam( String.format( "@Param[%d]", actParamIdx ), actParam._type(), actParamIdx );
+        actParamNode.symbol = Symbol.newActivParam( String.format( "@Param_%d", actParamIdx ), actParam._type(), actParamIdx );
         SymbolTable.addSymbol( actParamNode.symbol );
     }
 
@@ -2094,9 +2178,94 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( MethodCall_Plain curr )
     {
-        curr.symbol = curr.getDesignator().symbol;
+        // reset the function call's symbol
+        curr.symbol = SymbolTable.noSym;
         // add the function call's designator to the syntax node stack
         context.syntaxNodeStack.add( curr );
+
+        // get the designator's symbol
+        Symbol left = curr.getDesignator().symbol;
+
+        if( left.isNoSym() ) return;
+
+        // if the function call is a call to the supertype's constructor (super())
+        if( left.isSuper() )
+        {
+            // replace the designator's symbol with the supertype's constructor
+            // NOTE: use _type() instead of _base(), since the <'super' symbol>'s type is the <'this' symbol>'s supertype
+            left = left._type()._members().findSymbol( "@Constructor" );
+            curr.getDesignator().symbol = left;
+
+            // get the surrounding function's declaration
+            SyntaxNode methodDeclType = context.syntaxNodeStack.find(
+                elem -> ( elem instanceof MethodDeclType )
+            );
+
+            // get the surrounding function's symbol
+            Symbol methodSymbol = null;
+            if( methodDeclType instanceof MethodDeclType_Empty ) methodSymbol = ( ( MethodDeclType_Empty )methodDeclType ).symbol;
+
+            // if 'super()' is used outside the constructor
+            if( methodSymbol == null || !methodSymbol.isConstructor() )
+            {
+                report_verbose( curr, "'super()' can only be used inside the constructor" );
+                return;
+            }
+
+            // check if the 'super();' statement is the first statement in the constructor
+            // +   the 'super();' statement must not be nested: <void @constructor() { {{{ super(); }}} }> is not allowed
+            // +   NOTE: the statement is going to be in a <StatementList_Tail ::= ...>, since the <MethodDecl ::= ...> node contains a StatementList!
+            SyntaxNode node = curr;
+            int nestLevel = 0;
+            boolean isInStatementList = false;
+            boolean isFirstStmt = true;
+            while( true )
+            {
+                ////// MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace (((StatementList))) rbrace;
+                if( node instanceof MethodDecl )
+                {
+                    isInStatementList = false;
+                    break;
+                }
+                ////// StatementList ::= (StatementList_Tail ) StatementList Statement;
+                ////// StatementList ::= (StatementList_Empty) ;
+                if( node instanceof StatementList )
+                {
+                    // if the <statement list> node has just been entered
+                    if( !isInStatementList )
+                    {
+                        // increment the current nest level
+                        isInStatementList = true;
+                        nestLevel++;
+
+                        // check if there is a statement before 'super();'
+                        SyntaxNode prevNode = ( ( StatementList_Tail )node ).getStatementList();
+                        if( !( prevNode instanceof StatementList_Empty ) ) isFirstStmt = false;
+
+                        // if the 'super();' statement isn't the first! statement in the constructor's! scope
+                        if( nestLevel > 1 || !isFirstStmt )
+                        {
+                            report_verbose( curr, "'super()' must be the first statement in the constructor's scope" );
+                            return;
+                        }
+                    }
+                }
+                ////// Statement ::= (Statement_Plain)           Stmt;
+                ////// Statement ::= (Statement_Label) StmtLabel Stmt;
+                ////// Statement ::= (Statement_Scope) lbrace StatementList rbrace;
+                ////// ...
+                else
+                {
+                    isInStatementList = false;
+                }
+
+                // go up the syntax tree
+                node = node.getParent();
+            }
+        }
+
+        // set the function call's symbol to the designator's symbol
+        curr.symbol = left;
     }
 
     ////// null
@@ -2126,13 +2295,13 @@ public class SemanticVisitor extends VisitorAdaptor
         // reset the current designator's symbol
         curr.symbol = SymbolTable.noSym;
 
-        // find the class declaration surrounding 'this'
-        SyntaxNode scope = context.syntaxNodeStack.find(
+        // find the class! declaration surrounding 'this' (not method declaration)
+        // +   this allows for using 'this' in the class's field initializers
+        boolean isInClassScope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof ClassDeclType )
-        );
-
+        ) != null;
         // if the 'this' designator is not in a class declaration
-        if( scope == null )
+        if( !isInClassScope )
         {
             report_verbose( curr, "'this' has no effect here (it must be inside a class declaration)" );
             return;
@@ -2140,7 +2309,6 @@ public class SemanticVisitor extends VisitorAdaptor
 
         // try to find the 'this' symbol in the symbol table
         curr.symbol = SymbolTable.findSymbol( "this" );
-
         // if the 'this' symbol does not exist in the symbol table
         if( curr.symbol.isNoSym() )
         {
@@ -2153,8 +2321,47 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( Designator_Super curr )
     {
         // reset the current designator's symbol
-        curr.symbol = SymbolTable.nullSym;
-        // TODO: 1. super must be a method; 2. only allowed inside constructor; 3. must be the first statement
+        curr.symbol = SymbolTable.noSym;
+
+        // find the class! declaration surrounding 'super' (not method declaration)
+        // +   this allows for using 'super' in the class's field initializers
+        boolean isInClassScope = context.syntaxNodeStack.find(
+            elem -> ( elem instanceof ClassDeclType )
+        ) != null;
+        // if the 'super' designator is not in a class declaration
+        if( !isInClassScope )
+        {
+            report_verbose( curr, "'super' has no effect here (it must be inside a class declaration)" );
+            return;
+        }
+
+        // try to find the 'this' symbol in the symbol table
+        Symbol thisSymbol = SymbolTable.findSymbol( "this" );
+        // if the 'this' symbol does not exist in the symbol table
+        if( thisSymbol.isNoSym() )
+        {
+            report_fatal( curr, "Cannot find 'this' symbol in class scope" );
+            return;
+        }
+
+        // get the next syntax node after 'super'
+        SyntaxNode next = /*Designator_Super*/curr.getParent();
+        // check if the 'super' keyword refers to the supertype's constructor or a supertype's method
+        if( !( next instanceof Designator
+            || next instanceof MethodCall )
+        )
+        {
+            report_verbose( next, "'super' can only be used to call the supertype's virtual methods or the constructor" );
+            return;
+        }
+
+        // get the 'super' symbol's type, which is the supertype of the 'this' symbol
+        SymbolType superType = thisSymbol._type()._base();
+        // set the current designator's symbol
+        // +   important: the 'super' symbol is the same as the 'this' symbol, except that its type is the supertype of the 'this' symbol
+        // +   this means that the zeroth method parameter (which is 'this') can be used as 'super' as well
+        //     +   but it can only be used to call the supertype's methods non-virtually (directly instead through the virtual table)
+        curr.symbol = Symbol.newConst( "super", superType, 0 );
     }
     // Designator ::= (Designator_Null   ) NULL_K;
     @Override
@@ -2163,9 +2370,9 @@ public class SemanticVisitor extends VisitorAdaptor
         // set the current designator's symbol to be the 'null' symbol
         curr.symbol = SymbolTable.nullSym;
     }
-    // Designator ::= (Designator_Field  ) Designator dot ident:Name;
+    // Designator ::= (Designator_Member ) Designator dot ident:Name;
     @Override
-    public void visit( Designator_Field curr )
+    public void visit( Designator_Member curr )
     {
         // reset the current designator's symbol
         curr.symbol = SymbolTable.noSym;
@@ -2185,6 +2392,12 @@ public class SemanticVisitor extends VisitorAdaptor
         // find the symbol with the given name in the previous designator's type's members
         Symbol member = left._type()._members().findSymbol( curr.getName() );
 
+        // if 'super' is used to access the inherited supertype's fields
+        if( left.isSuper() && !member.isMethod() )
+        {
+            report_verbose( curr, "'super' cannot be used to access the inherited supertype's fields (use 'this' instead)" );
+            return;
+        }
         // if the previous symbol doesn't contain the current field/member
         if( member.isNoSym() )
         {
@@ -2228,7 +2441,7 @@ public class SemanticVisitor extends VisitorAdaptor
         }
 
         // find the symbol with the given name in the previous designator's type's members
-        Symbol member = left._type()._members().findSymbol( "@elem" );
+        Symbol member = left._type()._members().findSymbol( "@Element" );
 
         // if the expression inside the angle brackets has an error, an error must have already been reported for the expression, return
         if( right.isNoSym() ) return;

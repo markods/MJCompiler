@@ -241,20 +241,22 @@ public class CodeGen
     // load the symbol's value onto the expression stack
     public static int loadSymbolValue( Symbol symbol )
     {
-        // +   the <CONST case> also works for constants 'null' and 'this', since their values are 0
+        // +   the <CONST case> also works for constants 'null', 'this' and 'super', since their values are 0
         // +   the <ARRAY_ELEM case> requires that the array element's index was previously loaded onto the expression stack
         // +   the <FIELD case> also works for @pVirtualTable (field whose value is the virtual table's starting address)
         // +   the <TYPE case> does nothing, since this is a way to access the class's static fields outside the class's scope
         switch( symbol._kind() )
         {
-            case Symbol.CONST: if( symbol.isThis() )   { return loadLocal  ( symbol._value()/*0*/); }
+            case Symbol.CONST: if( symbol.isThis()
+                                || symbol.isSuper() )  { return loadLocal  ( symbol._value()/*0*/); }
                                else                    { return loadConst  ( symbol._value()     ); }
             case Symbol.VAR:   if( symbol.isGlobal() ) { return i_getstatic( symbol._address()   ); }
                                else                    { return loadLocal  ( symbol._varIdx()    ); }
             case Symbol.FORMAL_PARAM:                  { return loadLocal  ( symbol._varIdx()    ); }
-            case Symbol.STATIC_FIELD:                  { return i_getstatic( symbol._address()   ); }
             case Symbol.FIELD:                         { return i_getfield ( symbol._memberIdx() ); }
+            case Symbol.STATIC_FIELD:                  { return i_getstatic( symbol._address()   ); }
             case Symbol.METHOD:                        { return /*ignore symbol*/_pc32(); }
+            case Symbol.STATIC_METHOD:                 { return /*ignore symbol*/_pc32(); }
             case Symbol.FUNCTION:                      { return /*ignore symbol*/_pc32(); }
             case Symbol.TYPE:                          { return /*ignore symbol*/_pc32(); }
             case Symbol.ARRAY_ELEM:                    { return loadArrayElem( symbol._type().isChar() ); }
@@ -268,24 +270,25 @@ public class CodeGen
     // check if the symbol needs designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
     public static boolean needsPrevDesignatorValue( Symbol symbol )
     {
-        // +   the <CONST case> also works for constants 'null' and 'this', since their values are 0
+        // +   the <CONST case> also works for constants 'null', 'this' and 'super', since their values are 0
         // +   the <ARRAY_ELEM case> requires that the array element's index was previously loaded onto the expression stack
         // +   the <FIELD case> also works for @pVirtualTable (field whose value is the virtual table's starting address)
         // +   the <TYPE case> does nothing, since this is a way to access the class's static fields outside the class's scope
         switch( symbol._kind() )
         {
-            case Symbol.CONST:        { return false; }
-            case Symbol.VAR:          { return false; }
-            case Symbol.FORMAL_PARAM: { return false; }
-            case Symbol.STATIC_FIELD: { return false; }
-            case Symbol.FIELD:        { return true;  }
-            case Symbol.METHOD:       { return true;  }
-            case Symbol.FUNCTION:     { return false; }
-            case Symbol.TYPE:         { return false; }
-            case Symbol.ARRAY_ELEM:   { return true;  }
+            case Symbol.CONST:         { return false; }
+            case Symbol.VAR:           { return false; }
+            case Symbol.FORMAL_PARAM:  { return false; }
+            case Symbol.FIELD:         { return true;  }
+            case Symbol.STATIC_FIELD:  { return false; }
+            case Symbol.METHOD:        { return true;  }
+            case Symbol.STATIC_METHOD: { return false; }
+            case Symbol.FUNCTION:      { return false; }
+            case Symbol.TYPE:          { return false; }
+            case Symbol.ARRAY_ELEM:    { return true;  }
             /* miscellaneous symbol types */
-         // case Symbol.ACTIV_PARAM:  { return /*not allowed*/; }
-         // case Symbol.PROGRAM:      { return /*not allowed*/; }
+         // case Symbol.ACTIV_PARAM:   { return /*not allowed*/; }
+         // case Symbol.PROGRAM:       { return /*not allowed*/; }
 
             default: { report_fatal( "Symbol not supported" ); return false; }
         }
@@ -301,9 +304,10 @@ public class CodeGen
             case Symbol.VAR:   if( symbol.isGlobal() ) { return i_putstatic( symbol._address()   ); }
                                else                    { return storeLocal ( symbol._varIdx()    ); }
             case Symbol.FORMAL_PARAM:                  { return storeLocal ( symbol._varIdx()    ); }
-            case Symbol.STATIC_FIELD:                  { return i_putstatic( symbol._address()   ); }
             case Symbol.FIELD:                         { return i_putfield ( symbol._memberIdx() ); }
+            case Symbol.STATIC_FIELD:                  { return i_putstatic( symbol._address()   ); }
          // case Symbol.METHOD:                        { return /*not allowed*/; }
+         // case Symbol.STATIC_METHOD:                 { return /*not allowed*/; }
          // case Symbol.FUNCTION:                      { return /*not allowed*/; }
          // case Symbol.TYPE:                          { return /*not allowed*/; }
             case Symbol.ARRAY_ELEM:                    { return storeArrayElem( symbol._type().isChar() ); }
@@ -324,10 +328,10 @@ public class CodeGen
         int vtSize = 0;
 
         // for all the class's methods
-        for( Symbol method : classSymbol._type()._members() )
+        for( Symbol method : classSymbol._type()._methods() )
         {
-            // if the symbol is not a method, skip it
-            if( !method.isMethod() ) continue;
+            // if the method is not explicitly callable, skip it
+            if( method.isDummySym() ) continue;
 
             // reserve an entry in the class's virtual table
             // +   reserve one word (i32) for each char in the method name
@@ -349,10 +353,10 @@ public class CodeGen
         int pVirtualTable = classSymbol._address();
 
         // for all the class's methods
-        for( Symbol method : classSymbol._type()._members() )
+        for( Symbol method : classSymbol._type()._methods() )
         {
-            // if the symbol is not a method, skip it
-            if( !method.isMethod() ) continue;
+            // if the method is not explicitly callable, skip it
+            if( method.isDummySym() ) continue;
             
             // for all characters in the method name
             String methodName = method._name();

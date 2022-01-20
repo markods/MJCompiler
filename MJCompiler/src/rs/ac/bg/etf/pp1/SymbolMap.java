@@ -86,6 +86,17 @@ public class SymbolMap extends SymbolDataStructure implements Iterable<Symbol>, 
         return this;
     }
 
+    // return the positive occurences in their respectful order as a symbol map
+    public SymbolMap filter( Predicate<Symbol> matcher )
+    {
+        SymbolMap result = new SymbolMap();
+        for( Symbol symbol : _symbols() )
+        {
+            if( matcher.test( symbol ) ) result.addSymbol( symbol );
+        }
+        return result;
+    }
+
     // count the number of positive occurences given the match function
     public int count( Predicate<Symbol> matcher )
     {

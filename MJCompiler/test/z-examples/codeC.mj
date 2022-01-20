@@ -20,7 +20,7 @@ class Predmet
         char dohvVrstu() { return vrsta; }
         int dohvTezinu() { return tezina; }
         void ispisi()
-		{
+        {
             print(vrsta);
             print(Q());
         }
@@ -46,7 +46,7 @@ class Sfera extends Predmet
         }
         
         void ispisi(){
-            super();
+            super.ispisi();
             print(r);
             print(eol);
         }
@@ -55,7 +55,7 @@ class Sfera extends Predmet
 
 class Kvadar extends Predmet
 {
-     int a, b, c;
+    int a, b, c;
     {
         Kvadar() {
             super();
@@ -70,7 +70,7 @@ class Kvadar extends Predmet
             return z;
         }
         void ispisi(){
-            super();
+            super.ispisi();
             print(a);
             print(b);
             print(c);

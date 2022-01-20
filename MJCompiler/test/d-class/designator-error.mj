@@ -1,82 +1,63 @@
 program __designator_error__
 
-class Root
+class A
 {
     static int a;
+    int b;
 
     {
-        // k-th root of x
-        int root( int k, int x )
-            int a_km1;
-            int i, j;
+        A( int a )
         {
-            i = 0;
-            a = 1;
-            do
-            {
-                j = 0; a_km1 = 1;
-                do
-                {
-                    a_km1 = a_km1 * a;
-                    j++;
-                } while( j < k-1 );
-                
-                a = ( ( k-1 )*a + x/a_km1 ) / k;
-
-                i++;
-            } while( i < 20 );
-
-            return a;
+            this.a = a;
+            A.b = 6;
         }
+
+        A foo() { return this; }
+        A bar() { return this; }
     }
 }
 
-class Vector3D
+class B extends A
 {
-    static Root root;
     static int a;
 
-    int x, y, z;
-    
     {
-        void init()
+        B()
         {
-            if( root == null ) { root = new Root; }
+            a = 1;
+            super();
         }
 
-        // scalar multiplication of two 3D vectors
-        int scmul( Vector3D v2 )
-            Vector3D v1;
-            int res;
+        A foo() { return super; }
+        B bar( int a ) { B.a = a; return this; }
+        void baz() { super.b = 5; b = 5; super(); }
+    }
+}
+
+class C extends B
+{
+    {
+        B() int a; {}
+
+        C()
         {
-            init();
-            v1 = this;
-            res = root.root( 2, v1.x*v2.x + v1.y*v2.y + v1.z*v2.z );
-            return res;
+            { super(); }
         }
+
+        C() {}
+
+        C foo() { return this; }
+        C bar() { C.a = a; return this; }
     }
 }
 
 {
     void main()
-        Vector3D v1, v2;
-        int a;
+        C c;
     {
-        v1 = new Vector3D;
-        v1.x = 1;
-        v1.y = 2;
-        v1.z = 3;
-
-        v2 = new Vector3D;
-        v2.x = 4;
-        v2.y = 3;
-        v2.z = 2;
-
-        a = v1.scmul( v2 );
-        print( v1.root.a ); print( ' ' );   // TODO: static member cannot be accessed non-statically; this cannot be used outside class
-                                            // TODO: Cannot override, method's signature different from inherited method's signature
-        print( v2.a ); print( ' ' );
-        print( v1.this.root.a );
+        c = new C;
         this.a = 5;
+        super.a = 6;
     }
 }
+

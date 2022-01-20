@@ -367,6 +367,7 @@ RecordDeclBody ::= (RecordDeclBody_Vars) VarDeclList;
 // void foo() { statement statement }
 // void foo() vardl vardl { }
 // void foo() vardl vardl { statement statement }
+//      foo() vardl vardl { statement statement }   -- constructor
 // void foo( int a, char c, Node Array[] ) { }
 // void foo( int a, char c, Node Array[] ) { statement statement }
 // void foo( int a, char c, Node Array[] ) vardl vardl { }
@@ -375,7 +376,9 @@ MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDe
 
 // void foo
 // A foo
+// foo   -- constructor
 MethodDeclType ::= (MethodDeclType_Plain) ReturnType ident:MethodName;
+MethodDeclType ::= (MethodDeclType_Empty)            ident:MethodName;
 
 // action symbol for opening a new scope
 MethodDeclBody ::= (MethodDeclBody_Plain) ;
@@ -460,7 +463,7 @@ ConstInit ::= (ConstInit_Err  ) error {: parser.report_error( "Bad initializatio
 StatementList ::= (StatementList_Tail ) StatementList Statement;
 StatementList ::= (StatementList_Empty) ;
 
-// stmt stmt label_01:stmt
+// label_01:stmt
 // {}
 // { label1:statement label2:statement label3:statement }
 Statement ::= (Statement_Plain)           Stmt;
@@ -625,7 +628,7 @@ Designator ::= (Designator_Ident  ) ident:Name;
 Designator ::= (Designator_This   ) THIS_K;
 Designator ::= (Designator_Super  ) SUPER_K;
 Designator ::= (Designator_Null   ) NULL_K;
-Designator ::= (Designator_Field  ) Designator dot ident:Name;
+Designator ::= (Designator_Member ) Designator dot ident:Name;
 Designator ::= (Designator_ArrElem) Designator lbracket Expr rbracket;
 
 

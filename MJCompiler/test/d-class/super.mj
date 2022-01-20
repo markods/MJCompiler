@@ -1,0 +1,67 @@
+program __super__
+
+class A
+{
+    char name;
+    int a;
+
+    {
+        A()
+        {
+            super();
+            name = 'A';
+            a = 5;
+        }
+
+        void get() { print('+');print('a');print('=');print(a);print(eol); }
+        void str() { print(name);print(':');print(eol); get(); }
+    }
+}
+
+class B extends A
+{
+    int b;
+
+    {
+        void get() { name = 'B'; super.get(); print('+');print('b');print('=');print(b);print(eol); }
+    }
+}
+
+class C extends B
+{
+    {
+        C()
+        {
+            super();
+            name = 'C';
+            b = 6;
+        }
+    }
+}
+
+class D extends C
+{
+    int d;
+
+    {
+        D()
+        {
+            b = 6;
+            d = 7;
+            name = 'D';
+        }
+
+        void get() { super.get(); print('+');print('d');print('=');print(d);print(eol); }
+    }
+}
+
+{
+    void main()
+        A a;
+    {
+        a = new A; a.str();
+        a = new B; a.str();
+        a = new C; a.str();
+        a = new D; a.str();
+    }
+}

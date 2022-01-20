@@ -104,7 +104,7 @@ public class ScopeVisitor implements Visitor
     public void visit( ReturnType_Ident            node ) { updateScope( node ); }
     public void visit( ReturnType_Void             node ) { updateScope( node ); }
     public void visit( Designator_ArrElem          node ) { updateScope( node ); }
-    public void visit( Designator_Field            node ) { updateScope( node ); }
+    public void visit( Designator_Member           node ) { updateScope( node ); }
     public void visit( Designator_Null             node ) { updateScope( node ); }
     public void visit( Designator_Super            node ) { updateScope( node ); }
     public void visit( Designator_This             node ) { updateScope( node ); }
@@ -200,6 +200,7 @@ public class ScopeVisitor implements Visitor
     public void visit( FormPars_List               node ) { updateScope( node ); }
     public void visit( MethodDeclCode_Plain        node ) { updateScope( node ); }
     public void visit( MethodDeclBody_Plain        node ) { updateScope( node ); }
+    public void visit( MethodDeclType_Empty        node ) { updateScope( node ); }
     public void visit( MethodDeclType_Plain        node ) { updateScope( node ); }
     public void visit( MethodDecl_Plain            node ) { updateScope( node ); }
     public void visit( RecordDeclBody_Vars         node ) { updateScope( node ); }
