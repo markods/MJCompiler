@@ -796,8 +796,18 @@ public class CodeGenVisitor extends VisitorAdaptor
         // if the symbol needs designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
         if( CodeGen.needsPrevDesignatorValue( designator ) )
         {
-            // duplicate that previous value (so that we don't lose it)
-            CodeGen.i_dup();
+            // if the last designator segment is not an array element
+            if( !designator.isArrayElem() )
+            {
+                // duplicate the designator address (so that we don't lose it)
+                CodeGen.i_dup();
+            }
+            // if the last designator segment is an array element
+            else
+            {
+                // duplicate the designator address and the array element index (so that we don't lose them)
+                CodeGen.i_dup2();
+            }
         }
 
         // load the designator's value to the expression stack

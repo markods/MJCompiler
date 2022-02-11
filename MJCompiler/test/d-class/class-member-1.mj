@@ -39,7 +39,10 @@ class C
         c.b[ 0 ].a.c_arr = new char[ 20 ];
 
         c.b[ 0 ].a_arr[ 24 ] = c.b[ 0 ].a;
-        c.b[ 0 ].a.a_arr[ 9 ] = 2;
+        c.b[ 0 ].a.a_arr[ 9 ] = 1;
+        c.b[ 0 ].a.a_arr[ 9 ]++;
+        c.b[ 0 ].a.a_arr[ 9 ]--;
+        c.b[ 0 ].a.a_arr[ 9 ]++;
         c.b[ 0 ].a.b_arr[ 14 ] = false;
         c.b[ 0 ].a.c_arr[ 19 ] = ''';
 
