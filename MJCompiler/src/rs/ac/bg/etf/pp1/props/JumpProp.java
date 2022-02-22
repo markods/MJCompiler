@@ -29,7 +29,7 @@ public class JumpProp implements Iterable<JumpProp.JumpRecord>
         public int _pointAddress() { return pointAddress; }
         public JumpRecord _pointAddress( int pointAddress )
         {
-            if( this.pointAddress != NO_ADDRESS && this.pointAddress != pointAddress ) throw new IllegalArgumentException( "The point's address cannot be changed once set" );
+            if( this.pointAddress != NO_ADDRESS ) throw new IllegalArgumentException( "The point's address cannot be set more than once" );
             this.pointAddress = pointAddress;
 
             for( int addressToFix : addressesToFix ) CodeGen.fixJumpOffset( addressToFix, pointAddress );
@@ -40,8 +40,8 @@ public class JumpProp implements Iterable<JumpProp.JumpRecord>
 
         public JumpRecord _addAddressToFix( int addressToFix )
         {
-            if( this.pointAddress != CodeGen.NO_ADDRESS ) CodeGen.fixJumpOffset( addressToFix, pointAddress );
-            else                                          addressesToFix.add( addressToFix );
+            if( pointAddress != CodeGen.NO_ADDRESS ) CodeGen.fixJumpOffset( addressToFix, pointAddress );
+            else                                     addressesToFix.add( addressToFix );
             
             return this;
         }

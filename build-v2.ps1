@@ -526,7 +526,7 @@ class Pipeline
         if( $script:LastStatusCode -ne 0 )
         {
             FileUtil_RemoveFolder "$AstPath" | Write-Output;
-            FileUtil_MoveItem "$AstPath.old", "$AstPath" | Write-Output;
+            FileUtil_MoveItem "$AstPath.old" "$AstPath" | Write-Output;
             return;
         }
 

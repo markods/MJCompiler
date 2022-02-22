@@ -22,13 +22,13 @@ public class CodeGen
     // constant copied over from class Code
     private static final int codesz = 8192;
     
-    public static int _pc32() { return Code.pc; };
-    public static void _pc32( int value_32 ) { Code.pc = value_32; };
-    private static int _pc32Inc( int amount ) { int pc = Code.pc; Code.pc += amount; return pc; };
+    public static int _pc32() { return Code.pc; }
+    public static void _pc32( int value_32 ) { Code.pc = value_32; }
+    private static int _pc32Inc( int amount ) { int pc = Code.pc; Code.pc += amount; return pc; }
 
-    private static int _mainAddr32() { return Code.mainPc; };
-    private static void _mainAddr32( int value_32 ) { Code.mainPc = value_32; };
-    public static void _mainAddr32Set() { Code.mainPc = Code.pc; };
+    private static int _mainAddr32() { return Code.mainPc; }
+    private static void _mainAddr32( int value_32 ) { Code.mainPc = value_32; }
+    public static void _mainAddr32Set() { Code.mainPc = Code.pc; }
 
     private static int _staticSize32() { return Code.dataSize; }
     private static void _staticSize32( int value_32 ) { Code.dataSize = value_32; }
