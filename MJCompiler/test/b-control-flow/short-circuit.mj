@@ -1,0 +1,231 @@
+program __short_circuit__
+{
+    bool P( char p, bool b )
+    {
+        print(p); print(' ');
+        return b;
+    }
+    void T( bool b )
+    {
+        if( b ) { print('o');print('k');print(' '); print(eol); }
+        else    { print('u');print('n');print('e');print('x');print('p');print('e');print('c');print('t');print('e');print('d');print(' '); print(eol); }
+    }
+    void EOL()
+    {
+        print(eol);
+    }
+    void HR()
+    {
+        print('-');print('-');print('-');print('-');print('-');print('-');print('-');print('-');print('-');print('-'); print(eol);
+    }
+    bool bool_invert( bool a )
+    {
+        if( a ) return false;
+        else    return true;
+    }
+
+
+    void TEST_01( bool a, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( P('A',a) ) T(branch1); else T(branch2);
+    }
+    void TEST_02( bool a, bool b, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( P('A',a) || P('B',b) ) T(branch1); else T(branch2);
+    }
+    void TEST_03( bool a, bool b, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( P('A',a) && P('B',b) ) T(branch1); else T(branch2);
+    }
+
+
+    void TEST_04( bool a, bool b, bool c, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( P('A',a) && P('B',b) || P('C',c) ) T(branch1); else T(branch2);
+    }
+    void TEST_05( bool a, bool b, bool c, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( P('A',a) || P('B',b) && P('C',c) ) T(branch1); else T(branch2);
+    }
+    
+
+    void TEST_06( bool a, bool b, bool c, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( P('A',a) && ( P('B',b) || P('C',c) ) ) T(branch1); else T(branch2);
+    }
+    void TEST_07( bool a, bool b, bool c, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if( ( P('A',a) || P('B',b) ) && P('C',c) ) T(branch1); else T(branch2);
+    }
+
+
+    void TEST_08( bool a, bool b, bool c, bool d, bool e, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if(   ( ( ((( P('A',a) ))) || P('B',b) ) || P('C',c) && P('D',d) ) && P('E',e)   ) T(branch1); else T(branch2);
+    }
+
+
+    void TEST_09( bool a, bool b, bool c, bool d, bool e, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if(   ( ( ((( P('A',a) ))) && P('B',b) ) && P('C',c) || P('D',d) ) || P('E',e)   ) T(branch1); else T(branch2);
+    }
+
+
+    void TEST_10( bool m, bool n, bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool q, bool h, bool i, bool j, bool k, bool r, bool l, bool branch1 )
+        bool branch2;
+    {
+        branch2 = bool_invert(branch1);
+        if(   P('M',m) && P('N',n)   ||   ((( P('A',a) && P('B',b) || P('C',c) ))) && ( P('D',d) && P('E',e) || P('F',f) || P('G',g) && P('Q',q) )   ||  P('H',h) && P('I',i) && P('J',j) || P('K',k) && P('R',r) || P('L',l)   ) T(branch1); else T(branch2);
+    }
+
+
+    void main()
+    {
+        // testing base cases
+        HR();
+        TEST_01( true , /*RES*/ true  );
+        TEST_01( false, /*RES*/ false );
+
+        // testing 'or' short circuiting
+        HR();
+        TEST_02( true , true , /*RES*/ true  );
+        TEST_02( true , false, /*RES*/ true  );
+        TEST_02( false, true , /*RES*/ true  );
+        TEST_02( false, false, /*RES*/ false );
+
+        // testing 'and' short circuiting
+        HR();
+        TEST_03( true , true , /*RES*/ true  );
+        TEST_03( true , false, /*RES*/ false );
+        TEST_03( false, true , /*RES*/ false );
+        TEST_03( false, false, /*RES*/ false );
+
+
+
+        // testing combination of 'and' and 'or' 1
+        HR();
+/*0*/   TEST_04( true , true , true , /*RES*/ true  );
+        TEST_04( true , true , false, /*RES*/ true  );
+        TEST_04( true , false, true , /*RES*/ true  );
+        TEST_04( true , false, false, /*RES*/ false );
+/*4*/   TEST_04( false, true , true , /*RES*/ true  );
+        TEST_04( false, true , false, /*RES*/ false );
+        TEST_04( false, false, true , /*RES*/ true  );
+        TEST_04( false, false, false, /*RES*/ false );
+
+        // testing combination of 'and' and 'or' 2
+        HR();
+/*0*/   TEST_05( true , true , true , /*RES*/ true  );
+        TEST_05( true , true , false, /*RES*/ true  );
+        TEST_05( true , false, true , /*RES*/ true  );
+        TEST_05( true , false, false, /*RES*/ true  );
+/*4*/   TEST_05( false, true , true , /*RES*/ true  );
+        TEST_05( false, true , false, /*RES*/ false );
+        TEST_05( false, false, true , /*RES*/ false );
+        TEST_05( false, false, false, /*RES*/ false );
+
+
+
+        // testing nested combination of 'and' and 'or' 1
+        HR();
+/*0*/   TEST_06( true , true , true , /*RES*/ true  );
+        TEST_06( true , true , false, /*RES*/ true  );
+        TEST_06( true , false, true , /*RES*/ true  );
+        TEST_06( true , false, false, /*RES*/ false );
+/*4*/   TEST_06( false, true , true , /*RES*/ false );
+        TEST_06( false, true , false, /*RES*/ false );
+        TEST_06( false, false, true , /*RES*/ false );
+        TEST_06( false, false, false, /*RES*/ false );
+
+        // testing nested combination of 'and' and 'or' 2
+        HR();
+/*0*/   TEST_07( true , true , true , /*RES*/ true  );
+        TEST_07( true , true , false, /*RES*/ false );
+        TEST_07( true , false, true , /*RES*/ true  );
+        TEST_07( true , false, false, /*RES*/ false );
+/*4*/   TEST_07( false, true , true , /*RES*/ true  );
+        TEST_07( false, true , false, /*RES*/ false );
+        TEST_07( false, false, true , /*RES*/ false );
+        TEST_07( false, false, false, /*RES*/ false );
+
+
+
+        //////                           .P   .P     .P   // jumpIfNot(X) to .(&Y)
+        ////// if(   ( ( ( A ) || B ) || C && D ) && E   )(&&)   O   else(||)   P;
+        //////             .E     .E                      // jumpIf(X) to .(&Y)   -- special case for 'or' (A and B jumpIf to E!, not D)
+
+        // special case for 'or'
+        HR();
+        TEST_08( true , true , true , true , true , /*RES*/ true  );
+        TEST_08( false, true , true , true , true , /*RES*/ true  );
+        TEST_08( false, false, true , true , true , /*RES*/ true  );
+        TEST_08( false, false, false, true , true , /*RES*/ false );
+        TEST_08( false, false, false, false, true , /*RES*/ false );
+        TEST_08( false, false, false, false, false, /*RES*/ false );
+
+
+
+        //////             .D     .D                 .P   // jumpIfNot(X) to .(&Y)
+        ////// if(   ( ( ( A ) && B ) && C || D ) || E   )(&&)   O   else(||)   P;
+        //////                           .O   .O          // jumpIf(X) to .(&Y)
+
+        // the same as the previous test but with the entire condition inverted
+        HR();
+        TEST_09( false, false, false, false, false, /*RES*/ false );
+        TEST_09( true , false, false, false, false, /*RES*/ false );
+        TEST_09( true , true , false, false, false, /*RES*/ false );
+        TEST_09( true , true , true , false, false, /*RES*/ true  );
+        TEST_09( true , true , true , true , false, /*RES*/ true  );
+        TEST_09( true , true , true , true , true , /*RES*/ true  );
+
+
+
+        //////       .A                .C        .H         .F             .H             .K   .K        .L        .P   // jumpIfNot(X) to .(&Y)
+        ////// if(   M && N   ||   ((( A && B || C ))) && ( D && E || F || G && Q )   ||  H && I && J || K && R || L   )(&&)   O   else(||)   P;
+        //////            .O                .D                   .O   .O        .O                  .O        .O        // jumpIf(X) to .(&Y)
+
+/*0*/   TEST_10( true , true , true , true , true , true , true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, true , true , true , true , true , true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, true , true , true , true , true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, true , true , true , true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, true , true , true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+/*5*/   TEST_10( false, false, false, false, false, true , true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, true , true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, true , true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, true , true , true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, false, true , true , true , true , true , true , true , /*RES*/ true  );
+/*10*/  TEST_10( false, false, false, false, false, false, false, false, false, false, true , true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, false, false, false, true , true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, false, false, false, false, true , true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, false, false, false, false, false, true , true , true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, false, false, false, false, false, false, true , true , /*RES*/ true  );
+/*15*/  TEST_10( false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true , /*RES*/ true  );
+        TEST_10( false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, /*RES*/ false );
+        
+
+        //////                                   .P          .P                 .P     .P     // jumpIfNot(X) to .(&Y)
+        ////// do(&&)   O   while(   A || ( B || C && ( D || E && ( F || G ) || H ) && G )   );   (||)P
+        //////                       .O     .O          .O          .O   .O                   // jumpIf(X) to .(&Y)
+
+
+
+    }
+}

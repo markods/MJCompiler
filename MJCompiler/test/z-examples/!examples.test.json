@@ -37,19 +37,19 @@
                 {
                     "TestName": "CodeB input 1",
                     "TestInput": ["1 2 3"],
-                    "ExTestOutput": ["01v97","v4","6","661218","84",""],
+                    "ExTestOutput": ["01v97","4","6","661218","84",""],
                     "ExExitCode": 0,
                 },
                 {
                     "TestName": "CodeB input 2",
                     "TestInput": ["1 1 1"],
-                    "ExTestOutput": ["01v97","v4","3","2666","18",""],
+                    "ExTestOutput": ["01v97","4","3","2666","18",""],
                     "ExExitCode": 0,
                 },
                 {
                     "TestName": "CodeB input 3",
                     "TestInput": ["-3 -2 -1"],
-                    "ExTestOutput": ["01v97","v4","-6","-2-18-12-6","84",""],
+                    "ExTestOutput": ["01v97","4","-6","-2-18-12-6","84",""],
                     "ExExitCode": 0,
                 },
             ],

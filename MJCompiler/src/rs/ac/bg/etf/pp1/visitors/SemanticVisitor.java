@@ -124,11 +124,11 @@ public class SemanticVisitor extends VisitorAdaptor
         
         ////// <epsilon>
         ////// int ident, Node Array[], char c
-        // FormPars ::= (FormPars_List ) FormParsScope FormParsList;
-        // FormPars ::= (FormPars_Empty) FormParsScope ;
+        // FormPars ::= (FormPars_List ) FormParsList;
+        // FormPars ::= (FormPars_Empty) ;
 
         ////// action symbol for opening a new scope
-        // FormParsScope ::= (FormParsScope_Plain) ;
+        // FormParsScope ::= (FormParsScope_Plain) lparen;
 
         ////// int a, char c, Node Array[]
         // FormParsList ::= (FormParsList_Init)                    FormParam;
@@ -318,8 +318,7 @@ public class SemanticVisitor extends VisitorAdaptor
         {
             report_verbose( curr.getProgramType(), String.format( "Unexpected symbol table scope level: %d (expected 0)", SymbolTable._localsLevel() ) );
         }
-        // if the symbol table has more or less scopes open than expected
-        // +   global -> program
+        // if the syntax node stack is not empty
         if( context.syntaxNodeStack.size() != 0 )
         {
             report_verbose( curr.getProgramType(), "Syntax node stack not empty" );
@@ -613,7 +612,7 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// void foo( int a, char c, Node Array[] ) { statement statement }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
+    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType FormParsScope FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
     @Override
     public void visit( MethodDecl_Plain curr )
     {
@@ -913,11 +912,11 @@ public class SemanticVisitor extends VisitorAdaptor
     
     ////// <epsilon>
     ////// int ident, Node Array[], char c
-    // FormPars ::= (FormPars_List ) FormParsScope FormParsList;
-    // FormPars ::= (FormPars_Empty) FormParsScope ;
+    // FormPars ::= (FormPars_List ) FormParsList;
+    // FormPars ::= (FormPars_Empty) ;
 
     ////// action symbol for opening a new scope
-    // FormParsScope ::= (FormParsScope_Plain) ;
+    // FormParsScope ::= (FormParsScope_Plain) lparen;
 
     ////// int a, char c, Node Array[]
     // FormParsList ::= (FormParsList_Init)                    FormParam;
@@ -1325,15 +1324,25 @@ public class SemanticVisitor extends VisitorAdaptor
     //////
     ////// ;
     // Stmt ::= (Stmt_Designator ) DesignatorStmt semicol;
-    // Stmt ::= (Stmt_If         ) IF_K lparen IfCondition rparen IfStmt;
-    // Stmt ::= (Stmt_IfElse     ) IF_K lparen IfCondition rparen IfStmt ElseScope ElseStmt;
-    // Stmt ::= (Stmt_DoWhile    ) DoWhileScope Stmt WHILE_K lparen DoWhileCondition rparen semicol;
+    // Stmt ::= (Stmt_If         ) IfScope lparen IfCondition rparen IfStmt;
+    @Override
+    public void visit( Stmt_If curr )
+    {
+        context.syntaxNodeStack.remove();
+    }
+    // Stmt ::= (Stmt_IfElse     ) IfScope lparen IfCondition rparen IfStmt ELSE_K ElseStmt;
+    @Override
+    public void visit( Stmt_IfElse curr )
+    {
+        context.syntaxNodeStack.remove();
+    }
+    // Stmt ::= (Stmt_DoWhile    ) DoWhileScope DoWhileStmt WHILE_K lparen DoWhileCondition rparen semicol;
     @Override
     public void visit( Stmt_DoWhile curr )
     {
         context.syntaxNodeStack.remove();
     }
-    // Stmt ::= (Stmt_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
+    // Stmt ::= (Stmt_Switch     ) SwitchScope lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
     public void visit( Stmt_Switch curr )
     {
@@ -1357,7 +1366,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // find the surrounding do-while or switch statement
         SyntaxNode scope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof DoWhileScope_Plain
-                   || elem instanceof SwitchExpr_Plain )
+                   || elem instanceof SwitchScope_Plain )
         );
 
         // if the break is not in a do-while or switch statement
@@ -1494,34 +1503,21 @@ public class SemanticVisitor extends VisitorAdaptor
     // Stmt ::= (Stmt_Semicolon  ) semicol;
 
     ////// action symbols for opening a new scope and the if-statement's jump instructions
+    // IfScope ::= (IfScope_Plain) IF_K;
+    @Override
+    public void visit( IfScope_Plain curr )
+    {
+        context.syntaxNodeStack.add( curr );
+
+        // initialize the jump map
+        curr.jumpprop = new JumpProp();
+        curr.jumpprop.add( "@TrueBranch" );
+        curr.jumpprop.add( "@FalseBranch" );
+        curr.jumpprop.add( "@End" );
+    }
     // IfCondition ::= (IfCondition_Plain) Condition;
-    @Override
-    public void visit( IfCondition_Plain curr )
-    {
-        // initialize the jump instruction's address
-        curr.integer = 0;
-    }
     // IfStmt ::= (IfStmt_Plain) Stmt;
-    @Override
-    public void visit( IfStmt_Plain curr )
-    {
-        // initialize the jump instruction's address
-        curr.integer = 0;
-    }
-    // ElseScope ::= (ElseScope_Plain) ELSE_K;
-    @Override
-    public void visit( ElseScope_Plain curr )
-    {
-        // initialize the jump instruction's address
-        curr.integer = 0;
-    }
     // ElseStmt ::= (ElseStmt_Plain) Stmt;
-    @Override
-    public void visit( ElseStmt_Plain curr )
-    {
-        // initialize the jump instruction's address
-        curr.integer = 0;
-    }
 
     ////// action symbols for opening a new scope and the do-while-statement's jump instructions
     // DoWhileScope ::= (DoWhileScope_Plain) DO_K;
@@ -1529,33 +1525,29 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( DoWhileScope_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
+
         // initialize the jump map
         curr.jumpprop = new JumpProp();
+        curr.jumpprop.add( "@TrueBranch" );
+        curr.jumpprop.add( "@Cond" );
+        curr.jumpprop.add( "@FalseBranch" );
+        curr.jumpprop.add( "@End" );
     }
-    // DoWhileCondition ::= (DoWhileCondition_Plain) DoWhileConditionScope Condition;
-    @Override
-    public void visit( DoWhileCondition_Plain curr )
-    {
-        // initialize the jump instruction's address
-        curr.integer = 0;
-    }
-    // DoWhileConditionScope ::= (DoWhileConditionScope_Plain) ;
-    @Override
-    public void visit( DoWhileConditionScope curr )
-    {
-        // initialize the do-while-condition's starting address
-        curr.integer = 0;
-    }
-
+    // DoWhileStmt ::= (DoWhileStmt_Plain) Statement;
+    // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
+    
     ////// action symbols for opening a new scope and the switch-statement's jump instructions
-    // SwitchExpr ::= (SwitchExpr_Plain) Expr;
+    // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
     @Override
-    public void visit( SwitchExpr_Plain curr )
+    public void visit( SwitchScope_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
+
         // initialize the jump map
         curr.jumpprop = new JumpProp();
+        curr.jumpprop.add( "@End" );
     }
+    // SwitchExpr ::= (SwitchExpr_Plain) Expr;
 
     ////// ident.ident[ expr ] = expr
     ////// ident.ident[ expr ]( )
@@ -1598,7 +1590,7 @@ public class SemanticVisitor extends VisitorAdaptor
             report_fatal( curr, "Assignment operator not yet supported" );
         }
     }
-    // DesignatorStmt ::= (DesignatorStmt_Call      ) MethodCall lparen ActPars rparen;
+    // DesignatorStmt ::= (DesignatorStmt_Call      ) MethodCall ActParsScope ActPars rparen;
     @Override
     public void visit( DesignatorStmt_Call curr )
     {
@@ -1660,22 +1652,19 @@ public class SemanticVisitor extends VisitorAdaptor
     public void visit( CaseScope_Plain curr )
     {
         // find the switch scope surrounding this symbol
-        SwitchExpr_Plain switchExpr = ( SwitchExpr_Plain )context.syntaxNodeStack.find(
-            elem -> ( elem instanceof SwitchExpr_Plain )
+        SwitchScope_Plain scope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof SwitchScope_Plain )
         );
 
         // if the switch scope doesn't exist
-        if( switchExpr == null )
+        if( scope == null )
         {
             report_fatal( curr, "Switch statement not yet supported" );
             return;
         }
         
-        // get the switch numbers set
-        JumpProp switchNumbers = switchExpr.jumpprop;
-
         // if the case number already exists
-        if( !switchNumbers.add( curr.getCaseNum().toString() ) )
+        if( !scope.jumpprop.add( String.format( "@Case_%d", curr.getCaseNum() ) ) )
         {
             report_verbose( curr, "Case with the same number already exists" );
             return;
@@ -1687,13 +1676,13 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// <epsilon>
     ////// expr
     ////// expr, expr, expr
-    // ActPars ::= (ActPars_Plain) ActParsScope ActParsList;
+    // ActPars ::= (ActPars_Plain) ActParsList;
     @Override
     public void visit( ActPars_Plain curr )
     {
         SymbolTable.closeScope();
     }
-    // ActPars ::= (ActPars_Empty) ActParsScope;
+    // ActPars ::= (ActPars_Empty) ;
     @Override
     public void visit( ActPars_Empty curr )
     {
@@ -1702,7 +1691,7 @@ public class SemanticVisitor extends VisitorAdaptor
     }
 
     ////// action symbol for opening a new scope
-    // ActParsScope ::= (ActParsScope_Plain) ;
+    // ActParsScope ::= (ActParsScope_Plain) lparen;
     @Override
     public void visit( ActParsScope_Plain curr )
     {
@@ -1829,63 +1818,55 @@ public class SemanticVisitor extends VisitorAdaptor
 
 
 
-    ////// expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
-    // Condition ::= (Condition_Term)              CondTerm;
-    @Override
-    public void visit( Condition_Term curr )
-    {
-        curr.symbol = curr.getCondTerm().symbol;
-    }
-    // Condition ::= (Condition_Or) Condition or CondTerm;
-    @Override
-    public void visit( Condition_Or curr )
-    {
-        curr.symbol = SymbolTable.noSym;
-        Symbol left = curr.getCondition().symbol;
-        Symbol right = curr.getCondTerm().symbol;
+    ////// bool   |   expr < expr   |   expr != expr
+    ////// ( expr == expr )
+    ////// ( expr >= expr || expr == expr && expr >= expr )   // 'and' has greater priority than 'or' implicitly
+    //////       .A                .C        .H         .F             .H             .K   .K        .L        .P   // jumpIfNot(X) to .(&Y)
+    ////// if(   M && N   ||   ((( A && B || C ))) && ( D && E || F || G && Q )   ||  H && I && J || K && R || L   )(&&)   O   else(||)   P;
+    //////            .O                .D                   .O   .O        .O                  .O        .O        // jumpIf(X) to .(&Y)
+    // Condition ::= (Condition_Single ) CondTerm;
+    // Condition ::= (Condition_Multi  ) CondTermList;
 
-        if( left.isNoSym()  ) curr.symbol = left;
-        if( right.isNoSym() ) curr.symbol = right;
-    }
-
-    ////// expr < expr and expr >= expr
-    // CondTerm ::= (CondTerm_Fact)              CondFact;
+    ////// ((( true )))                                       // the parentheses belong to the expression! (not to the condition)
+    ////// bool && b > c
+    ////// ((( ((bool)) && (( (b) > (c) )) )))
+    // CondTermList ::= (CondTermList_Aor ) CondTerm     CondTermScope CondTerm;
+    // CondTermList ::= (CondTermList_Tail) CondTermList CondTermScope CondTerm;
+    
+    ////// ((( cterm && cterm || cterm )))   |   expr   |   expr < expr   |   expr != expr
+    // CondTerm ::= (CondTerm_Fact) CondFact;
     @Override
     public void visit( CondTerm_Fact curr )
     {
-        curr.symbol = curr.getCondFact().symbol;
+        // initialize the jump map
+        curr.jumpprop = new JumpProp();
+        curr.jumpprop.add( "@TrueBranch" );
+        curr.jumpprop.add( "@FalseBranch" );
+        curr.jumpprop.add( "@Relop" );
     }
-    // CondTerm ::= (CondTerm_And) CondTerm and CondFact;
+    // CondTerm ::= (CondTerm_Nest) CondNest;
     @Override
-    public void visit( CondTerm_And curr )
+    public void visit( CondTerm_Nest curr )
     {
-        curr.symbol = SymbolTable.noSym;
-        Symbol left = curr.getCondTerm().symbol;
-        Symbol right = curr.getCondFact().symbol;
-
-        if( left.isNoSym()  ) curr.symbol = left;
-        if( right.isNoSym() ) curr.symbol = right;
+        // initialize the jump map
+        curr.jumpprop = new JumpProp();
+        curr.jumpprop.add( "@TrueBranch" );
+        curr.jumpprop.add( "@FalseBranch" );
     }
 
-    ////// expr < expr and expr >= expr
-    // CondFact ::= (CondFact_Expr) Expr;
+    ////// ((( cterm && cterm || cterm )))
+    // CondNest ::= (CondNest_Head) lparen CondTermList rparen;
+    // CondNest ::= (CondNest_Tail) lparen CondNest     rparen;
+    
+    ////// expr   |   expr < expr   |   expr != expr
+    // CondFact ::= (CondFact_Expr ) Expr;
     @Override
     public void visit( CondFact_Expr curr )
     {
-        curr.symbol = SymbolTable.noSym;
-
         Symbol left = curr.getExpr().symbol;
 
         // if the left symbol is not defined
         if( left.isNoSym() ) return;
-
-        curr.symbol = Symbol.newVar(
-            "@CondFact_Expr",
-            SymbolTable.boolType,
-            Symbol.NO_VALUE,
-            SymbolTable._localsLevel(),
-            SymbolTable._localsVarCount()
-        );
 
         // if the symbol's type is not a bool
         if( !left._type().isBool() )
@@ -1898,22 +1879,12 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( CondFact_Relop curr )
     {
-        curr.symbol = SymbolTable.noSym;
-
         Symbol left = curr.getExpr().symbol;
         Symbol right = curr.getExpr1().symbol;
         int relop = curr.getRelop().symbol._value();
 
         // if any of the symbols is not defined
         if( left.isNoSym() || right.isNoSym() ) return;
-
-        curr.symbol = Symbol.newVar(
-            "@CondFact_Relop",
-            SymbolTable.boolType,
-            Symbol.NO_VALUE,
-            SymbolTable._localsLevel(),
-            SymbolTable._localsVarCount()
-        );
 
         // if the symbols are not compatible
         if( !SymbolType.isCompatibleWith( left._type(), right._type() ) )
@@ -1933,6 +1904,9 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
+
+    ////// action symbols for finding out the next term's starting address
+    // CondTermScope ::= (CondTermScope_Plain) Aorop;
 
 
 
@@ -2077,8 +2051,8 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// 1202 | 'c' | true
     ////// new Object
     ////// new Array[ expr ]
-    ////// ( expr )
-    // Factor ::= (Factor_Designator    ) Designator;
+    ////// ((( expr )))
+    // Factor ::= (Factor_Designator ) Designator;
     @Override
     public void visit( Factor_Designator curr )
     {
@@ -2097,7 +2071,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
         curr.symbol = left;
     }
-    // Factor ::= (Factor_MethodCall ) MethodCall lparen ActPars rparen;
+    // Factor ::= (Factor_MethodCall ) MethodCall ActParsScope ActPars rparen;
     @Override
     public void visit( Factor_MethodCall curr )
     {
@@ -2105,13 +2079,13 @@ public class SemanticVisitor extends VisitorAdaptor
         // remove the function call's designator from the syntax node stack
         context.syntaxNodeStack.remove();
     }
-    // Factor ::= (Factor_Literal       ) Literal;
+    // Factor ::= (Factor_Literal    ) Literal;
     @Override
     public void visit( Factor_Literal curr )
     {
         curr.symbol = curr.getLiteral().symbol;
     }
-    // Factor ::= (Factor_NewVar        ) NEW_K Type;
+    // Factor ::= (Factor_NewVar     ) NEW_K Type;
     @Override
     public void visit( Factor_NewVar curr )
     {
@@ -2130,7 +2104,7 @@ public class SemanticVisitor extends VisitorAdaptor
 
         curr.symbol = left;
     }
-    // Factor ::= (Factor_NewArray      ) NEW_K Type lbracket Expr rbracket;
+    // Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
     @Override
     public void visit( Factor_NewArray curr )
     {
@@ -2166,7 +2140,7 @@ public class SemanticVisitor extends VisitorAdaptor
             return;
         }
     }
-    // Factor ::= (Factor_Expr          ) lparen Expr rparen;
+    // Factor ::= (Factor_Expr       ) lparen Expr rparen;
     @Override
     public void visit( Factor_Expr curr )
     {
@@ -2539,6 +2513,14 @@ public class SemanticVisitor extends VisitorAdaptor
     // Assignop ::= (Assignop_Assign) assign:Assignop;
     @Override
     public void visit( Assignop_Assign curr ) { curr.symbol = Symbol.newConst( "@Assignop_Assign", SymbolTable.intType, TokenCode.assign ); }
+
+    ////// &&  |  ||
+    // Aorop ::= (Aorop_And) and:Aorop;
+    @Override
+    public void visit( Aorop_And curr ) { curr.symbol = Symbol.newConst( "@Aorop_And", SymbolTable.intType, TokenCode.and ); }
+    // Aorop ::= (Aorop_Or ) or :Aorop;
+    @Override
+    public void visit( Aorop_Or curr ) { curr.symbol = Symbol.newConst( "@Aorop_Or", SymbolTable.intType, TokenCode.or ); }
 
     ////// ==  |  !=  |  >  |  >=  |  <  |  <=
     // Relop ::= (Relop_Eq) eq:Relop;

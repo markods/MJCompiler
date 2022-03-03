@@ -82,6 +82,11 @@ public class CodeGenVisitor extends VisitorAdaptor
         {
             report_verbose( curr.getProgramType(), String.format( "Unexpected symbol table scope level: %d (expected 0)", SymbolTable._localsLevel() ) );
         }
+        // if the syntax node stack is not empty
+        if( context.syntaxNodeStack.size() != 0 )
+        {
+            report_verbose( curr.getProgramType(), "Syntax node stack not empty" );
+        }
         // close the program's scope
         SymbolTable.closeScope();
     }
@@ -98,7 +103,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // initialize the predefined methods' addresses and add their code to the code segment
         {
             // reserve the null address with dummy code (so that methods don't start at null)
-            CodeGen.i_const_0();
+            CodeGen.loadConst( 0 );
             CodeGen.i_epop();
 
             ////// char chr( int i );
@@ -243,8 +248,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// void foo( int a, char c, Node Array[] ) { statement statement }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { }
     ////// void foo( int a, char c, Node Array[] ) vardl vardl { statement statement }
-    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType lparen FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;
-    @Override
+    // MethodDecl ::= (MethodDecl_Plain) MethodDeclType FormParsScope FormPars rparen MethodDeclBody VarDeclList MethodDeclCode lbrace StatementList rbrace;    @Override
     public void visit( MethodDecl_Plain curr )
     {
         // remove the <method declaration code> node from the syntax node stack
@@ -349,11 +353,11 @@ public class CodeGenVisitor extends VisitorAdaptor
 
     ////// <epsilon>
     ////// int ident, Node Array[], char c
-    // FormPars ::= (FormPars_List ) FormParsScope FormParsList;
-    // FormPars ::= (FormPars_Empty) FormParsScope ;
+    // FormPars ::= (FormPars_List ) FormParsList;
+    // FormPars ::= (FormPars_Empty) ;
 
     ////// action symbol for opening a new scope
-    // FormParsScope ::= (FormParsScope_Plain) ;
+    // FormParsScope ::= (FormParsScope_Plain) lparen;
 
     ////// int a, char c, Node Array[]
     // FormParsList ::= (FormParsList_Init)                    FormParam;
@@ -457,9 +461,6 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( StmtLabel_Plain curr )
     {
-        // save the current program counter as the statement's starting address
-        curr.integer = CodeGen._pc32();
-        
         // find the surrounding method declaration
         MethodDeclCode_Plain methodDecl = ( MethodDeclCode_Plain )context.syntaxNodeStack.find(
             elem -> ( elem instanceof MethodDeclCode_Plain )
@@ -467,8 +468,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // set the label's jump point's address
         // +   the method's labels have already been added in the semantic pass
-        String labelName = String.format( "@Label_%s", curr.getLabel() );
-        methodDecl.jumpprop.get( labelName )._pointAddress( curr.integer );
+        methodDecl.jumpprop.get( String.format( "@Label_%s", curr.getLabel() ) )._pointAddress( CodeGen._pc32() );
     }
 
     ////// ident.ident[ expr ] = expr;
@@ -493,48 +493,46 @@ public class CodeGenVisitor extends VisitorAdaptor
     //////
     ////// ;
     // Stmt ::= (Stmt_Designator ) DesignatorStmt semicol;
-    // Stmt ::= (Stmt_If         ) IF_K lparen IfCondition rparen IfStmt;
+    // Stmt ::= (Stmt_If         ) IfScope lparen IfCondition rparen IfStmt;
     @Override
     public void visit( Stmt_If curr )
     {
-        int pointA = curr.getIfCondition().integer;
-        int pointC = curr.getIfStmt().integer;
+        context.syntaxNodeStack.remove();
+        IfScope scope = curr.getIfScope();
 
-        // set the if-condition's jump to point after the if-statement
-        CodeGen.fixJumpOffset( pointA, pointC );
-        // remove the unconditional jump instruction from the code (by restoring the pc's value before it was added)
-        CodeGen._pc32( pointC );
+        // set the if statement's exit point here
+        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
     }
-    // Stmt ::= (Stmt_IfElse     ) IF_K lparen IfCondition rparen IfStmt ElseScope ElseStmt;
+    // Stmt ::= (Stmt_IfElse     ) IfScope lparen IfCondition rparen IfStmt ELSE_K ElseStmt;
     @Override
     public void visit( Stmt_IfElse curr )
     {
-        int pointA = curr.getIfCondition().integer;
-        int pointB = curr.getIfStmt().integer;
-        int pointC = curr.getElseScope().integer;
-        int pointD = curr.getElseStmt().integer;
+        context.syntaxNodeStack.remove();
+        IfScope scope = curr.getIfScope();
 
-        // set the if-condition's jump to point to the else-statement
-        CodeGen.fixJumpOffset( pointA, pointC );
-        // set the if-condition's unconditional jump to point after the else-statement
-        CodeGen.fixJumpOffset( pointB, pointD );
+        // set the if-else statement's exit point here
+        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
     }
-    // Stmt ::= (Stmt_DoWhile    ) DoWhileScope Stmt WHILE_K lparen DoWhileCondition rparen semicol;
+    // Stmt ::= (Stmt_DoWhile    ) DoWhileScope DoWhileStmt WHILE_K lparen DoWhileCondition rparen semicol;
     @Override
     public void visit( Stmt_DoWhile curr )
     {
         context.syntaxNodeStack.remove();
+        DoWhileScope scope = curr.getDoWhileScope();
+
+        // set the do-while statement's exit point here
+        scope.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
     }
     // Stmt ::= (Stmt_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
     public void visit( Stmt_Switch curr )
     {
         context.syntaxNodeStack.remove();
-        SwitchExpr scope = curr.getSwitchExpr();
+        SwitchScope scope = curr.getSwitchScope();
 
-        // set the switch-statement's exit point here
-        // +    the entry! point has been set in the SwitchExpr
-        scope.jumpprop.get( "exit" )._pointAddress( CodeGen._pc32() );
+        // set the switch statement's exit point here
+        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
     }
     // Stmt ::= (Stmt_Break      ) BREAK_K       semicol;
     @Override
@@ -543,19 +541,19 @@ public class CodeGenVisitor extends VisitorAdaptor
         // find the surrounding do-while or switch statement
         SyntaxNode scope = context.syntaxNodeStack.find(
             elem -> ( elem instanceof DoWhileScope_Plain
-                   || elem instanceof SwitchExpr_Plain )
+                   || elem instanceof SwitchScope_Plain )
         );
 
-        JumpProp jumpMap = null;
-        if     ( scope instanceof DoWhileScope     ) { jumpMap = ( ( DoWhileScope     )scope ).jumpprop; }
-        else if( scope instanceof SwitchExpr_Plain ) { jumpMap = ( ( SwitchExpr_Plain )scope ).jumpprop; }
+        JumpProp jumpprop = null;
+        if     ( scope instanceof DoWhileScope_Plain ) jumpprop = ( ( DoWhileScope_Plain )scope ).jumpprop;
+        else if( scope instanceof SwitchScope_Plain  ) jumpprop = ( ( SwitchScope_Plain  )scope ).jumpprop;
         
         // unconditionally jump to the end of the do-while or switch statement
         // +    get the jump-instruction's starting address
         int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
 
         // mark the jump instruction's offset to be fixed later
-        jumpMap.get( "exit" )._addAddressToFix( pointA );
+        jumpprop.get( "@End" )._addAddressToFix( pointA );
     }
     // Stmt ::= (Stmt_Continue   ) CONTINUE_K    semicol;
     @Override
@@ -566,12 +564,12 @@ public class CodeGenVisitor extends VisitorAdaptor
             elem -> ( elem instanceof DoWhileScope_Plain )
         );
 
-        // unconditionally jump to the beginning of the do-while-statement's condition
+        // unconditionally jump to the beginning of the do-while statement's condition
         // +    get the jump-instruction's starting address
         int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
 
         // mark the jump instruction's offset to be fixed later
-        scope.jumpprop.get( "condition" )._addAddressToFix( pointA );
+        scope.jumpprop.get( "@Cond" )._addAddressToFix( pointA );
     }
     // Stmt ::= (Stmt_Return     ) RETURN_K      semicol;
     @Override
@@ -602,8 +600,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // initialize the jump instruction's address
         // +   the actual address will be fixed once the label's address is resolved
-        String labelName = String.format( "@Label_%s", curr.getLabel() );
-        methodDecl.jumpprop.get( labelName )._addAddressToFix( pointA );
+        methodDecl.jumpprop.get( String.format( "@Label_%s", curr.getLabel() ) )._addAddressToFix( pointA );
     }
     // Stmt ::= (Stmt_Read       ) READ_K lparen Designator rparen semicol;
     @Override
@@ -618,7 +615,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Stmt_Print curr )
     {
-        CodeGen.i_const_0();
+        CodeGen.loadConst( 0 );
         CodeGen.print( curr.getExpr().symbol._type() );
     }
     // Stmt ::= (Stmt_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
@@ -628,80 +625,62 @@ public class CodeGenVisitor extends VisitorAdaptor
         CodeGen.loadConst( curr.getMinWidth() );
         CodeGen.print( curr.getExpr().symbol._type() );
     }
-    // Stmt ::= (Stmt_Semicolon  ) semicol;
 
     ////// action symbols for opening a new scope and the if-statement's jump instructions
+    // IfScope ::= (IfScope_Plain) IF_K;
+    @Override
+    public void visit( IfScope_Plain curr )
+    {
+        context.syntaxNodeStack.add( curr );
+    }
     // IfCondition ::= (IfCondition_Plain) Condition;
     @Override
     public void visit( IfCondition_Plain curr )
     {
-        // add the 'true' constant's value (1) to the expression stack
-        CodeGen.loadConst( CodeGen.TRUE );
-        // initialize the jump instruction's address
-        // +    jump if the condition is not true
-        curr.integer = CodeGen.jumpIfNot( TokenCode.eq, CodeGen.NO_ADDRESS );
+        // find the surrounding if/if-else statement
+        IfScope_Plain scope = ( IfScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof IfScope_Plain )
+        );
+
+        // set the if statement's starting address
+        scope.jumpprop.get( "@TrueBranch" )._pointAddress( CodeGen._pc32() );
     }
     // IfStmt ::= (IfStmt_Plain) Stmt;
     @Override
     public void visit( IfStmt_Plain curr )
     {
-        // initialize the jump instruction's address
-        // +    unconditionally jump over the entire else-statement
-        curr.integer = CodeGen.jump( CodeGen.NO_ADDRESS );
-    }
-    // ElseScope ::= (ElseScope_Plain) ELSE_K;
-    @Override
-    public void visit( ElseScope_Plain curr )
-    {
-        // get the address of the first instruction after the if-statement
-        curr.integer = CodeGen._pc32();
+        // find the surrounding if/if-else statement
+        IfScope_Plain scope = ( IfScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof IfScope_Plain )
+        );
+
+        // if there is a following 'else'
+        if( curr.getParent() instanceof Stmt_IfElse )
+        {
+            // add an unconditional jump to the end of the if-else statement
+            int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+            scope.jumpprop.get( "@End" )._addAddressToFix( pointA );
+        }
+
+        // set the else statement's starting address (equal to the end address if 'else' doesn't exist)
+        // IMPORTANT: this code should be the last code in this visitor function
+        scope.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
     }
     // ElseStmt ::= (ElseStmt_Plain) Stmt;
-    @Override
-    public void visit( ElseStmt_Plain curr )
-    {
-        // get the address of the first instruction after the entire if-else-statement
-        curr.integer = CodeGen._pc32();
-    }
 
-    ////// action symbols for opening a new scope and the do-while-statement's jump instructions
+    ////// action symbols for opening a new scope and the do-while statement's jump instructions
     // DoWhileScope ::= (DoWhileScope_Plain) DO_K;
     @Override
     public void visit( DoWhileScope_Plain curr )
     {
         context.syntaxNodeStack.add( curr );
 
-        // initialize the jump map
-        curr.jumpprop.add( "enter" );
-        curr.jumpprop.add( "condition" );
-        curr.jumpprop.add( "exit" );
-
-        // get the address of the first instruction in the do-while-statement
-        curr.jumpprop.get( "enter" )._pointAddress( CodeGen._pc32() );
+        // set the address of the first instruction in the do-while statement
+        curr.jumpprop.get( "@TrueBranch" )._pointAddress( CodeGen._pc32() );
     }
-    // DoWhileCondition ::= (DoWhileCondition_Plain) DoWhileConditionScope Condition;
+    // DoWhileStmt ::= (DoWhileStmt_Plain) Statement;
     @Override
-    public void visit( DoWhileCondition_Plain curr )
-    {
-        // find the surrounding do-while statement
-        DoWhileScope_Plain scope = ( DoWhileScope_Plain )context.syntaxNodeStack.find(
-            elem -> ( elem instanceof DoWhileScope_Plain )
-        );
-
-        // add the 'true' constant's value (1) to the expression stack
-        CodeGen.loadConst( CodeGen.TRUE );
-        // initialize the jump instruction's address
-        // +    jump to the beginning of the loop if the condition is true
-        curr.integer = CodeGen.jumpIf( TokenCode.eq, CodeGen.NO_ADDRESS );
-        scope.jumpprop.get( "enter" )._addAddressToFix( curr.integer );
-
-        // set the do-while-statement's exit point here
-        // +    the entry! point has been set in the DoWhileScope
-        scope.jumpprop.get( "exit" )._pointAddress( CodeGen._pc32() );
-    }
-    // DoWhileConditionScope ::= (DoWhileConditionScope_Plain) ;
-    @Override
-    public void visit( DoWhileConditionScope_Plain curr )
+    public void visit( DoWhileStmt_Plain curr )
     {
         // find the surrounding do-while statement
         DoWhileScope_Plain scope = ( DoWhileScope_Plain )context.syntaxNodeStack.find(
@@ -709,41 +688,62 @@ public class CodeGenVisitor extends VisitorAdaptor
         );
 
         // set the do-while-condition's entry point
-        curr.integer = CodeGen._pc32();
-        scope.jumpprop.get( "condition" )._pointAddress( curr.integer );
+        scope.jumpprop.get( "@Cond" )._pointAddress( CodeGen._pc32() );
     }
+    // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
 
-    ////// action symbols for opening a new scope and the switch-statement's jump instructions
+    ////// action symbols for opening a new scope and the switch statement's jump instructions
+    // SwitchScope ::= (SwitchScope_Plain) SWITCH_K;
+    @Override
+    public void visit( SwitchScope_Plain curr )
+    {
+        context.syntaxNodeStack.add( curr );
+    }
     // SwitchExpr ::= (SwitchExpr_Plain) Expr;
     @Override
     public void visit( SwitchExpr_Plain curr )
     {
-        context.syntaxNodeStack.add( curr );
+        // find the switch scope surrounding this symbol
+        SwitchScope_Plain scope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof SwitchScope_Plain )
+        );
 
         // for all the switch's cases in the order they appeared (default not yet supported)
-        for( JumpRecord caseRecord : curr.jumpprop )
+        for( JumpRecord caseRecord : scope.jumpprop )
         {
+            // get the <switch case>'s integer number
+            int value_i32 = 0;
+            try
+            {
+                String string_i32 = caseRecord._pointName()/*"@Case_%d"*/.substring( 6 );
+                value_i32 = Integer.parseInt( string_i32 );
+            }
+            // if the jump record name isn't in the form "@Case_%d", skip that jump record
+            catch( NumberFormatException | StringIndexOutOfBoundsException ex )
+            {
+                continue;
+            }
+
             // duplicate the switch-expression's result, so that it is there for other conditional jumps as well
             // +    (the expression stack's top duplicate gets consumed whenever the conditional jump's condition is evaluated)
             CodeGen.i_dup();
 
             // add the case statement's value to the expression stack
-            CodeGen.loadConst( Integer.parseInt( caseRecord._pointName() ) );
+            CodeGen.loadConst( value_i32 );
 
             // initialize the jump instruction's address
             // +    jump if the condition is not true
             int pointCaseX = CodeGen.jumpIf( TokenCode.eq, CodeGen.NO_ADDRESS );
-            curr.jumpprop.get( caseRecord._pointName() )._addAddressToFix( pointCaseX );
+            scope.jumpprop.get( caseRecord._pointName() )._addAddressToFix( pointCaseX );
         }
 
         // remove the last duplicate, since there are no more cases left (default not yet supported)
         CodeGen.i_epop();
-        // jump unconditionally to the first instruction after the switch-statement
+        // jump unconditionally to the first instruction after the switch statement
         int pointSkipAllCases = CodeGen.jump( CodeGen.NO_ADDRESS );
 
         // add the switch's exit point
-        curr.jumpprop.add( "exit" );
-        curr.jumpprop.get( "exit" )._addAddressToFix( pointSkipAllCases );
+        scope.jumpprop.get( "@End" )._addAddressToFix( pointSkipAllCases );
     }
 
     ////// ident.ident[ expr ] = expr
@@ -757,7 +757,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         visit_UpdateDesignatorValue( curr, curr.getDesignator().symbol );
     }
-    // DesignatorStmt ::= (DesignatorStmt_Call      ) MethodCall lparen ActPars rparen;
+    // DesignatorStmt ::= (DesignatorStmt_Call      ) MethodCall ActParsScope ActPars rparen;
     @Override
     public void visit( DesignatorStmt_Call curr )
     {
@@ -816,7 +816,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         CodeGen.loadSymbolValue( designator );
 
         // load the constant 1 to the expression stack and add/sub it from the designator
-        CodeGen.i_const_1();
+        CodeGen.loadConst( 1 );
         if     ( curr instanceof DesignatorStmt_Plusplus   ) CodeGen.i_add();
         else if( curr instanceof DesignatorStmt_Minusminus ) CodeGen.i_sub();
 
@@ -844,7 +844,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // add a random constant on the stack, which will be removed by the next case
         // +   this supports cases that fall through to the next case (there is a code path that doesn't hit a break/continue/return statement in the case)
         // +   the next case will remove this constant at the beginning (as if it were a switch-expression's value duplicate)
-        CodeGen.i_const_0();
+        CodeGen.loadConst( 0 );
     }
 
     ////// action symbols for opening a new scope and the case-statement's jump instructions
@@ -853,15 +853,15 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( CaseScope_Plain curr )
     {
         // find the switch scope surrounding this symbol
-        SwitchExpr_Plain scope = ( SwitchExpr_Plain )context.syntaxNodeStack.find(
-            elem -> ( elem instanceof SwitchExpr_Plain )
+        SwitchScope_Plain scope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
+            elem -> ( elem instanceof SwitchScope_Plain )
         );
 
         // remove the last switch-expression's result (last duplicate)
         int pointCase = CodeGen.i_epop();
 
         // update the case's starting address
-        scope.jumpprop.get( curr.getCaseNum().toString() )._pointAddress( pointCase );
+        scope.jumpprop.get( String.format( "@Case_%d", curr.getCaseNum() ) )._pointAddress( pointCase );
     }
 
 
@@ -869,11 +869,11 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// <epsilon>
     ////// expr
     ////// expr, expr, expr
-    // ActPars ::= (ActPars_Plain) ActParsScope ActParsList;
-    // ActPars ::= (ActPars_Empty) ActParsScope;
+    // ActPars ::= (ActPars_Plain) ActParsList;
+    // ActPars ::= (ActPars_Empty) ;
 
     ////// action symbol for opening a new scope
-    // ActParsScope ::= (ActParsScope_Plain) ;
+    // ActParsScope ::= (ActParsScope_Plain) lparen;
 
 
     ////// expr
@@ -894,46 +894,301 @@ public class CodeGenVisitor extends VisitorAdaptor
 
 
 
-    ////// expr   or   expr < expr and expr >= expr  or  expr != expr   // 'and' has greater priority than 'or'!
-    // Condition ::= (Condition_Term)              CondTerm;
-    // Condition ::= (Condition_Or  ) Condition or CondTerm;
+    ////// bool   |   expr < expr   |   expr != expr
+    ////// ( expr == expr )
+    ////// ( expr >= expr || expr == expr && expr >= expr )   // 'and' has greater priority than 'or' implicitly
+    //////       .A                .C        .H         .F             .H             .K   .K        .L        .P   // jumpIfNot(X) to .(&Y)
+    ////// if(   M && N   ||   ((( A && B || C ))) && ( D && E || F || G && Q )   ||  H && I && J || K && R || L   )(&&)   O   else(||)   P;
+    //////            .O                .D                   .O   .O        .O                  .O        .O        // jumpIf(X) to .(&Y)
+    // Condition ::= (Condition_Single ) CondTerm;
+    // Condition ::= (Condition_Multi  ) CondTermList;
+
+    ////// ((( true )))                                       // the parentheses belong to the expression! (not to the condition)
+    ////// bool && b > c
+    ////// ((( ((bool)) && (( (b) > (c) )) )))
+    // CondTermList ::= (CondTermList_Aor ) CondTerm     CondTermScope CondTerm;
+    // CondTermList ::= (CondTermList_Tail) CondTermList CondTermScope CondTerm;
+    
+    ////// ((( cterm && cterm || cterm )))   |   expr   |   expr < expr   |   expr != expr
+    // CondTerm ::= (CondTerm_Fact) CondFact;
     @Override
-    public void visit( Condition_Or curr )
+    public void visit( CondTerm_Fact curr )
     {
-        // HACK: if any of the inputs is one (true), their addition + one, when int divided by two ( (a+b+1)/2 ) result in a one (true)
-        CodeGen.i_add();
-        CodeGen.i_const_1();
-        CodeGen.i_add();
-        CodeGen.i_const_2();
-        CodeGen.i_div();
+        visit_CondTerm( curr );
+    }
+    // CondTerm ::= (CondTerm_Nest) CondNest;
+    @Override
+    public void visit( CondTerm_Nest curr )
+    {
+        visit_CondTerm( curr );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_CondTerm( CondTerm curr )
+    {
+        // Condition ::= (Condition_Single ) CondTerm;   // <---   #sentinel
+        // Condition ::= (Condition_Multi  ) CondTermList;
+        //
+        // CondTermList ::= (CondTermList_Aor ) CondTerm     CondTermScope CondTerm;   // <---
+        // CondTermList ::= (CondTermList_Tail) CondTermList CondTermScope CondTerm;   // <---
+        //
+        // CondTerm ::= (CondTerm_Fact) CondFact;   // *
+        // CondTerm ::= (CondTerm_Nest) CondNest;   // *
+        //
+        // CondNest ::= (CondNest_Head) lparen CondTermList rparen;   // #sentinel
+        // CondNest ::= (CondNest_Tail) lparen CondNest     rparen;
+        //
+        // CondFact ::= (CondFact_Expr ) Expr;
+        // CondFact ::= (CondFact_Relop) Expr Relop Expr;
+        //
+        // CondTermScope ::= (CondTermScope_Plain) Aorop;
+
+        // if the current term doesn't have an associated jump instruction, return
+        if( !( curr instanceof CondTerm_Fact ) ) return;
+
+        // get the comparison type used in the current term
+        int currRelop = curr.jumpprop.get( "@Relop" )._pointAddress();   // HACK: not actually an address, but a token code constant
+
+        // get the and/or operator that comes immediately after the current term (ignore parentheses)
+        int nextAorop = TokenCode.invalid;
+        SyntaxNode node = curr;
+        {
+            // if the current entry term in the list should be skipped
+            boolean skipListEntry = false;
+
+            while( true )
+            {
+                if( node instanceof CondTermList )
+                {
+                    if( !skipListEntry )
+                    {
+                        CondTermScope scope = null;
+                        if     ( node instanceof CondTermList_Tail ) { scope = ( ( CondTermList_Tail )node ).getCondTermScope(); }
+                        else if( node instanceof CondTermList_Aor  ) { scope = ( ( CondTermList_Aor  )node ).getCondTermScope(); }
+
+                        nextAorop = ( ( CondTermScope_Plain )scope ).getAorop().symbol._value();
+                        break;
+                    }
+
+                    skipListEntry = false;
+                }
+                else if( node instanceof CondTerm )
+                {
+                    if( node.getParent() instanceof CondTermList )
+                    {
+                        CondTermList list = ( CondTermList )node.getParent();
+                        boolean beforeAorop = false;
+                        if     ( list instanceof CondTermList_Tail ) { beforeAorop = node != ( ( CondTermList_Tail )list ).getCondTerm();  }
+                        else if( list instanceof CondTermList_Aor  ) { beforeAorop = node != ( ( CondTermList_Aor  )list ).getCondTerm1(); }
+
+                        if( !beforeAorop ) { skipListEntry = true; }
+                    }
+                }
+                else if( node instanceof Condition )
+                {
+                    if     ( node.getParent() instanceof IfCondition      ) { nextAorop = TokenCode.and; }   // if( ... )(&&) ... else(||) ...
+                    else if( node.getParent() instanceof DoWhileCondition ) { nextAorop = TokenCode.or;  }   // do(&&) ... while( ... );   (||)
+                    else                                                    { report_fatal( curr, "<Condition parent type> not yet supported" ); }
+                    
+                    break;
+                }
+
+                node = node.getParent();
+            }
+        }
+
+        //////       .A                .C        .H         .F             .H             .K   .K        .L        .P   // jumpIfNot(X) to .(&Y)
+        ////// if(   M && N   ||   ((( A && B || C ))) && ( D && E || F || G && Q )   ||  H && I && J || K && R || L   )(&&)   O   else(||)   P;
+        //////            .O                .D                   .O   .O        .O                  .O        .O        // jumpIf(X) to .(&Y)
+
+        //////                                   .P          .P                 .P     .P     // jumpIfNot(X) to .(&Y)
+        ////// do(&&)   O   while(   A || ( B || C && ( D || E && ( F || G ) || H ) && G )   );   (||)P
+        //////                       .O     .O          .O          .O   .O                   // jumpIf(X) to .(&Y)
+
+        //////             .D     .D                 .P   // jumpIfNot(X) to .(&Y)
+        ////// if(   ( ( ( A ) && B ) && C || D ) || E   )(&&)   O   else(||)   P;
+        //////                           .O   .O          // jumpIf(X) to .(&Y)
+
+        //////                           .P   .P     .P   // jumpIfNot(X) to .(&Y)
+        ////// if(   ( ( ( A ) || B ) || C && D ) && E   )(&&)   O   else(||)   P;
+        //////             .E     .E                      // jumpIf(X) to .(&Y)   -- special case for 'or' (A and B jumpIf to E!, not D)
+
+        // get the location to which the current term jumps to (if the current term's jump condition is satisfied)
+        JumpProp destJumpprop = null;
+        // invert the aorop -- this is the aorop that we are searching for next
+        // +   we want to jump immediately after it
+        // +   NOTE: this also works for the case when the next aorop is unknown (it should be 'and' by default)
+        int wantedAorop = ( nextAorop != TokenCode.and ) ? TokenCode.and : TokenCode.or;
+        {
+            // if everything in the current! parentheses should be skipped
+            boolean skipParens = false;
+            // if the current entry term in the list should be skipped
+            boolean skipListEntry = false;
+
+            // do this until we find a term that fulfills the specified criteria, or we've run out of terms
+            while( true )
+            {
+                // if we aren't skipping the current parentheses and there are still more terms after the current term
+                if( node instanceof CondTermList )
+                {
+                    if( !skipParens && !skipListEntry )
+                    {
+                        // get stuff from the syntax node
+                        int destAorop = TokenCode.invalid;
+
+                        CondTerm term = null;
+                        CondTermScope scope = null;
+                        if     ( node instanceof CondTermList_Tail ) {   term = ( ( CondTermList_Tail )node ).getCondTerm();    scope = ( ( CondTermList_Tail )node ).getCondTermScope();   }
+                        else if( node instanceof CondTermList_Aor  ) {   term = ( ( CondTermList_Aor  )node ).getCondTerm1();   scope = ( ( CondTermList_Aor  )node ).getCondTermScope();   }
+            
+                        // get the <possible destination term>'s aorop and jump map
+                        destAorop = ( ( CondTermScope_Plain )scope ).getAorop().symbol._value();
+                        destJumpprop = ( ( CondTerm )term ).jumpprop;
+
+                        // if the first aor operator after the parentheses is not 'and' but we want 'and'
+                        // +   NOTE: this is a special case for or; it defines that 'and' has greater precedence than 'or'
+                        if( ( node instanceof CondTermList_Aor )/*first*/ && destAorop != TokenCode.and && wantedAorop == TokenCode.and )
+                        {
+                            // skip the current parentheses and continue the search
+                            skipParens = true;
+                        }
+                        // otherwise, if the aorops match
+                        else if( destAorop == wantedAorop )
+                        {
+                            // stop the search
+                            break;
+                        }
+                    }
+
+                    // there's now always an aor operator after the current term in these parentheses
+                    skipListEntry = false;
+                }
+                // if we are skipping the current parentheses and we've just exited from (possibly multiply nested) parentheses
+                // +   NOTE: only CondTerm_Nest! can be encountered (not CondTerm_Fact or anything similar)
+                else if( node instanceof CondTerm )
+                {
+                    // set that we've just exited from (possibly multiply nested) parentheses
+                    //    ((( ... ))) .HERE
+                    skipParens = false;
+
+                    if( node.getParent() instanceof CondTermList )
+                    {
+                        CondTermList list = ( CondTermList )node.getParent();
+                        boolean beforeAorop = false;
+                        if     ( list instanceof CondTermList_Tail ) { beforeAorop = node != ( ( CondTermList_Tail )list ).getCondTerm();  }
+                        else if( list instanceof CondTermList_Aor  ) { beforeAorop = node != ( ( CondTermList_Aor  )list ).getCondTerm1(); }
+
+                        if( !beforeAorop ) { skipListEntry = true; }
+                    }
+                }
+                // if we've hit the end of the condition
+                else if( node instanceof Condition )
+                {
+                    // find the surrounding if/if-else/do-while statement
+                    SyntaxNode scope = context.syntaxNodeStack.find(
+                        elem -> ( elem instanceof IfScope      )
+                             || ( elem instanceof DoWhileScope )
+                    );
+
+                    // update the destination jump map
+                    if     ( scope instanceof IfScope      ) { destJumpprop = ( ( IfScope      )scope ).jumpprop; }
+                    else if( scope instanceof DoWhileScope ) { destJumpprop = ( ( DoWhileScope )scope ).jumpprop; }
+
+                    // stop the search
+                    break;
+                }
+
+                // continue traversing the condition to the right
+                // +   this doesn't enter more-nested parents (only exits from them)
+                node = node.getParent();
+            }
+        }
+
+        // emit code for the jump instruction and update the destination term's jump record
+        // +   the destination term will fix the offset for the current jump instruction (when the destination term's starting address becomes known)
+        int pointA = CodeGen.NO_ADDRESS;
+        if     ( nextAorop == TokenCode.and ) { pointA = CodeGen.jumpIfNot( currRelop, CodeGen.NO_ADDRESS ); destJumpprop.get( "@FalseBranch" )._addAddressToFix( pointA ); }
+        else if( nextAorop == TokenCode.or  ) { pointA = CodeGen.jumpIf   ( currRelop, CodeGen.NO_ADDRESS ); destJumpprop.get( "@TrueBranch"  )._addAddressToFix( pointA ); }
+        else                                  { report_fatal( curr, "Aorop must be either 'and' or 'or'" ); }
     }
 
-    ////// expr < expr and expr >= expr
-    // CondTerm ::= (CondTerm_Fact)              CondFact;
-    // CondTerm ::= (CondTerm_And ) CondTerm and CondFact;
-    @Override
-    public void visit( CondTerm_And curr )
-    {
-        // HACK: only if both inputs are one (true) their multiplication results in a one (true)
-        CodeGen.i_mul();
-    }
+    ////// ((( cterm && cterm || cterm )))
+    // CondNest ::= (CondNest_Head) lparen CondTermList rparen;
+    // CondNest ::= (CondNest_Tail) lparen CondNest     rparen;
 
-    ////// expr < expr and expr >= expr
+    ////// expr   |   expr < expr   |   expr != expr
     // CondFact ::= (CondFact_Expr ) Expr;
+    @Override
+    public void visit( CondFact_Expr curr )
+    {
+        visit_CondFact( curr );
+    }
     // CondFact ::= (CondFact_Relop) Expr Relop Expr;
     @Override
     public void visit( CondFact_Relop curr )
     {
-        int pointA = CodeGen.jumpIf( curr.getRelop().symbol._value(), CodeGen.NO_ADDRESS );   // jump to C
-                     CodeGen.loadConst( CodeGen.FALSE );
-        int pointB = CodeGen.jump( CodeGen.NO_ADDRESS );   // jump to D
-        int pointC = CodeGen.loadConst( CodeGen.TRUE );
-        
-        int pointD = CodeGen._pc32();
+        visit_CondFact( curr );
+    }
+    // IMPORTANT: helper method, not intended to be used elsewhere
+    private void visit_CondFact( CondFact curr )
+    {
+        // Condition ::= (Condition_Single ) CondTerm;
+        // Condition ::= (Condition_Multi  ) CondTermList;
+        //
+        // CondTermList ::= (CondTermList_Aor ) CondTerm     CondTermScope CondTerm;
+        // CondTermList ::= (CondTermList_Tail) CondTermList CondTermScope CondTerm;
+        //
+        // CondTerm ::= (CondTerm_Fact) CondFact;   // <---
+        // CondTerm ::= (CondTerm_Nest) CondNest;
+        //
+        // CondNest ::= (CondNest_Head) lparen CondTermList rparen;
+        // CondNest ::= (CondNest_Tail) lparen CondNest     rparen;
+        //
+        // CondFact ::= (CondFact_Expr ) Expr;              // *
+        // CondFact ::= (CondFact_Relop) Expr Relop Expr;   // *
+        //
+        // CondTermScope ::= (CondTermScope_Plain) Aorop;
 
-        // fix the jump addresses for the jump instructions
-        CodeGen.fixJumpOffset( pointA, pointC );
-        CodeGen.fixJumpOffset( pointB, pointD );
+        // get the possible relational operator used
+        // +   also emit a 'false' constant if a boolean expression is checked for truthness
+        int relop = TokenCode.invalid;
+        if     ( curr instanceof CondFact_Relop ) { relop = ( ( CondFact_Relop )curr ).getRelop().symbol._value(); }
+        else if( curr instanceof CondFact_Expr  ) { relop = TokenCode.ne; CodeGen.loadConst( CodeGen.FALSE ); }
+        else                                      { report_fatal( curr, "<Condition factor>'s type not yet supported" ); }
+
+        // get the parent term
+        CondTerm term = ( CondTerm )curr.getParent();
+
+        // save the current node's possible relational operator to the parent term
+        // +   the current node's starting address will be saved by the <term's scope> and <nested term's scope>
+        //     (+   because the program counter here isn't actually the starting address for the term)
+     // term.jumpprop.get( "@TrueBranch"  )._pointAddress( CodeGen._pc32() );
+     // term.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
+        term.jumpprop.get( "@Relop" )._pointAddress( relop );
+
+        // IMPORTANT: the actual jump instruction will be emitted in the parent term, not here!
+    }
+
+    ////// action symbols for finding out the next term's starting address
+    // CondTermScope ::= (CondTermScope_Plain) Aorop;
+    @Override
+    public void visit( CondTermScope_Plain curr )
+    {
+        // get the term that immediately follows the current node in the term list
+        CondTerm term = null;
+        CondTermList parent = ( CondTermList )curr.getParent();
+        if     ( parent instanceof CondTermList_Aor  ) { term = ( ( CondTermList_Aor  )parent ).getCondTerm1(); }
+        else if( parent instanceof CondTermList_Tail ) { term = ( ( CondTermList_Tail )parent ).getCondTerm(); }
+        else                                           { report_fatal( curr, "<Condition term list>'s type not yet supported" ); }
+
+        // update the term's starting address
+        term.jumpprop.get( "@TrueBranch"  )._pointAddress( CodeGen._pc32() );
+        term.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
+
+        // NOTE: this won't cover the first term in any parentheses, but that isn't a problem because
+        // +   either the term is the first in the entire condition, in which case nothing from inside the condition can jump to it
+        // +   or the term is the first in some nested parentheses, in which case, the outermost parenteses will have a starting address if they are not the first in their parentheses' scope
+        //               .HERE       .       .        .
+        //     +    A || ((( (( B || C )) && D ))) && E   // dots represent terms that have a starting address
     }
 
 
@@ -991,7 +1246,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     ////// 1202 | 'c' | true
     ////// new Object
     ////// new Array[ expr ]
-    ////// ( expr )
+    ////// ((( expr )))
     // Factor ::= (Factor_Designator ) Designator;
     @Override
     public void visit( Factor_Designator curr )
@@ -1000,7 +1255,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // +   IMPORTANT: this loads the null constant's value
         CodeGen.loadSymbolValue( curr.symbol );
     }
-    // Factor ::= (Factor_MethodCall ) MethodCall lparen ActPars rparen;
+    // Factor ::= (Factor_MethodCall ) MethodCall ActParsScope ActPars rparen;
     @Override
     public void visit( Factor_MethodCall curr )
     {
@@ -1161,7 +1416,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         {
             // load a random constant on the expression stack (quasi class instance pointer)
             // so that both the method's and the function's activation parameters are handled in the same way
-            CodeGen.i_const_0();
+            CodeGen.loadConst( 0 );
         }
     }
 
@@ -1260,6 +1515,10 @@ public class CodeGenVisitor extends VisitorAdaptor
 
     ////// =
     // Assignop ::= (Assignop_Assign) assign:Assignop;
+
+    ////// &&  |  ||
+    // Aorop ::= (Aorop_And) and:Aorop;
+    // Aorop ::= (Aorop_Or ) or :Aorop;
 
     ////// ==  |  !=  |  >  |  >=  |  <  |  <=
     // Relop ::= (Relop_Eq) eq:Relop;

@@ -525,8 +525,10 @@ class Pipeline
         Stage_ExecuteScript $script:StageScript_Default $Stage | Write-Output;
         if( $script:LastStatusCode -ne 0 )
         {
+            $LastStatusCode = $script:LastStatusCode;
             FileUtil_RemoveFolder "$AstPath" | Write-Output;
             FileUtil_MoveItem "$AstPath.old" "$AstPath" | Write-Output;
+            $script:LastStatusCode = $LastStatusCode;
             return;
         }
 
@@ -745,7 +747,7 @@ class Pipeline
                 # start the test group's input file compilation as a background job
                 [Job] $MJCompileJob = Start-Job -ScriptBlock $MJCompileScript -ArgumentList $MJFilePath, $ObjFilePath;
                 # wait for the compilation to finish and get the compilation output
-                Wait-Job $MJCompileJob -Timeout 5 | Out-Null;   # in seconds
+                Wait-Job $MJCompileJob -Timeout 2 | Out-Null;   # in seconds
                 $CompileOutput = ( $MJCompileJob | Receive-Job ) -join "`n";
                 # HACK: if there is an error with an empty message in the error stream, when calling ToString on the error it outputs its type as string
                 # +   this happens a lot in the compiler, since it writes newlines on stderr
@@ -778,7 +780,7 @@ class Pipeline
                     # start the test with the given input
                     [Job] $MJRunJob = Start-Job -ScriptBlock $MJRunScript -ArgumentList $ObjFilePath, $TestUnit.TestInput;
                     # wait for the test to finish and get its output
-                    Wait-Job $MJRunJob -Timeout 5 | Out-Null;   # in seconds
+                    Wait-Job $MJRunJob -Timeout 2 | Out-Null;   # in seconds
                     $TestOutput = ( $MJRunJob | Receive-Job ) -join "`n";
                     # HACK: if there is an error with an empty message in the error stream, when calling ToString on the error it outputs its type as string
                     $TestOutput = $TestOutput -replace "System.Management.Automation.RemoteException","";

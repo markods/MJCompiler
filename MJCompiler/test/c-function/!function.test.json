@@ -79,7 +79,7 @@
                         " 2  3  4  5 ",
                         " 3  5  7  9 ",
                         " 5 13 ",
-                        "-- exception at address 116: expression stack overflow",
+                        "-- exception at address 98: expression stack overflow",
                         "",
                     ],
                     "ExExitCode": 0,
