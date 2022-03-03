@@ -26,9 +26,9 @@ public class CodeGen
     public static void _pc32( int value_32 ) { Code.pc = value_32; }
     private static int _pc32Inc( int amount ) { int pc = Code.pc; Code.pc += amount; return pc; }
 
-    private static int _mainAddr32() { return Code.mainPc; }
-    private static void _mainAddr32( int value_32 ) { Code.mainPc = value_32; }
-    public static void _mainAddr32Set() { Code.mainPc = Code.pc; }
+    private static int _entryAddr32() { return Code.mainPc; }
+    private static void _entryAddr32( int value_32 ) { Code.mainPc = value_32; }
+    public static void _entryAddr32Set() { Code.mainPc = Code.pc; }
 
     private static int _staticSize32() { return Code.dataSize; }
     private static void _staticSize32( int value_32 ) { Code.dataSize = value_32; }
@@ -43,7 +43,7 @@ public class CodeGen
     {
         // initialize registers
         _pc32( 0 );
-        _mainAddr32( 0 );
+        _entryAddr32( 0 );
         _staticSize32( staticSize );
 
         // initialize the code segment
@@ -52,7 +52,7 @@ public class CodeGen
         // /*01*/put8( 'J' );
         // /*02*/put32( codeSize );
         // /*06*/put32( _staticSize32() );
-        // /*10*/put32( _mainAddr32() );
+        // /*10*/put32( _entryAddr32() );
     }
 
 
@@ -92,7 +92,7 @@ public class CodeGen
             /*01*/put8( 'J' );
             /*02*/put32( codeSize );
             /*06*/put32( _staticSize32() );
-            /*10*/put32( _mainAddr32() );
+            /*10*/put32( _entryAddr32() );
 
             // write the header and actual code to the buffer
             buffer.write( Code.buf, codeSize, _pc32() - codeSize );

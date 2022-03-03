@@ -30,7 +30,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     // only have a single underscore point at the start of the error tokens
     private void report_basic( SyntaxNode node, String message )
     {
-        // FIX: restore the original behaviour when the error reporting prints lines and underlines their errors (instead of just printing errors)
+        // TODO: restore the original behaviour when the error reporting prints lines and underlines their errors (instead of just printing errors)
      // report_error( node, message, false, false );
         report_error( node, message, true, false );
     }
@@ -292,21 +292,34 @@ public class CodeGenVisitor extends VisitorAdaptor
     // IMPORTANT: helper method, not intended to be used elsewhere
     private void visit_MethodDeclType( MethodDeclType curr )
     {
-        // open the function/method scope and add the function/method's members to the scope
-        SymbolTable.openScope();
-        SymbolTable.addSymbols( curr.symbol._params() );
-
         // get the method's symbol
         Symbol method = curr.symbol;
-        // set the method's address
-        method._address( CodeGen._pc32() );
 
         // if this method is the main method
         if( method.isMain() )
         {
-            // set the program entry point
-            CodeGen._mainAddr32Set();
+            // set the program entry point (before the actual main method)
+            CodeGen._entryAddr32Set();
+
+            // initialize all class's virtual tables before the main method
+            // +   the main method is located in the program scope (global -> program)
+            // +   that's why we can filter these symbols for class definitions (classes are defined in the program scope)
+            for( Symbol classDef : SymbolTable._locals() )
+            {
+                // skip any non-class definitions
+                if( !classDef.isType() || !classDef._type().isClass() ) continue;
+
+                // initialize the class's virtual table in the static segment
+                CodeGen.initVirtualTable( classDef );
+            }
         }
+
+        // open the function/method scope and add the function/method's members to the scope
+        SymbolTable.openScope();
+        SymbolTable.addSymbols( curr.symbol._params() );
+
+        // set the method's address
+        method._address( CodeGen._pc32() );
     }
 
     ////// action symbol for opening a new scope
@@ -325,30 +338,6 @@ public class CodeGenVisitor extends VisitorAdaptor
         // initialize the method's stack frame
         int thisParamInc = ( method.isMethod() ) ? 1 : 0;
         CodeGen.i_enter( thisParamInc + method._paramCount(), thisParamInc + SymbolTable._localsStackFrameSize() );
-
-        // if this method is the main method
-        if( method.isMain() )
-        {
-            // close the method scope so that the outer program scope can be accessed
-            SymbolMap methodLocals = SymbolTable._locals();
-            SymbolTable.closeScope();
-
-            // initialize all class's virtual tables in the main method
-            // +   the main method is located in the program scope (global -> program)
-            // +   that's why we can filter these symbols for class definitions (classes are defined in the program scope)
-            for( Symbol classDef : SymbolTable._locals() )
-            {
-                // skip any non-class definitions
-                if( !classDef.isType() || !classDef._type().isClass() ) continue;
-
-                // initialize the class's virtual table in the static segment
-                CodeGen.initVirtualTable( classDef );
-            }
-
-            // reopen the method scope and add the symbols that were previously there
-            SymbolTable.openScope();
-            SymbolTable.addSymbols( methodLocals );
-        }
     }
 
     ////// <epsilon>

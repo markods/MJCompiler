@@ -39,7 +39,7 @@ public class SemanticVisitor extends VisitorAdaptor
     // only have a single underscore point at the start of the error tokens
     private void report_basic( SyntaxNode node, String message )
     {
-        // FIX: restore the original behaviour when the error reporting prints lines and underlines their errors (instead of just printing errors)
+        // TODO: restore the original behaviour when the error reporting prints lines and underlines their errors (instead of just printing errors)
      // report_error( node, message, false, false );
         report_error( node, message, true, false );
     }
@@ -1576,7 +1576,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the designator is not compatible with the expression
         if( !SymbolType.isAssignableFrom( left._type(), right._type() ) )
         {
-            // FIX: uncomment this line once the reporting bug has been fixed
+            // TODO: uncomment this line once the reporting bug has been fixed
          // report_verbose( curr.getAssignop(), "This expression is not assignable to" );
             report_verbose( curr, "This expression is not assignable to" );
             return;
@@ -1585,7 +1585,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the assignment operator is not =
         if( center._value() != TokenCode.assign )
         {
-            // FIX: uncomment this line once the reporting bug has been fixed
+            // TODO: uncomment this line once the reporting bug has been fixed
          // report_fatal( curr.getAssignop(), "Assignment operator not yet supported" );
             report_fatal( curr, "Assignment operator not yet supported" );
         }
@@ -1889,7 +1889,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the symbols are not compatible
         if( !SymbolType.isCompatibleWith( left._type(), right._type() ) )
         {
-            // FIX: uncomment this line once the reporting bug has been fixed
+            // TODO: uncomment this line once the reporting bug has been fixed
          // report_verbose( curr.getRelop(), "The left and right side of the condition do not result in compatible types" );
             report_verbose( curr, "The left and right side of the condition do not result in compatible types" );
             return;
@@ -1898,7 +1898,7 @@ public class SemanticVisitor extends VisitorAdaptor
         // if the symbols are references and the relational operator is not an (in)equality comparison ( == or != )
         if( left._type().isReferenceType() && !TokenCode.isEqualityComparison( relop ) )
         {
-            // FIX: uncomment this line once the reporting bug has been fixed
+            // TODO: uncomment this line once the reporting bug has been fixed
          // report_verbose( curr.getRelop(), "Cannot compare references" );
             report_verbose( curr, "Cannot compare references" );
             return;

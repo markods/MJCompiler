@@ -73,7 +73,6 @@ public class CompilerError extends Error
         return additionalInfo;
     }
 
-    // TODO: omoguciti da se moze zvati vise puta main() tako sto se inicijalizacija radi izvan main-a, pa se main pozove
     // TODO: napraviti lep ispis gresaka
     @Override
     public String toString()
