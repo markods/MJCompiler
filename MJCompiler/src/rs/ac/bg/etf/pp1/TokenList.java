@@ -8,11 +8,6 @@ public class TokenList
 
     public TokenList() {}
 
-    public void assign( TokenList tokens )
-    {
-        this.tokenList = tokens.tokenList;
-    }
-
 
 
     public boolean add( Token token )
@@ -44,6 +39,7 @@ public class TokenList
 
     public Token get( int index )
     {
+        if( !checkIndex( index ) ) throw new IndexOutOfBoundsException( "<Token list>'s index out of bounds" );
         return tokenList.get( index );
     }
 
@@ -63,7 +59,7 @@ public class TokenList
         StringBuilder builder = new StringBuilder();
         for( Token token : tokenList )
         {
-            builder.append( token.valueToString() );
+            builder.append( token.getValue() );
         }
         if( builder.charAt( builder.length()-1 ) != '\n' ) builder.append( "\n" );
         return builder.toString();

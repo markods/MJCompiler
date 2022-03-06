@@ -35,14 +35,15 @@ package rs.ac.bg.etf.pp1;
 
 
 // classes
+Anything   = [^]*
 Newline    = \r|\n|\r\n
 NotNewline = [^\r\n]
 Whitespace = [ \t\f]+
 
 // different types of comments
 // +   the line comment can be on the last line of the file, therefore not ending with a newline
-LineComment      = "//" {NotNewline}* {Newline}?
-MultilineComment = "/*" ~"*/"
+LineComment   = "//" {NotNewline}* {Newline}?
+InlineComment = "/*" !({Anything} ( \r|\n|"*/" ) {Anything}) "*/"
 
 IntLiteral = 0 | [1-9][0-9]*
 BoolLiteral = true | false
@@ -61,11 +62,11 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 // send newlines, whitespaces and comments to the parser
 // +   the parser will filter them out (used for better error reporting)
-{Newline}           { return new_token( TokenCode.newline, yytext() ); }
-{Whitespace}        { return new_token( TokenCode.whitespace, yytext() ); }
-{MultilineComment}  { return new_token( TokenCode.multi_comment, yytext() ); }
-{LineComment}       { return new_token( TokenCode.line_comment, yytext() ); }
-<<EOF>>             { return new_token( TokenCode.EOF ); }
+{Newline}       { return new_token( TokenCode.newline, yytext() ); }
+{Whitespace}    { return new_token( TokenCode.whitespace, yytext() ); }
+{InlineComment} { return new_token( TokenCode.inline_comment, yytext() ); }
+{LineComment}   { return new_token( TokenCode.line_comment, yytext() ); }
+<<EOF>>         { return new_token( TokenCode.EOF ); }
 
 
 

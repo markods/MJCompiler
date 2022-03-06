@@ -106,7 +106,7 @@
                 "```}",
                 "",
                 "    void```",
-                "Ln 39  Col 13  SYN     Couldn't repair and continue parse",
+                "Ln 39  Col 13  SYN     Fatal error detected, parsing stopped",
                 "```(```",
                 "",
                 "Lexer: 8   Syntax: 33  Semantic: 0  ",

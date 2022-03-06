@@ -3,7 +3,6 @@ package rs.ac.bg.etf.pp1;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 
 public class TokenCode implements ITokenCode
@@ -58,7 +57,7 @@ public class TokenCode implements ITokenCode
         return tokenCode == TokenCode.newline
             || tokenCode == TokenCode.whitespace
             || tokenCode == TokenCode.line_comment
-            || tokenCode == TokenCode.multi_comment;
+            || tokenCode == TokenCode.inline_comment;
     }
 
     public static boolean isInvalid( int tokenCode )
@@ -67,24 +66,14 @@ public class TokenCode implements ITokenCode
             || tokenCode == TokenCode.invalid;
     }
 
-    public static boolean containsNewline( Token token )
+    public static boolean isWhitespace( int tokenCode )
     {
-        if( token == null ) return false;
-        int tokenCode = token.getCode();
-        
-        if( tokenCode == TokenCode.newline ) return true;
+        return tokenCode == TokenCode.whitespace;
+    }
 
-        if( tokenCode == TokenCode.line_comment    // possibly at the end of file, so not containing newline
-         || tokenCode == TokenCode.multi_comment   // possibly inline
-        )
-        {
-            String value = ( String )token.getValue();
-            // find if there is at least one newline in the token
-            boolean newlineFound = Pattern.compile( "\r|\n|\r\n" ).matcher( value ).find();
-            return newlineFound;
-        }
-
-        return false;
+    public static boolean isNewline( int tokenCode )
+    {
+        return tokenCode == TokenCode.newline;
     }
 
     public static boolean isEqualityComparison( int tokenCode )

@@ -515,7 +515,9 @@ class Pipeline
         param( [Stage] $Stage )
 
         # the abstract syntax tree's folder path
-        $AstPath = "./rs/ac/bg/etf/pp1/ast"
+        $AstPath = "./rs/ac/bg/etf/pp1/ast";
+        $TempAstFilePath = "../spec";
+        $TempAstFileFilter = "*_astbuild.cup";
 
         # rename the ast directory
         FileUtil_MoveItem "$AstPath" "$AstPath.old" | Write-Output;
@@ -525,15 +527,23 @@ class Pipeline
         Stage_ExecuteScript $script:StageScript_Default $Stage | Write-Output;
         if( $script:LastStatusCode -ne 0 )
         {
+            # backup the actual last status code
             $LastStatusCode = $script:LastStatusCode;
+            
+            # cleanup
             FileUtil_RemoveFolder "$AstPath" | Write-Output;
             FileUtil_MoveItem "$AstPath.old" "$AstPath" | Write-Output;
+            FileUtil_RemoveFiles "$TempAstFilePath" "$TempAstFileFilter" | Write-Output;
+
+            # restore the old status code
             $script:LastStatusCode = $LastStatusCode;
             return;
         }
 
-        # remove previously generated ast code
+        # cleanup
         FileUtil_RemoveFolder "$AstPath.old" | Write-Output;
+        if( $script:LastStatusCode -ne 0 ) { return; }
+        FileUtil_RemoveFiles "$TempAstFilePath" "$TempAstFileFilter" | Write-Output;
         if( $script:LastStatusCode -ne 0 ) { return; }
 
         $script:LastStatusCode = 0; return;
@@ -663,7 +673,7 @@ class Pipeline
             $ScriptOutput = @( $TestInput | java -cp '../lib/mj-runtime-1.1.jar' 'rs.etf.pp1.mj.runtime.Run' "$ObjFilePath" *>&1 );   # make the result into an array
             $ScriptOutput[ -1 ] = $LASTEXITCODE;   # replace the last output line (which is always present) with the exit code
             Write-Output $ScriptOutput;
-        };
+        }
         # some unicode symbols used in printing
         $TestGroupSym = "❖";
         $TestResultSym = "`u{274C}", "`u{2705}";   # "🗴", "✓"
@@ -747,7 +757,7 @@ class Pipeline
                 # start the test group's input file compilation as a background job
                 [Job] $MJCompileJob = Start-Job -ScriptBlock $MJCompileScript -ArgumentList $MJFilePath, $ObjFilePath;
                 # wait for the compilation to finish and get the compilation output
-                Wait-Job $MJCompileJob -Timeout 2 | Out-Null;   # in seconds
+                Wait-Job $MJCompileJob -Timeout 5 | Out-Null;   # in seconds
                 $CompileOutput = ( $MJCompileJob | Receive-Job ) -join "`n";
                 # HACK: if there is an error with an empty message in the error stream, when calling ToString on the error it outputs its type as string
                 # +   this happens a lot in the compiler, since it writes newlines on stderr
@@ -780,7 +790,7 @@ class Pipeline
                     # start the test with the given input
                     [Job] $MJRunJob = Start-Job -ScriptBlock $MJRunScript -ArgumentList $ObjFilePath, $TestUnit.TestInput;
                     # wait for the test to finish and get its output
-                    Wait-Job $MJRunJob -Timeout 2 | Out-Null;   # in seconds
+                    Wait-Job $MJRunJob -Timeout 5 | Out-Null;   # in seconds
                     $TestOutput = ( $MJRunJob | Receive-Job ) -join "`n";
                     # HACK: if there is an error with an empty message in the error stream, when calling ToString on the error it outputs its type as string
                     $TestOutput = $TestOutput -replace "System.Management.Automation.RemoteException","";

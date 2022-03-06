@@ -15,6 +15,8 @@ import rs.etf.pp1.symboltable.concepts.Scope;
 import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 
+// IMPORTANT: don't create more than one symbol table
+// +   at the moment, it is compatible with the symbol table from the symboltable.jar file, which is a singleton by design!
 public class SymbolTable
 {
     // IMPORTANT: don't use the Tab's types and symbols! (for compatibility with Symbol and SymbolType classes)
@@ -42,11 +44,11 @@ public class SymbolTable
     public static final Symbol boolSym = Symbol.newType ( "bool",   boolType, Symbol.NO_VALUE );
 
     // this value is copied over from the Tab.init() method
-    private static int currScopeLevel = -2;
-    private static Scope global = null;
+    private int currScopeLevel = -2;
+    private Scope global = null;
     // saves all the scopes that were ever created in preorder
     // +   used for printing the symbol table
-    private static ArrayList<ScopeInfo> scopeList = new ArrayList<>();
+    private ArrayList<ScopeInfo> scopeList = new ArrayList<>();
     private static class ScopeInfo
     {
         public ScopeInfo( Scope scope, int level )
@@ -62,12 +64,12 @@ public class SymbolTable
         public SymbolMap _symbols() { return new SymbolMap( scope.getLocals() ); }
     }
 
-    static
+    public SymbolTable()
     {
         init();
     }
 
-    private static void init()
+    private void init()
     {
         // initialize the universal scope (the first scope in the symbol table)
         // +   that way, chrObj, ordObj and lenObj can be final
@@ -98,7 +100,7 @@ public class SymbolTable
         }
 
         // char chr( int i );
-        try( ScopeGuard guard = new ScopeGuard(); )
+        try( ScopeGuard guard = new ScopeGuard( this ); )
         {
             _localScope().addToLocals( Symbol.newFormalParam( "i", intType, 0 ) );
             
@@ -108,14 +110,14 @@ public class SymbolTable
         }
 
         // int ord( char c );
-        try( ScopeGuard guard = new ScopeGuard(); )
+        try( ScopeGuard guard = new ScopeGuard( this ); )
         {
             _localScope().addToLocals( Symbol.newFormalParam( "c", charType, 0 ) );
             global.addToLocals( Symbol.newFunction( "ord", intType, Symbol.NO_VALUE, _locals() ) );
         }
 
         // int len( anyType arr[] );
-        try( ScopeGuard guard = new ScopeGuard(); )
+        try( ScopeGuard guard = new ScopeGuard( this ); )
         {
             SymbolType anyArrayType = SymbolType.newArray( "@anyArray", anyType );
             _localScope().addToLocals( Symbol.newFormalParam( "arr", anyArrayType, 0 ) );
@@ -126,58 +128,56 @@ public class SymbolTable
         global.addToLocals( Symbol.newConst( "eol", charType, '\n' ) );
     }
 
-    private SymbolTable() {}
-
 
 
     // IMPORTANT: no need to check if the scope is not null, since the symbol table should always be initialized before use
     // +   the only way the scope can be null is if the user calls closeScope() more times than openScope()
 
     // get the global scope
-    public static Scope _globalScope() { return global; }
+    public Scope _globalScope() { return global; }
     // get the global scope's local symbols
-    public static SymbolMap _globals() { return new SymbolMap( _globalScope().getLocals() ); }
+    public SymbolMap _globals() { return new SymbolMap( _globalScope().getLocals() ); }
 
     // get the current scope
-    public static Scope _localScope() { return Tab.currentScope(); }
+    public Scope _localScope() { return Tab.currentScope(); }
     // get the current scope's local symbols
-    public static SymbolMap _locals() { return new SymbolMap( _localScope().getLocals() ); }
+    public SymbolMap _locals() { return new SymbolMap( _localScope().getLocals() ); }
     // get the current scope's level
-    public static int _localsLevel() { return currScopeLevel; }
+    public int _localsLevel() { return currScopeLevel; }
     // get the current scope's size
-    public static int _localsSize() { return _locals().size(); }
+    public int _localsSize() { return _locals().size(); }
 
     // get the number of variables in the current scope
-    public static int _localsVarCount() { return _locals().count( elem -> elem.isVar() ); }
+    public int _localsVarCount() { return _locals().count( elem -> elem.isVar() ); }
     // get the stack frame size in the current scope (this includes formal parameters and variables)
-    public static int _localsStackFrameSize() { return _locals().count( elem -> elem.isVar() || elem.isFormalParam() || elem.isThis() ); }
+    public int _localsStackFrameSize() { return _locals().count( elem -> elem.isVar() || elem.isFormalParam() || elem.isThis() ); }
     // get the number of formal parameters in the current scope
-    public static int _localsFormalParamCount() { return _locals().count( elem -> elem.isFormalParam() ); }
+    public int _localsFormalParamCount() { return _locals().count( elem -> elem.isFormalParam() ); }
     // get the number of activation parameters in the current scope
-    public static int _localsActivParamCount() { return _locals().count( elem -> elem.isActivParam() ); }
+    public int _localsActivParamCount() { return _locals().count( elem -> elem.isActivParam() ); }
 
     // get the number of programs in the global scope
-    public static int _globalsProgramCount() { return _globals().count( elem -> elem.isProgram() ); }
+    public int _globalsProgramCount() { return _globals().count( elem -> elem.isProgram() ); }
     // get the number of class declarations in the current scope
-    public static int _localsClassCount() { return _locals().count( elem -> elem.isType() && elem._type().isClass() ); }
+    public int _localsClassCount() { return _locals().count( elem -> elem.isType() && elem._type().isClass() ); }
     // get the number of record declarations in the current scope
-    public static int _localsRecordCount() { return _locals().count( elem -> elem.isType() && elem._type().isRecord() ); }
+    public int _localsRecordCount() { return _locals().count( elem -> elem.isType() && elem._type().isRecord() ); }
     // get the number of method declarations in the current scope
-    public static int _localsMethodCount() { return _locals().count( elem -> elem.isMethod() ); }
+    public int _localsMethodCount() { return _locals().count( elem -> elem.isMethod() ); }
     // get the number of static_method declarations in the current scope
-    public static int _localsStaticMethodCount() { return _locals().count( elem -> elem.isStaticMethod() ); }
+    public int _localsStaticMethodCount() { return _locals().count( elem -> elem.isStaticMethod() ); }
     // get the number of function declarations in the current scope
-    public static int _localsFunctionCount() { return _locals().count( elem -> elem.isFunction() ); }
+    public int _localsFunctionCount() { return _locals().count( elem -> elem.isFunction() ); }
 
     // IMPORTANT: !isGlobalScope does not work as expected if the symbol's scope is an invalid value (Symbol.NO_VALUE)
     // check if this scope is the global or program scope
-    public static boolean isGlobalScope() { return isGlobalScope( currScopeLevel ); }
+    public boolean isGlobalScope() { return isGlobalScope( currScopeLevel ); }
     // check if the scope with the given level is the global or program scope
     public static boolean isGlobalScope( int scopeLevel ) { return scopeLevel == -1 || scopeLevel == 0; }
 
 
     // open a new scope
-    public static Scope openScope()
+    public Scope openScope()
     {
         Tab.openScope();
         currScopeLevel++;
@@ -187,7 +187,7 @@ public class SymbolTable
     }
     // close the most recent scope
     // +   stop when the global scope is reached
-    public static Scope closeScope()
+    public Scope closeScope()
     {
         // prevent the global scope from being closed
         if( _localScope() == global )
@@ -206,7 +206,7 @@ public class SymbolTable
 
 
     // try to add the given symbol to the symbol table and return if the addition was successful
-    public static boolean addSymbol( Symbol symbol )
+    public boolean addSymbol( Symbol symbol )
     {
         if( symbol == null || symbol.isNoSym() ) return false;
         Symbol existing = findSymbol( symbol._name() );
@@ -240,7 +240,7 @@ public class SymbolTable
 
     // try to add the given symbol map to the symbol table
     // +   return the index of the element that wasn't added successfully (-1 if everything is ok)
-    public static int addSymbols( SymbolMap symbols )
+    public int addSymbols( SymbolMap symbols )
     {
         int i = 0;
         for( Symbol symbol : symbols )
@@ -258,7 +258,7 @@ public class SymbolTable
     // +   start the search from the most recent open scope
     // +   if the object cannot be found in the current scope, go to its parent scope and search there
     // +   return the found object, or noSymbol if the search was unsuccessful
-    public static Symbol findSymbol( String name )
+    public Symbol findSymbol( String name )
     {
         Symbol symbol = null;
         
@@ -278,7 +278,7 @@ public class SymbolTable
 
 
     // return the symbol table as string
-    public static String asString()
+    public String asString()
     {
         StackProp<Scope> scopeStack = new StackProp<>();
         for( Scope scope = _localScope(); scope != null;   )
@@ -306,7 +306,7 @@ public class SymbolTable
     }
 
     // // return the symbol table as string
-    // public static String dump_old()
+    // public String dump_old()
     // {
     //     String output = null;
         

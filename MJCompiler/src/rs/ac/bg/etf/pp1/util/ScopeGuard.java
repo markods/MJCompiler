@@ -5,11 +5,13 @@ import rs.etf.pp1.symboltable.concepts.Scope;
 
 public class ScopeGuard implements AutoCloseable
 {
-    private Scope scope;
+    private final SymbolTable symbolTable;
+    private final Scope scope;
 
-    public ScopeGuard()
+    public ScopeGuard( SymbolTable symbolTable )
     {
-        scope = SymbolTable.openScope();
+        this.symbolTable = symbolTable;
+        this.scope = symbolTable.openScope();
     }
 
     public Scope scope() { return scope; }
@@ -17,6 +19,6 @@ public class ScopeGuard implements AutoCloseable
     @Override
     public void close()
     {
-        SymbolTable.closeScope();
+        symbolTable.closeScope();
     }
 }

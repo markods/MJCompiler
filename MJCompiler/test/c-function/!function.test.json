@@ -227,7 +227,7 @@
                 "```( arr```",
                 "Ln 49  Col 25  SYN     Bad variable name",
                 "```)```",
-                "Ln 50  Col 4   SYN     Couldn't repair and continue parse",
+                "Ln 50  Col 4   SYN     Fatal error detected, parsing stopped",
                 "```}```",
                 "",
                 "Lexer: 0   Syntax: 53  Semantic: 0  ",

@@ -4,7 +4,6 @@ import rs.ac.bg.etf.pp1.CodeGen;
 import rs.ac.bg.etf.pp1.Compiler;
 import rs.ac.bg.etf.pp1.CompilerError;
 import rs.ac.bg.etf.pp1.Symbol;
-import rs.ac.bg.etf.pp1.SymbolMap;
 import rs.ac.bg.etf.pp1.SymbolTable;
 import rs.ac.bg.etf.pp1.SymbolType;
 import rs.ac.bg.etf.pp1.TokenCode;
@@ -15,50 +14,30 @@ import rs.ac.bg.etf.pp1.props.JumpProp.JumpRecord;
 
 public class CodeGenVisitor extends VisitorAdaptor
 {
-    private Context context = new Context();
+    private final Compiler.State state;
+    private final Context context = new Context();
     
     private static class Context
     {
-        public final BoolProp errorDetected = new BoolProp();
-
         public final StackProp<SyntaxNode> syntaxNodeStack = new StackProp<>();
     }
+    private SymbolTable _symbolTable() { return state._symbolTable(); }
+    private CodeGen _codeGen() { return state._codeGen(); }
 
-
-    public boolean hasErrors() { return context.errorDetected.get(); }
-
-    // only have a single underscore point at the start of the error tokens
-    private void report_basic( SyntaxNode node, String message )
+    public CodeGenVisitor( Compiler.State state )
     {
-        // TODO: restore the original behaviour when the error reporting prints lines and underlines their errors (instead of just printing errors)
-     // report_error( node, message, false, false );
-        report_error( node, message, true, false );
+        this.state = state;
     }
 
     // underscore all error tokens
-    private void report_verbose( SyntaxNode node, String message )
+    private void report_error( SyntaxNode node, String message )
     {
-        report_error( node, message, true, false );
+        state._errors().add( CompilerError.CODEGEN_ERROR, message, node, true, false );
     }
-
-    // report verbose and throw an exception
+    // underscore all error tokens and throw an exception
     private void report_fatal( SyntaxNode node, String message )
     {
-        report_error( node, message, true, true );
-    }
-
-    private void report_error( SyntaxNode node, String message, boolean entireScope, boolean throwError )
-    {
-        context.errorDetected.set();
-
-        ScopeVisitor scopeVisitor = new ScopeVisitor();
-        node.accept( scopeVisitor );
-
-        int tokenFromIdx = scopeVisitor.getTokenFromIdx();
-        int tokenToIdx = ( entireScope ) ? scopeVisitor.getTokenToIdx() : tokenFromIdx + 1;
-
-        Compiler.errors.add( CompilerError.SEMANTIC_ERROR, message, tokenFromIdx, tokenToIdx );
-        if( throwError ) throw Compiler.errors.getLast();
+        state._errors().add( CompilerError.CODEGEN_ERROR, message, node, true, true );
     }
 
 
@@ -78,17 +57,17 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         // if the symbol table has more or less scopes open than expected
         // +   global -> program
-        if( SymbolTable._localsLevel() != 0 )
+        if( _symbolTable()._localsLevel() != 0 )
         {
-            report_verbose( curr.getProgramType(), String.format( "Unexpected symbol table scope level: %d (expected 0)", SymbolTable._localsLevel() ) );
+            report_error( curr.getProgramType(), String.format( "Unexpected symbol table scope level: %d (expected 0)", _symbolTable()._localsLevel() ) );
         }
         // if the syntax node stack is not empty
         if( context.syntaxNodeStack.size() != 0 )
         {
-            report_verbose( curr.getProgramType(), "Syntax node stack not empty" );
+            report_error( curr.getProgramType(), "Syntax node stack not empty" );
         }
         // close the program's scope
-        SymbolTable.closeScope();
+        _symbolTable().closeScope();
     }
 
     ////// program my_program
@@ -97,52 +76,52 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( ProgramType_Plain curr )
     {
         // open the program's scope and add the program's symbols to it
-        SymbolTable.openScope();
-        SymbolTable.addSymbols( curr.symbol._locals() );
+        _symbolTable().openScope();
+        _symbolTable().addSymbols( curr.symbol._locals() );
 
         // initialize the predefined methods' addresses and add their code to the code segment
         {
             // reserve the null address with dummy code (so that methods don't start at null)
-            CodeGen.loadConst( 0 );
-            CodeGen.i_epop();
+            _codeGen().loadConst( 0 );
+            _codeGen().i_epop();
 
             ////// char chr( int i );
-            SymbolTable.findSymbol( "chr" )._address( CodeGen._pc32() );
-            CodeGen.i_enter( 1, 1 );
+            _symbolTable().findSymbol( "chr" )._address( _codeGen()._pc32() );
+            _codeGen().i_enter( 1, 1 );
             {
                 // load the given int to the expression stack
-                CodeGen.i_load_0();
+                _codeGen().i_load_0();
                 // calculate the int's remainder with 256
-                CodeGen.loadConst( 256 );
-                CodeGen.i_rem();
+                _codeGen().loadConst( 256 );
+                _codeGen().i_rem();
                 // voila -- the resulting character is on the expression stack
             }
-            CodeGen.i_exit();
-            CodeGen.i_return();
+            _codeGen().i_exit();
+            _codeGen().i_return();
             
             ////// int ord( char c );
-            SymbolTable.findSymbol( "ord" )._address( CodeGen._pc32() );
-            CodeGen.i_enter( 1, 1 );
+            _symbolTable().findSymbol( "ord" )._address( _codeGen()._pc32() );
+            _codeGen().i_enter( 1, 1 );
             {
                 // load the zeroth method parameter to the expression stack
-                CodeGen.i_load_0();
+                _codeGen().i_load_0();
                 // that's it, the character's index is on the expression stack
             }
-            CodeGen.i_exit();
-            CodeGen.i_return();
+            _codeGen().i_exit();
+            _codeGen().i_return();
 
             ////// int len( anyType arr[] );
-            SymbolTable.findSymbol( "len" )._address( CodeGen._pc32() );
-            CodeGen.i_enter( 1, 1 );
+            _symbolTable().findSymbol( "len" )._address( _codeGen()._pc32() );
+            _codeGen().i_enter( 1, 1 );
             {
                 // load the array pointer to the expression stack
-                CodeGen.i_load_0();
+                _codeGen().i_load_0();
                 // put the array length on the expression stack
-                CodeGen.i_arraylength();
+                _codeGen().i_arraylength();
                 // return
             }
-            CodeGen.i_exit();
-            CodeGen.i_return();
+            _codeGen().i_exit();
+            _codeGen().i_return();
         }
     }
 
@@ -173,7 +152,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // remove the class declaration type node from the syntax node stack
         context.syntaxNodeStack.remove();
         // close the class's scope
-        SymbolTable.closeScope();
+        _symbolTable().closeScope();
     }
 
     ////// class A
@@ -198,17 +177,17 @@ public class CodeGenVisitor extends VisitorAdaptor
         context.syntaxNodeStack.add( curr );
 
         // the class symbol has already been added to the symbol table in the SemanticVisitor
-     // SymbolTable.addSymbol( curr.symbol );
+     // _symbolTable().addSymbol( curr.symbol );
         SymbolType classType = curr.symbol._type();
 
         // open the class scope and add the class's members to the scope
-        SymbolTable.openScope();
-        SymbolTable.addSymbols( classType._members() );
+        _symbolTable().openScope();
+        _symbolTable().addSymbols( classType._members() );
 
         // add a dummy 'this' constant to the symbol table scope
         // +   set its value to be 0 (equal to the null constant)
         Symbol thisSymbol = Symbol.newConst( "this", classType, 0 );
-        SymbolTable.addSymbol( thisSymbol );
+        _symbolTable().addSymbol( thisSymbol );
     }
 
     ////// <epsilon>
@@ -254,7 +233,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // remove the <method declaration code> node from the syntax node stack
         context.syntaxNodeStack.remove();
         // close the method's scope
-        SymbolTable.closeScope();
+        _symbolTable().closeScope();
 
         // get the method's symbol
         Symbol method = curr.getMethodDeclType().symbol;
@@ -264,13 +243,13 @@ public class CodeGenVisitor extends VisitorAdaptor
         {
             // add an exit instruction at the end of the method, followed by a return instruction
             // +    used to gracefully stop the program execution for main and functions that don't return anything
-            CodeGen.i_exit(); CodeGen.i_return();
+            _codeGen().i_exit(); _codeGen().i_return();
         }
         else
         {
             // add a trap instruction at the end of the method, to catch in runtime! any program paths that don't return a value in the method but should
             // +    weird, but according to the microjava specification
-            CodeGen.i_trap( 1 );
+            _codeGen().i_trap( 1 );
         }
     }
 
@@ -299,27 +278,27 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( method.isMain() )
         {
             // set the program entry point (before the actual main method)
-            CodeGen._entryAddr32Set();
+            _codeGen()._entryAddr32Set();
 
             // initialize all class's virtual tables before the main method
             // +   the main method is located in the program scope (global -> program)
             // +   that's why we can filter these symbols for class definitions (classes are defined in the program scope)
-            for( Symbol classDef : SymbolTable._locals() )
+            for( Symbol classDef : _symbolTable()._locals() )
             {
                 // skip any non-class definitions
                 if( !classDef.isType() || !classDef._type().isClass() ) continue;
 
                 // initialize the class's virtual table in the static segment
-                CodeGen.initVirtualTable( classDef );
+                _codeGen().initVirtualTable( classDef );
             }
         }
 
         // open the function/method scope and add the function/method's members to the scope
-        SymbolTable.openScope();
-        SymbolTable.addSymbols( curr.symbol._params() );
+        _symbolTable().openScope();
+        _symbolTable().addSymbols( curr.symbol._params() );
 
         // set the method's address
-        method._address( CodeGen._pc32() );
+        method._address( _codeGen()._pc32() );
     }
 
     ////// action symbol for opening a new scope
@@ -337,7 +316,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         Symbol method = ( ( MethodDecl_Plain )curr.getParent() ).getMethodDeclType().symbol;
         // initialize the method's stack frame
         int thisParamInc = ( method.isMethod() ) ? 1 : 0;
-        CodeGen.i_enter( thisParamInc + method._paramCount(), thisParamInc + SymbolTable._localsStackFrameSize() );
+        _codeGen().i_enter( thisParamInc + method._paramCount(), thisParamInc + _symbolTable()._localsStackFrameSize() );
     }
 
     ////// <epsilon>
@@ -405,7 +384,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( curr.symbol.isVar() && !curr.symbol.isGlobal() )
         {
             // add the symbol to the current symbol table scope
-            SymbolTable.addSymbol( curr.symbol );
+            _symbolTable().addSymbol( curr.symbol );
         }
     }
     // VarIdent ::= (VarIdent_Err  ) error {: parser.report_error( "Bad variable declaration", null ); :};
@@ -457,7 +436,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // set the label's jump point's address
         // +   the method's labels have already been added in the semantic pass
-        methodDecl.jumpprop.get( String.format( "@Label_%s", curr.getLabel() ) )._pointAddress( CodeGen._pc32() );
+        methodDecl.jumpprop.get( String.format( "@Label_%s", curr.getLabel() ) )._pointAddress( _codeGen()._pc32() );
     }
 
     ////// ident.ident[ expr ] = expr;
@@ -490,7 +469,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         IfScope scope = curr.getIfScope();
 
         // set the if statement's exit point here
-        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@End" )._pointAddress( _codeGen()._pc32() );
     }
     // Stmt ::= (Stmt_IfElse     ) IfScope lparen IfCondition rparen IfStmt ELSE_K ElseStmt;
     @Override
@@ -500,7 +479,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         IfScope scope = curr.getIfScope();
 
         // set the if-else statement's exit point here
-        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@End" )._pointAddress( _codeGen()._pc32() );
     }
     // Stmt ::= (Stmt_DoWhile    ) DoWhileScope DoWhileStmt WHILE_K lparen DoWhileCondition rparen semicol;
     @Override
@@ -510,8 +489,8 @@ public class CodeGenVisitor extends VisitorAdaptor
         DoWhileScope scope = curr.getDoWhileScope();
 
         // set the do-while statement's exit point here
-        scope.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
-        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@FalseBranch" )._pointAddress( _codeGen()._pc32() );
+        scope.jumpprop.get( "@End" )._pointAddress( _codeGen()._pc32() );
     }
     // Stmt ::= (Stmt_Switch     ) SWITCH_K lparen SwitchExpr rparen lbrace CaseList rbrace;
     @Override
@@ -521,7 +500,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         SwitchScope scope = curr.getSwitchScope();
 
         // set the switch statement's exit point here
-        scope.jumpprop.get( "@End" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@End" )._pointAddress( _codeGen()._pc32() );
     }
     // Stmt ::= (Stmt_Break      ) BREAK_K       semicol;
     @Override
@@ -539,7 +518,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         
         // unconditionally jump to the end of the do-while or switch statement
         // +    get the jump-instruction's starting address
-        int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+        int pointA = _codeGen().jump( CodeGen.NO_ADDRESS );
 
         // mark the jump instruction's offset to be fixed later
         jumpprop.get( "@End" )._addAddressToFix( pointA );
@@ -555,7 +534,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // unconditionally jump to the beginning of the do-while statement's condition
         // +    get the jump-instruction's starting address
-        int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+        int pointA = _codeGen().jump( CodeGen.NO_ADDRESS );
 
         // mark the jump instruction's offset to be fixed later
         scope.jumpprop.get( "@Cond" )._addAddressToFix( pointA );
@@ -564,15 +543,15 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Stmt_Return curr )
     {
-        CodeGen.i_exit();
-        CodeGen.i_return();
+        _codeGen().i_exit();
+        _codeGen().i_return();
     }
     // Stmt ::= (Stmt_ReturnExpr ) RETURN_K Expr semicol;
     @Override
     public void visit( Stmt_ReturnExpr curr )
     {
-        CodeGen.i_exit();
-        CodeGen.i_return();
+        _codeGen().i_exit();
+        _codeGen().i_return();
     }
     // Stmt ::= (Stmt_Goto       ) GOTO_K ident:Label semicol;
     @Override
@@ -585,7 +564,7 @@ public class CodeGenVisitor extends VisitorAdaptor
 
         // unconditionally jump to the label
         // +    get the jump-instruction's starting address
-        int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+        int pointA = _codeGen().jump( CodeGen.NO_ADDRESS );
 
         // initialize the jump instruction's address
         // +   the actual address will be fixed once the label's address is resolved
@@ -596,23 +575,23 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Stmt_Read curr )
     {
         // read the value from the standard input
-        CodeGen.read( curr.getDesignator().symbol._type() );
+        _codeGen().read( curr.getDesignator().symbol._type() );
         // store the read value in the symbol
-        CodeGen.storeSymbolValue( curr.getDesignator().symbol );
+        _codeGen().storeSymbolValue( curr.getDesignator().symbol );
     }
     // Stmt ::= (Stmt_Print      ) PRINT_K lparen Expr                        rparen semicol;
     @Override
     public void visit( Stmt_Print curr )
     {
-        CodeGen.loadConst( 0 );
-        CodeGen.print( curr.getExpr().symbol._type() );
+        _codeGen().loadConst( 0 );
+        _codeGen().print( curr.getExpr().symbol._type() );
     }
     // Stmt ::= (Stmt_PrintFormat) PRINT_K lparen Expr comma int_lit:MinWidth rparen semicol;
     @Override
     public void visit( Stmt_PrintFormat curr )
     {
-        CodeGen.loadConst( curr.getMinWidth() );
-        CodeGen.print( curr.getExpr().symbol._type() );
+        _codeGen().loadConst( curr.getMinWidth() );
+        _codeGen().print( curr.getExpr().symbol._type() );
     }
 
     ////// action symbols for opening a new scope and the if-statement's jump instructions
@@ -632,7 +611,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         );
 
         // set the if statement's starting address
-        scope.jumpprop.get( "@TrueBranch" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@TrueBranch" )._pointAddress( _codeGen()._pc32() );
     }
     // IfStmt ::= (IfStmt_Plain) Stmt;
     @Override
@@ -647,13 +626,13 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( curr.getParent() instanceof Stmt_IfElse )
         {
             // add an unconditional jump to the end of the if-else statement
-            int pointA = CodeGen.jump( CodeGen.NO_ADDRESS );
+            int pointA = _codeGen().jump( CodeGen.NO_ADDRESS );
             scope.jumpprop.get( "@End" )._addAddressToFix( pointA );
         }
 
         // set the else statement's starting address (equal to the end address if 'else' doesn't exist)
         // IMPORTANT: this code should be the last code in this visitor function
-        scope.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@FalseBranch" )._pointAddress( _codeGen()._pc32() );
     }
     // ElseStmt ::= (ElseStmt_Plain) Stmt;
 
@@ -665,7 +644,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         context.syntaxNodeStack.add( curr );
 
         // set the address of the first instruction in the do-while statement
-        curr.jumpprop.get( "@TrueBranch" )._pointAddress( CodeGen._pc32() );
+        curr.jumpprop.get( "@TrueBranch" )._pointAddress( _codeGen()._pc32() );
     }
     // DoWhileStmt ::= (DoWhileStmt_Plain) Statement;
     @Override
@@ -677,7 +656,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         );
 
         // set the do-while-condition's entry point
-        scope.jumpprop.get( "@Cond" )._pointAddress( CodeGen._pc32() );
+        scope.jumpprop.get( "@Cond" )._pointAddress( _codeGen()._pc32() );
     }
     // DoWhileCondition ::= (DoWhileCondition_Plain) Condition;
 
@@ -715,21 +694,21 @@ public class CodeGenVisitor extends VisitorAdaptor
 
             // duplicate the switch-expression's result, so that it is there for other conditional jumps as well
             // +    (the expression stack's top duplicate gets consumed whenever the conditional jump's condition is evaluated)
-            CodeGen.i_dup();
+            _codeGen().i_dup();
 
             // add the case statement's value to the expression stack
-            CodeGen.loadConst( value_i32 );
+            _codeGen().loadConst( value_i32 );
 
             // initialize the jump instruction's address
             // +    jump if the condition is not true
-            int pointCaseX = CodeGen.jumpIf( TokenCode.eq, CodeGen.NO_ADDRESS );
+            int pointCaseX = _codeGen().jumpIf( TokenCode.eq, CodeGen.NO_ADDRESS );
             scope.jumpprop.get( caseRecord._pointName() )._addAddressToFix( pointCaseX );
         }
 
         // remove the last duplicate, since there are no more cases left (default not yet supported)
-        CodeGen.i_epop();
+        _codeGen().i_epop();
         // jump unconditionally to the first instruction after the switch statement
-        int pointSkipAllCases = CodeGen.jump( CodeGen.NO_ADDRESS );
+        int pointSkipAllCases = _codeGen().jump( CodeGen.NO_ADDRESS );
 
         // add the switch's exit point
         scope.jumpprop.get( "@End" )._addAddressToFix( pointSkipAllCases );
@@ -778,39 +757,39 @@ public class CodeGenVisitor extends VisitorAdaptor
         {
             // store the value of the expression to the symbol
             // +   the symbol's address is present on the expression stack (if needed), followed by the expression value
-            CodeGen.storeSymbolValue( designator );
+            _codeGen().storeSymbolValue( designator );
             return;
         }
 
         // if the symbol needs designation by another symbol (whose value must be placed onto the expression stack in order for this symbol to be accessed)
-        if( CodeGen.needsPrevDesignatorValue( designator ) )
+        if( _codeGen().needsPrevDesignatorValue( designator ) )
         {
             // if the last designator segment is not an array element
             if( !designator.isArrayElem() )
             {
                 // duplicate the designator address (so that we don't lose it)
-                CodeGen.i_dup();
+                _codeGen().i_dup();
             }
             // if the last designator segment is an array element
             else
             {
                 // duplicate the designator address and the array element index (so that we don't lose them)
-                CodeGen.i_dup2();
+                _codeGen().i_dup2();
             }
         }
 
         // load the designator's value to the expression stack
         // +    this uses up one of the duplicate designator's addresses
         // +    (if they are present on the expression stack, that means that they were needed to load and store the designator's value)
-        CodeGen.loadSymbolValue( designator );
+        _codeGen().loadSymbolValue( designator );
 
         // load the constant 1 to the expression stack and add/sub it from the designator
-        CodeGen.loadConst( 1 );
-        if     ( curr instanceof DesignatorStmt_Plusplus   ) CodeGen.i_add();
-        else if( curr instanceof DesignatorStmt_Minusminus ) CodeGen.i_sub();
+        _codeGen().loadConst( 1 );
+        if     ( curr instanceof DesignatorStmt_Plusplus   ) _codeGen().i_add();
+        else if( curr instanceof DesignatorStmt_Minusminus ) _codeGen().i_sub();
 
         // store the updated value back to the designator
-        CodeGen.storeSymbolValue( designator );
+        _codeGen().storeSymbolValue( designator );
     }
 
     ////// <epsilon>
@@ -833,7 +812,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // add a random constant on the stack, which will be removed by the next case
         // +   this supports cases that fall through to the next case (there is a code path that doesn't hit a break/continue/return statement in the case)
         // +   the next case will remove this constant at the beginning (as if it were a switch-expression's value duplicate)
-        CodeGen.loadConst( 0 );
+        _codeGen().loadConst( 0 );
     }
 
     ////// action symbols for opening a new scope and the case-statement's jump instructions
@@ -847,7 +826,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         );
 
         // remove the last switch-expression's result (last duplicate)
-        int pointCase = CodeGen.i_epop();
+        int pointCase = _codeGen().i_epop();
 
         // update the case's starting address
         scope.jumpprop.get( String.format( "@Case_%d", curr.getCaseNum() ) )._pointAddress( pointCase );
@@ -877,8 +856,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         // HACK: swap the expression's value and the class instance pointer on the expression stack
         // +    that way, the class instance pointer always ends up at the top of the stack (similar to how bubble sort works)
-        CodeGen.i_dup_x1();   // ExprStack=[...,valA, valB -> ...,valB, valA, valB]
-        CodeGen.i_epop();     // ExprStack=[..., val -> ...]
+        _codeGen().i_dup_x1();   // ExprStack=[...,valA, valB -> ...,valB, valA, valB]
+        _codeGen().i_epop();     // ExprStack=[..., val -> ...]
     }
 
 
@@ -1095,8 +1074,8 @@ public class CodeGenVisitor extends VisitorAdaptor
         // emit code for the jump instruction and update the destination term's jump record
         // +   the destination term will fix the offset for the current jump instruction (when the destination term's starting address becomes known)
         int pointA = CodeGen.NO_ADDRESS;
-        if     ( nextAorop == TokenCode.and ) { pointA = CodeGen.jumpIfNot( currRelop, CodeGen.NO_ADDRESS ); destJumpprop.get( "@FalseBranch" )._addAddressToFix( pointA ); }
-        else if( nextAorop == TokenCode.or  ) { pointA = CodeGen.jumpIf   ( currRelop, CodeGen.NO_ADDRESS ); destJumpprop.get( "@TrueBranch"  )._addAddressToFix( pointA ); }
+        if     ( nextAorop == TokenCode.and ) { pointA = _codeGen().jumpIfNot( currRelop, CodeGen.NO_ADDRESS ); destJumpprop.get( "@FalseBranch" )._addAddressToFix( pointA ); }
+        else if( nextAorop == TokenCode.or  ) { pointA = _codeGen().jumpIf   ( currRelop, CodeGen.NO_ADDRESS ); destJumpprop.get( "@TrueBranch"  )._addAddressToFix( pointA ); }
         else                                  { report_fatal( curr, "Aorop must be either 'and' or 'or'" ); }
     }
 
@@ -1141,7 +1120,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         // +   also emit a 'false' constant if a boolean expression is checked for truthness
         int relop = TokenCode.invalid;
         if     ( curr instanceof CondFact_Relop ) { relop = ( ( CondFact_Relop )curr ).getRelop().symbol._value(); }
-        else if( curr instanceof CondFact_Expr  ) { relop = TokenCode.ne; CodeGen.loadConst( CodeGen.FALSE ); }
+        else if( curr instanceof CondFact_Expr  ) { relop = TokenCode.ne; _codeGen().loadConst( CodeGen.FALSE ); }
         else                                      { report_fatal( curr, "<Condition factor>'s type not yet supported" ); }
 
         // get the parent term
@@ -1150,8 +1129,8 @@ public class CodeGenVisitor extends VisitorAdaptor
         // save the current node's possible relational operator to the parent term
         // +   the current node's starting address will be saved by the <term's scope> and <nested term's scope>
         //     (+   because the program counter here isn't actually the starting address for the term)
-     // term.jumpprop.get( "@TrueBranch"  )._pointAddress( CodeGen._pc32() );
-     // term.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
+     // term.jumpprop.get( "@TrueBranch"  )._pointAddress( _codeGen()._pc32() );
+     // term.jumpprop.get( "@FalseBranch" )._pointAddress( _codeGen()._pc32() );
         term.jumpprop.get( "@Relop" )._pointAddress( relop );
 
         // IMPORTANT: the actual jump instruction will be emitted in the parent term, not here!
@@ -1170,8 +1149,8 @@ public class CodeGenVisitor extends VisitorAdaptor
         else                                           { report_fatal( curr, "<Condition term list>'s type not yet supported" ); }
 
         // update the term's starting address
-        term.jumpprop.get( "@TrueBranch"  )._pointAddress( CodeGen._pc32() );
-        term.jumpprop.get( "@FalseBranch" )._pointAddress( CodeGen._pc32() );
+        term.jumpprop.get( "@TrueBranch"  )._pointAddress( _codeGen()._pc32() );
+        term.jumpprop.get( "@FalseBranch" )._pointAddress( _codeGen()._pc32() );
 
         // NOTE: this won't cover the first term in any parentheses, but that isn't a problem because
         // +   either the term is the first in the entire condition, in which case nothing from inside the condition can jump to it
@@ -1197,7 +1176,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Addition_STerm curr )
     {
-        if( curr.getAddop().symbol._value() == TokenCode.minus ) CodeGen.i_neg();
+        if( curr.getAddop().symbol._value() == TokenCode.minus ) _codeGen().i_neg();
     }
     // Addition ::= (Addition_Tail ) Addition Addop Term;
     @Override
@@ -1205,8 +1184,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         switch( curr.getAddop().symbol._value() )
         {
-            case TokenCode.plus:  CodeGen.i_add(); break;
-            case TokenCode.minus: CodeGen.i_sub(); break;
+            case TokenCode.plus:  _codeGen().i_add(); break;
+            case TokenCode.minus: _codeGen().i_sub(); break;
             default: report_fatal( curr, "Unsupported addition operator code" );
         }
     }
@@ -1220,9 +1199,9 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         switch( curr.getMulop().symbol._value() )
         {
-            case TokenCode.mul:  CodeGen.i_mul(); break;
-            case TokenCode.div:  CodeGen.i_div(); break;
-            case TokenCode.perc: CodeGen.i_rem(); break;
+            case TokenCode.mul:  _codeGen().i_mul(); break;
+            case TokenCode.div:  _codeGen().i_div(); break;
+            case TokenCode.perc: _codeGen().i_rem(); break;
             default: report_fatal( curr, "Unsupported multiplication operator code" );
         }
     }
@@ -1242,7 +1221,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     {
         // load the designator's value on the expression stack (given the previous designator where the designator evalueation stopped)
         // +   IMPORTANT: this loads the null constant's value
-        CodeGen.loadSymbolValue( curr.symbol );
+        _codeGen().loadSymbolValue( curr.symbol );
     }
     // Factor ::= (Factor_MethodCall ) MethodCall ActParsScope ActPars rparen;
     @Override
@@ -1309,7 +1288,6 @@ public class CodeGenVisitor extends VisitorAdaptor
             else
             {
                 report_fatal( curr, "Function designator type not yet supported" );
-                break;
             }
         } while( false );
     
@@ -1318,9 +1296,9 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( isVirtualCall )
         {
             // push the virtual table pointer to the expression stack (#0 field in the class)
-            CodeGen.i_getfield( 0 );
+            _codeGen().i_getfield( 0 );
             // call the virtual method
-            CodeGen.i_invokevirtual( function._name() );
+            _codeGen().i_invokevirtual( function._name() );
         }
         // if the function should be called non-virtually
         else
@@ -1333,22 +1311,22 @@ public class CodeGenVisitor extends VisitorAdaptor
 
             // remove the random constant (quasi class instance pointer) from the expression stack
             // NOTE: this works for the constructor, as it still leaves the 'this' formal parameter in the zeroth place
-            CodeGen.i_epop();
+            _codeGen().i_epop();
             // call the function/static method starting at the given address
             // NOTE: this works for super() and super.foo(), as their addresses are set inside the superclass, which will have been visited before the subclass
-            int pointA = CodeGen.i_call( CodeGen.NO_ADDRESS );
-            CodeGen.fixJumpOffset( pointA, function._address() );
+            int pointA = _codeGen().i_call( CodeGen.NO_ADDRESS );
+            _codeGen().fixJumpOffset( pointA, function._address() );
         }
 
         // if the return value should not be saved and the function/method returns something, remove the result from the expression stack
-        if( !saveReturnValueIfItExists && !function._type().isVoidType() ) CodeGen.i_epop();
+        if( !saveReturnValueIfItExists && !function._type().isVoidType() ) _codeGen().i_epop();
     }
     // Factor ::= (Factor_Literal    ) Literal;
     @Override
     public void visit( Factor_Literal curr )
     {
         // load the literal's value onto the expression stack
-        CodeGen.loadConst( curr.symbol._value() );
+        _codeGen().loadConst( curr.symbol._value() );
     }
     // Factor ::= (Factor_NewVar     ) NEW_K Type;
     @Override
@@ -1358,15 +1336,15 @@ public class CodeGenVisitor extends VisitorAdaptor
         SymbolType symbolType = curr.symbol._type();
 
         // allocate space on the heap for the class/record instance and add the starting address to the expression stack
-        CodeGen.i_new( symbolType._fieldCount()*4/*B*/ );
+        _codeGen().i_new( symbolType._fieldCount()*4/*B*/ );
         
         // if the type contains a virtual table pointer (class only)
         if( symbolType.isClass() )
         {
             // initialize the virtual table pointer, but leave the class instance's address on the expression stack
-            CodeGen.i_dup();
-            CodeGen.loadConst( curr.symbol._address() );
-            CodeGen.i_putfield( 0 );
+            _codeGen().i_dup();
+            _codeGen().loadConst( curr.symbol._address() );
+            _codeGen().i_putfield( 0 );
 
             // if the class contains a non-placeholder constructor, call it
             Symbol constructor = symbolType._members().findSymbol( "@Constructor" );
@@ -1374,10 +1352,10 @@ public class CodeGenVisitor extends VisitorAdaptor
 
             // copy the class instance's address on the expression stack
             // +   set the implicit 'this' as the zeroth constructor argument
-            CodeGen.i_dup();
+            _codeGen().i_dup();
             // call the constructor starting at the given address
-            int pointA = CodeGen.i_call( CodeGen.NO_ADDRESS );
-            CodeGen.fixJumpOffset( pointA, constructor._address() );
+            int pointA = _codeGen().i_call( CodeGen.NO_ADDRESS );
+            _codeGen().fixJumpOffset( pointA, constructor._address() );
         }
     }
     // Factor ::= (Factor_NewArray   ) NEW_K Type lbracket Expr rbracket;
@@ -1385,7 +1363,7 @@ public class CodeGenVisitor extends VisitorAdaptor
     public void visit( Factor_NewArray curr )
     {
         // allocate space on the heap for the array and add the array starting address to the expression stack
-        CodeGen.i_newarray( curr.symbol._type().isChar() );
+        _codeGen().i_newarray( curr.symbol._type().isChar() );
     }
     // Factor ::= (Factor_Expr       ) lparen Expr rparen;
 
@@ -1398,14 +1376,14 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( curr.symbol.isMethod() )
         {
             // duplicate the method address on the expression stack (the first address will be used to get the virtual table pointer)
-            CodeGen.i_dup();
+            _codeGen().i_dup();
         }
         // if the current symbol is a static method or function
         else if( curr.symbol.isStaticMethod() || curr.symbol.isFunction() )
         {
             // load a random constant on the expression stack (quasi class instance pointer)
             // so that both the method's and the function's activation parameters are handled in the same way
-            CodeGen.loadConst( 0 );
+            _codeGen().loadConst( 0 );
         }
     }
 
@@ -1466,7 +1444,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( curr instanceof Designator_Ident && isInClassScope && curr.symbol.isClassMember() )
         {
             // load the instance pointer on the expression stack
-            CodeGen.loadSymbolValue( SymbolTable.findSymbol( "this" ) );
+            _codeGen().loadSymbolValue( _symbolTable().findSymbol( "this" ) );
         }
 
         // if the designator is not the last one in the sequence
@@ -1474,7 +1452,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         if( hasNext )
         {
             // load its value on the expression stack
-            CodeGen.loadSymbolValue( curr.symbol );
+            _codeGen().loadSymbolValue( curr.symbol );
         }
         
         // if the designator is a call to the supertype's constructor ('super()')
@@ -1482,7 +1460,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         {
             // load the instance pointer on the expression stack
             // NOTE: this loads the zeroth constructor's formal parameter, which wouln't be done otherwise
-            CodeGen.loadSymbolValue( SymbolTable.findSymbol( "this" ) );
+            _codeGen().loadSymbolValue( _symbolTable().findSymbol( "this" ) );
         }
     }
 

@@ -144,7 +144,7 @@
             ],
         },
         {
-            "TestGroupName": "Class and record declaration error",
+            "TestGroupName": "Class and record declaration errors",
             "FilePath": "./declaration-error.mj",
             "ExCompileOutput": [
                 "Ln 4   Col 7   SYN     Bad record declaration",
@@ -183,7 +183,7 @@
                 "```.```",
                 "Ln 25  Col 13  SYN     Bad variable name",
                 "```( r )```",
-                "Ln 26  Col 4   SYN     Couldn't repair and continue parse",
+                "Ln 26  Col 4   SYN     Fatal error detected, parsing stopped",
                 "```}```",
                 "",
                 "Lexer: 1   Syntax: 15  Semantic: 0  ",
@@ -236,7 +236,7 @@
             "TestUnitList": [],
         },
         {
-            "TestGroupName": "Designator error",
+            "TestGroupName": "Designator errors",
             "FilePath": "./designator-error.mj",
             "ExCompileOutput": [
                 "Ln 9   Col 8   SEM     Cannot override, method's signature different from inherited method's signature",

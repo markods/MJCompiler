@@ -19,15 +19,7 @@ public class BufferedLexer implements java_cup.runtime.Scanner
         this.lexer = new Lexer( in );
         this.tokens = new TokenList();
     }
-    
-    public BufferedLexer( TokenList tokens )
-    {
-        this.lexer = null;
-        this.tokens = tokens;
-    }
 
-
-    public TokenList getTokens() { return tokens; }
 
     @Override
     public Token next_token() throws IOException
@@ -39,7 +31,7 @@ public class BufferedLexer implements java_cup.runtime.Scanner
                 Token token = ( Token )lexer.next_token();
                 tokens.add( token );
 
-                if( token.containsNewline() ) break;
+                if( token.isNewline() ) break;
                 if( token.isEOF() ) { isEOF = true; break; }
             }
         }
@@ -47,7 +39,7 @@ public class BufferedLexer implements java_cup.runtime.Scanner
         if( lastTokenIdx >= tokens.size() )
         {
             Token lastToken = tokens.getLast();
-            tokens.add( new Token( TokenCode.EOF, lastToken.getIdx() + 1, lastToken.getLine(), lastToken.getCol(), lastToken.getValue() ) );
+            tokens.add( new Token( TokenCode.EOF, lastToken._idx() + 1, lastToken._line(), lastToken._column(), lastToken._value() ) );
         }
 
         return tokens.get( lastTokenIdx++ );

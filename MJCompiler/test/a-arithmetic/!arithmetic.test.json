@@ -212,7 +212,7 @@
                 "```if( z > 0 && z >> 1 ) return -1```",
                 "Ln 21  Col 8   SYN     Bad variable name",
                 "```return z +* d + e```",
-                "Ln 22  Col 4   SYN     Couldn't repair and continue parse",
+                "Ln 22  Col 4   SYN     Fatal error detected, parsing stopped",
                 "```}```",
                 "",
                 "Lexer: 4   Syntax: 19  Semantic: 0  ",

@@ -10,16 +10,19 @@ public class JumpProp implements Iterable<JumpProp.JumpRecord>
 {
     public static int NO_ADDRESS = CodeGen.NO_ADDRESS;
 
-    private LinkedHashMap<String, JumpRecord> jumpMap = new LinkedHashMap<>();
+    private final LinkedHashMap<String, JumpRecord> jumpMap = new LinkedHashMap<>();
+    private final CodeGen codeGen;
+
     public static class JumpRecord
     {
+        private final CodeGen codeGen;
         private final String pointName;
         private int pointAddress = NO_ADDRESS;
         private final ArrayList<Integer> addressesToFix = new ArrayList<>();
 
-        private JumpRecord( String pointName )
+        private JumpRecord( CodeGen codeGen, String pointName )
         {
-            if( pointName == null ) throw new IllegalArgumentException( "The point name cannot be null" );
+            this.codeGen = codeGen;
             this.pointName = pointName;
         }
 
@@ -32,7 +35,7 @@ public class JumpProp implements Iterable<JumpProp.JumpRecord>
             if( this.pointAddress != NO_ADDRESS ) throw new IllegalArgumentException( "The point's address cannot be set more than once" );
             this.pointAddress = pointAddress;
 
-            for( int addressToFix : addressesToFix ) CodeGen.fixJumpOffset( addressToFix, pointAddress );
+            for( int addressToFix : addressesToFix ) codeGen.fixJumpOffset( addressToFix, pointAddress );
             addressesToFix.clear();
 
             return this;
@@ -40,16 +43,23 @@ public class JumpProp implements Iterable<JumpProp.JumpRecord>
 
         public JumpRecord _addAddressToFix( int addressToFix )
         {
-            if( pointAddress != CodeGen.NO_ADDRESS ) CodeGen.fixJumpOffset( addressToFix, pointAddress );
+            if( pointAddress != CodeGen.NO_ADDRESS ) codeGen.fixJumpOffset( addressToFix, pointAddress );
             else                                     addressesToFix.add( addressToFix );
             
             return this;
         }
     }
 
+    // constructor
+    public JumpProp( CodeGen codeGen )
+    {
+        this.codeGen = codeGen;
+    }
+
+
     public boolean add( String pointName )
     {
-        return null == jumpMap.putIfAbsent( pointName, new JumpRecord( pointName ) );
+        return null == jumpMap.putIfAbsent( pointName, new JumpRecord( codeGen, pointName ) );
     }
     public JumpRecord get( String pointName )
     {

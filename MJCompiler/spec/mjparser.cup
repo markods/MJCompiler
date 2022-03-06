@@ -6,20 +6,25 @@ import rs.ac.bg.etf.pp1.ast.*;
 import rs.ac.bg.etf.pp1.util.Log4J;
 
 
+
 // ________________________________________________________________________________________________
 // directive section
 
 parser code {:
-	private boolean errorDetected = false;
+    private Compiler.State state = null;
 	private boolean fatalErrorDetected = false;
 
     private Token currToken = null;
     private TokenList errorTokens = new TokenList();
 
+    public void finishConstruction( Compiler.State state )
+    {
+        this.state = state;
+    }
 
-    // check if there are parse errors
-    public boolean hasErrors()     { return errorDetected || fatalErrorDetected; }
-    public boolean hasFatalError() { return fatalErrorDetected; }
+
+    // check if there are fatal parse errors
+    public boolean noFatalErrors() { return !fatalErrorDetected; }
 
 
     @Override
@@ -39,12 +44,10 @@ parser code {:
     @Override
     public void report_error( String message, Object info )
     {
-    	errorDetected = true;
-
         // ignore default messages (lr parser messages that can't be replaced without rewriting that part of the parser in the .jar file)
         if( message == null
         || "Syntax error".equals( message )
-        || "Couldn't repair and continue parsing".equals( message ) )
+        || "Couldn't repair and continue parse".equals( message ) )
         {
             message = null;
         }
@@ -87,9 +90,9 @@ parser code {:
 
         if( errorTokens.size() > 0 )
         {
-            tokenFromIdx = ( ( Token )errorTokens.getFirst() ).getIdx();
-            if( !fatalErrorDetected ) tokenToIdx = ( ( Token )errorTokens.getLast() ).getIdx() + 1;
-            else                      tokenToIdx = tokenFromIdx + 1;
+            tokenFromIdx = ( ( Token )errorTokens.getFirst() )._idx();
+            if( !fatalErrorDetected ) tokenToIdx = ( ( Token )errorTokens.getLast() )._idx();
+            else                      tokenToIdx = tokenFromIdx;
 
             // clear all error tokens in the current syntax error
             errorTokens.clear();
@@ -97,7 +100,7 @@ parser code {:
 
 
         // report the syntax error
-        Compiler.errors.add( CompilerError.SYNTAX_ERROR, message, tokenFromIdx, tokenToIdx );
+        state._errors().add( CompilerError.SYNTAX_ERROR, message, tokenFromIdx, tokenToIdx );
     }
     
 
@@ -133,7 +136,7 @@ scan with {:
         if( !currToken.isIgnored() )
         {
             // log the current token and break
-            Compiler.logger.log( Log4J.INFO, currToken.toString(), true );
+            state._logger().log( Log4J.INFO, currToken.toString(), true );
             break;
         }
     }
@@ -142,7 +145,7 @@ scan with {:
     if( currToken.isInvalid() )
     {
         // report it as a lexer error
-        Compiler.errors.add( CompilerError.LEXICAL_ERROR, "Bad token", currToken.getIdx(), currToken.getIdx()+1  );
+        state._errors().add( CompilerError.LEXICAL_ERROR, "Bad token", currToken._idx(), currToken._idx()  );
     }
 
     // return the current token
@@ -185,7 +188,7 @@ terminal String ident;         // asdf0_13
 
 // ignored tokens [terminals]
 // +   whitespaces do not include newlines!
-terminal newline, whitespace, line_comment, multi_comment;
+terminal newline, whitespace, line_comment, inline_comment;
 // error token in lexer [terminals]
 // +   used instead of error, since then the parser doesn't skip reporting it as an error
 terminal invalid;

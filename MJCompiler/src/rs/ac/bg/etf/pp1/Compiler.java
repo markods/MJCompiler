@@ -17,80 +17,128 @@ import rs.ac.bg.etf.pp1.visitors.SemanticVisitor;
 
 public class Compiler
 {
-    public static final Log4J logger = Log4J.getLogger( Compiler.class );
+    // compiler state
+    private State state = new State();
 
-    public static final CompilerErrorList errors = new CompilerErrorList();
-    public static final TokenList tokens = new TokenList();
+    public class State
+    {
+        private Log4J logger = Log4J.getLogger( Compiler.class );
+        private CompilerErrorList errors = new CompilerErrorList( this );
 
-    private static boolean verbose = false;
-    private static File fInput = null;
-    private static File fLex = null;
-    private static File fParse = null;
-    private static File fOutput = null;
+        private boolean verbose = false;
+        // --------------------------------------------
+        private File fInput = null;
+        private File fLex = null;
+        private File fParse = null;
+        private File fOutput = null;
+
+        private final int maxFieldsInClass = 65536;
+        private final int maxStackFrameSize = 256;
+
+        private BufferedLexer lexer = null;
+        // --------------------------------------------
+        private Parser parser = null;
+        private SymbolTable symbolTable = null;
+        private SyntaxNode syntaxRoot = null;
+        // --------------------------------------------
+        private SemanticVisitor semanticVisitor = null;
+        private CodeGen codeGen = null;
+        // --------------------------------------------
+        private CodeGenVisitor codeGenVisitor = null;
+
+
+        // reset the compiler parameters
+        public void resetParams()
+        {
+            verbose = false;
+            fInput = null;
+            fLex = null;
+            fParse = null;
+            fOutput = null;
+        }
+
+        // get the input file name, if it exists
+        public String getInputFileName()
+        {
+            return ( fInput != null ) ? fInput.getName() : "";
+        }
+
+        // getters and setters
+        public Log4J _logger() { return logger; }
+        public CompilerErrorList _errors() { return errors; }
+
+        public boolean _verbose() { return verbose; }
+
+        public int _maxFieldsInClass() { return maxFieldsInClass; }
+        public int _maxStackFrameSize() { return maxStackFrameSize; }
+
+        public BufferedLexer _lexer() { return lexer; }
+        // --------------------------------------------
+        public Parser _parser() { return parser; }
+        public SymbolTable _symbolTable() { return symbolTable; }
+        public SyntaxNode _syntaxRoot() { return syntaxRoot; }
+        // --------------------------------------------
+        public SemanticVisitor _semanticVisitor() { return semanticVisitor; }
+        public CodeGen _codeGen() { return codeGen; }
+        // --------------------------------------------
+        public CodeGenVisitor _codeGenVisitor() { return codeGenVisitor; }
+    }
 
     // private constructor
     private Compiler() {}
 
-    // reset the compiler parameters
-    private static void resetParams()
-    {
-        verbose = false;
-        fInput = null;
-        fLex = null;
-        fParse = null;
-        fOutput = null;
-    }
+
 
 
 
     // compile [-lex file] [-par file] [-o file] file
     public static void main( String[] args )
     {
-        if( !Compiler.compile( args ) )
+        Compiler compiler = new Compiler();
+
+        if( !compiler.compile( args ) )
         {
-            System.err.println( Compiler.errors.toString() );
+            System.err.println( compiler.state.errors.toString() );
             System.exit( -1 );
         }
     }
 
     // compile the given source program
     // +   produce the lexer and parser intermediary files if requested
-    public static boolean compile( String[] args )
+    public boolean compile( String[] args )
     {
         // if there are argument errors, skip compilation
-        if( !Compiler.setParams( args ) ) return false;
+        if( !setParams( args ) ) return false;
         
         // if lexer output file is specified
-        if( fLex != null || verbose )
+        if( state.fLex != null || state.verbose )
         {
-            // save the lex results to the output file
-            TokenList tokenList = lex( fInput, fLex );
-            // if the lexer could not lex the input file, return
-            if( tokenList == null ) return false;
+            // lex the input file
+            // +   if the lexer could not lex the input file, return
+            if( !lex() ) return false;
         }
 
         // if parse output file or the object file is specified
-        if( fParse != null || fOutput != null )
+        if( state.fParse != null || state.fOutput != null )
         {
             // parse the input file and create the syntax tree
-            SyntaxNode syntaxRoot = parse( fInput, fParse, verbose );
-            // if the syntax tree could not be created, return
-            if( syntaxRoot == null ) return false;
+            // +   if the syntax tree could not be created, return
+            if( !parse() ) return false;
 
             // if compiler output is requested, write the parse results to the parse output file
-            if( fOutput != null )
+            if( state.fOutput != null )
             {
                 // do the semantic pass
                 // +   if there is a semantic problem in the syntax tree, return
-                if( !semanticAnalysis( syntaxRoot ) ) return false;
+                if( !semanticAnalyse() ) return false;
 
                 // if the code generation failed, return
-                if( !generateCode( syntaxRoot, fOutput ) ) return false;
+                if( !generateCode() ) return false;
             }
         }
         
-        // return if there were compilation errors
-        return !errors.hasErrors();
+        // return if there were no compilation errors
+        return state.errors.noErrors();
     }
 
 
@@ -98,28 +146,25 @@ public class Compiler
     // lex the input file
     // +   write the results to the given lex file
     // +   only used to show the lexer results, the parser already does lexing on its own using the same lexer class
-    private static TokenList lex( File fInput, File fLex )
+    private boolean lex()
     {
         // if the input file is missing, return
-        if( fInput == null ) return null;
+        if( state.fInput == null ) return false;
 
-        logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ LEXER" );
-        logger.info( "Lexing input file:" );
+        state.logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ LEXER" );
+        state.logger.info( "Lexing input file:" );
 
         StringBuilder output = new StringBuilder( "=========================LEXER OUTPUT==========================\n" );
 
 
         // read file and lex it
         // +   buffered reader constructor can throw an exception and not close the file reader!
-        try( FileReader frInput = new FileReader( fInput );
+        try( FileReader frInput = new FileReader( state.fInput );
              BufferedReader brInput = new BufferedReader( frInput );
         )
         {
-            BufferedLexer lexer = new BufferedLexer( brInput );
-            // HACK: copy the reference to the lexer's tokens over to the global tokens list
-            // +   meaning they are the same object (identical)
-            // +   important for correct error reporting
-            tokens.assign( lexer.getTokens() );
+            // if the lexer hasn't already been created, create it
+            if( state.lexer == null ) { state.lexer = new BufferedLexer( brInput ); }
             Token token = null;
 
             // lex the input .mj file
@@ -127,10 +172,10 @@ public class Compiler
             {
                 while( true )
                 {
-                    token = ( Token )( lexer.next_token() );
+                    token = ( Token )( state.lexer.next_token() );
 
                     output.append( token.toString() ).append( "\n" );
-                    logger.log( Log4J.INFO, token.toString(), true );
+                    state.logger.log( Log4J.INFO, token.toString(), true );
 
                     if( token.isEOF() ) break;
                     
@@ -145,25 +190,23 @@ public class Compiler
             }
             catch( IOException ex )
             {
-                errors.add( CompilerError.LEXICAL_ERROR, "Error lexing input file", ex );
-                tokens.clear();
-                return null;
+                state.errors.add( CompilerError.LEXICAL_ERROR, "Error lexing input file", ex );
+                return false;
             }
         }
         catch( IOException ex )
         {
-            errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
-            Compiler.tokens.clear();
-            return null;
+            state.errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
+            return false;
         }
 
 
         // if the lexer output is requested, write the lexer results to the lexer output file
-        if( fLex != null )
+        if( state.fLex != null )
         {
             // write lex results to output lex file
             // +   buffered writer constructor can throw an exception and not close the file writer!
-            try( FileWriter fwLex = new FileWriter( fLex );
+            try( FileWriter fwLex = new FileWriter( state.fLex );
                  BufferedWriter bwLex = new BufferedWriter( fwLex );
             )
             {
@@ -171,71 +214,48 @@ public class Compiler
             }
             catch( IOException ex )
             {
-                errors.add( CompilerError.LEXICAL_ERROR, "Cannot open/write to output lex file", ex );
-                return null;
+                state.errors.add( CompilerError.LEXICAL_ERROR, "Cannot open/write to output lex file", ex );
+                return false;
             }
         }
 
-        // return the lexed tokens
-        return tokens;
+        // return if the lexer finished successfully
+        return state.errors.noErrorsSinceLastCheck();
     }
 
     // parse the input file
     // +   set the root 
-    private static SyntaxNode parse( File fInput, File fParse, boolean verbose )
+    private boolean parse()
     {
         // if the input file is missing, return
-        if( fInput == null ) return null;
+        if( state.fInput == null ) return false;
 
-        logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ PARSER" );
-        logger.info( "Parsing input file:" );
-        logger.info( "=========================PARSER OUTPUT==========================" );
+        state.logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ PARSER" );
+        state.logger.info( "Parsing input file:" );
+        state.logger.info( "=========================PARSER OUTPUT==========================" );
 
-        SyntaxNode syntaxRoot = null;
-        Parser parser = null;
-
-
+        
         // read file and parse it
         // +   buffered reader constructor can throw an exception and not close the file reader!
-        try( FileReader frInput = new FileReader( fInput );
+        try( FileReader frInput = new FileReader( state.fInput );
              BufferedReader brInput = new BufferedReader( frInput );
         )
         {
+            // if the symbol table hasn't already been created, create it
+            if( state.symbolTable == null ) { state.symbolTable = new SymbolTable(); }
+            // if the lexer hasn't already been created, create it
+            if( state.lexer == null ) { state.lexer = new BufferedLexer( brInput ); }
+            // if the parser hasn't already been created, create it
+            if( state.parser == null ) { state.parser = new Parser( state.lexer ); state.parser.finishConstruction( state ); }
+
             try
             {
-                BufferedLexer lexer;
-
-                // if the lexer hasn't already lexed the entire file
-                if( tokens.size() == 0 )
-                {
-                    // create a lexer on the input file
-                    lexer = new BufferedLexer( brInput );
-
-                    // HACK: copy the reference from the global tokens list over to the lexer's tokens
-                    // +   meaning they are the same object (identical)
-                    // +   important for correct error reporting
-                    tokens.assign( lexer.getTokens() );
-                }
-                // otherwise,
-                else
-                {
-                    // create a lexer on the (already lexed file's) token list
-
-                    // HACK: copy the reference from the global tokens list over to the lexer's tokens
-                    // +   meaning they are the same object (identical)
-                    // +   important for correct error reporting
-                    lexer = new BufferedLexer( tokens );
-                }
-
-                parser = new Parser( lexer );
-                
-
                 // parse the input file
                 java_cup.runtime.Symbol rootSymbol = null;
                 
-                if( !verbose )
+                if( !state.verbose )
                 {
-                    rootSymbol = parser.parse();
+                    rootSymbol = state.parser.parse();
                 }
                 else
                 {
@@ -244,119 +264,115 @@ public class Compiler
                     )
                     {
                         // workaround since debug parse method only outputs to System.out
-                        rootSymbol = parser.debug_parse();
-                        logger.info( "" );
-                        logger.info( "=========================PARSER STATES==========================" );
-                        logger.log( Log4J.INFO, buffer.toString( "UTF-8" ), true );
+                        rootSymbol = state.parser.debug_parse();
+                        state.logger.info( "" );
+                        state.logger.info( "=========================PARSER STATES==========================" );
+                        state.logger.log( Log4J.INFO, buffer.toString( "UTF-8" ), true );
                     }
                 }
 
                 if( rootSymbol != null && rootSymbol.value instanceof SyntaxNode )
                 {
-                    syntaxRoot = ( SyntaxNode )( rootSymbol.value );
+                    state.syntaxRoot = ( SyntaxNode )( rootSymbol.value );
                 }
-                
-                // if the syntax tree is missing but no errors are reported (should never happen)
-                if( ( !parser.hasErrors() && syntaxRoot == null ) )
-                {
-                    errors.add( CompilerError.SYNTAX_ERROR, "Syntax tree missing" );
-                    return null;
-                }
-
             }
             catch( Exception ex )
             {
-                errors.add( CompilerError.SYNTAX_ERROR, "Error parsing input file", ex );
-                return null;
+                state.errors.add( CompilerError.SYNTAX_ERROR, "Error parsing input file", ex );
+                return false;
             }
         }
         catch( IOException ex )
         {
-            errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
-            return null;
+            state.errors.add( CompilerError.LEXICAL_ERROR, "Cannot open input file", ex );
+            return false;
         }
 
 
         // if parser output is requested, write the parse results to the parse output file
-        if( fParse != null )
+        if( state.fParse != null )
         {
             // write parse results to output parse file
             // +   buffered writer constructor can throw an exception and not close the file writer!
-            try( FileWriter fwParse = new FileWriter( fParse );
+            try( FileWriter fwParse = new FileWriter( state.fParse );
                  BufferedWriter bwParse = new BufferedWriter( fwParse );
             )
             {
-                bwParse.write( syntaxTreeToString( syntaxRoot ) );
+                bwParse.write( syntaxTreeToString() );
             }
             catch( IOException ex )
             {
-                errors.add( CompilerError.SYNTAX_ERROR, "Cannot open/write to output parse file", ex );
+                state.errors.add( CompilerError.SYNTAX_ERROR, "Cannot open/write to output parse file", ex );
             }
         }
 
-        // if the parser encountered a fatal error, return
-        if( parser.hasFatalError() ) return null;
-
-        // return the syntax tree
-        return syntaxRoot;
+        // return if the parser encountered a fatal error
+        return state.parser.noFatalErrors();
     }
 
     // semantic check the the syntax tree
-    private static boolean semanticAnalysis( SyntaxNode syntaxRoot )
+    private boolean semanticAnalyse()
     {
         // if the syntax tree is missing, return
-        if( syntaxRoot == null ) return false;
+        if( state.syntaxRoot == null ) return false;
 
-        logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ SEMANTIC" );
-        logger.info( "Semantic checking:" );
+        state.logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ SEMANTIC" );
+        state.logger.info( "Semantic checking:" );
         
-        // create a semantic check visitor
-        SemanticVisitor semanticVisitor = new SemanticVisitor();
+        // if the semantic visitor hasn't already been created, create it
+        if( state.semanticVisitor == null ) { state.semanticVisitor = new SemanticVisitor( state ); }
+        // if the code generator hasn't already been created, create it
+        // NOTE: needed for initializing the jump map
+        if( state.codeGen == null ) { state.codeGen = new CodeGen( state ); }
 
         try
         {
             // do a semantic pass over the abstract syntax tree and fill in the symbol table
-            syntaxRoot.traverseBottomUp( semanticVisitor );
+            state.syntaxRoot.traverseBottomUp( state.semanticVisitor );
         }
         catch( CompilerError err )
         {}
         finally
         {
             // log the source code, symbol table and the syntax tree
-            logger.log( Log4J.INFO, sourceCodeToString(), true );
-            logger.log( Log4J.INFO, symbolTableToString(), true );
-            if( verbose ) logger.log( Log4J.INFO, syntaxTreeToString( syntaxRoot ), true );
+            state.logger.log( Log4J.INFO, sourceCodeToString(), true );
+            state.logger.log( Log4J.INFO, symbolTableToString(), true );
+            if( state.verbose ) state.logger.log( Log4J.INFO, syntaxTreeToString(), true );
             // reset the scope info list, so that the code generator can recreate it
             // +    this doesn't close the global scope
-            SymbolTable.closeScope();
+            state.symbolTable.closeScope();
         }
 
-        // if there are syntax or semantic errors, return
-        return !errors.hasErrors();
+        // return if the semantic analysis finished successfully
+        return state.errors.noErrors();
     }
 
     // compile the given syntax tree into microjava code
-    private static boolean generateCode( SyntaxNode syntaxRoot, File fOutput )
+    private boolean generateCode()
     {
         // if the syntax tree or output file is missing, return
-        if( syntaxRoot == null || fOutput == null ) return false;
+        if( state.syntaxRoot == null || state.fOutput == null ) return false;
 
-        logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER" );
-        logger.info( "Compiling code:" );
+        state.logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER" );
+        state.logger.info( "Compiling code:" );
+
+        // if the code gen visitor hasn't already been created, create it
+        if( state.codeGenVisitor == null ) { state.codeGenVisitor = new CodeGenVisitor( state ); }
+        // if the code generator hasn't already been created, create it
+        if( state.codeGen == null ) { state.codeGen = new CodeGen( state ); }
 
         // generate code from the abstract syntax tree
-        CodeGenVisitor codeGenerator = new CodeGenVisitor();
-        syntaxRoot.traverseBottomUp( codeGenerator );
-        byte[] compiledCode = CodeGen.compile();
+        state.syntaxRoot.traverseBottomUp( state.codeGenVisitor );
+        byte[] compiledCode = state.codeGen.compile();
 
         // write compiler results to output file
-        try( FileOutputStream fWriter = new FileOutputStream( fOutput ); )
+        try( FileOutputStream fWriter = new FileOutputStream( state.fOutput ); )
         {
             fWriter.write( compiledCode );
         }
         catch( IOException ex )
         {
-            errors.add( CompilerError.SEMANTIC_ERROR, "Cannot open/write to output file", ex );
+            state.errors.add( CompilerError.SEMANTIC_ERROR, "Cannot open/write to output file", ex );
             return false;
         }
         catch( CompilerError err )
@@ -364,72 +380,55 @@ public class Compiler
         finally
         {
             // log the updated symbol table, source code (again), the decompiled code and the output from the microjava virtual machine
-            logger.log( Log4J.INFO, symbolTableToString(), true );
-            logger.log( Log4J.INFO, sourceCodeToString(), true );
-            logger.log( Log4J.INFO, decompiledCodeToString(), true );
-         // logger.log( Log4J.INFO, runCodeToString( false ), true );
-         // logger.log( Log4J.INFO, runCodeToString( true ), true );
+            state.logger.log( Log4J.INFO, symbolTableToString(), true );
+            state.logger.log( Log4J.INFO, sourceCodeToString(), true );
+            state.logger.log( Log4J.INFO, decompiledCodeToString(), true );
         }
 
-        // return if there are errors during code generation
-        return !errors.hasErrors();
+        // return if the code generator finished successfully
+        return state.errors.noErrorsSinceLastCheck();
     }
     
     
 
     // return the source code as a string
-    private static String sourceCodeToString()
+    private String sourceCodeToString()
     {
         return "=========================SOURCE CODE============================\n"
-            + tokens.toString();
+            + state.lexer.toString();
     }
 
     // return the compiler's symbol table as a string
-    private static String symbolTableToString()
+    private String symbolTableToString()
     {
-        return SymbolTable.asString();
+        return state.symbolTable.asString();
     }
 
     // return the syntax tree as a string
-    private static String syntaxTreeToString( SyntaxNode syntaxRoot )
+    private String syntaxTreeToString()
     {
-        if( syntaxRoot == null ) return null;
+        if( state.syntaxRoot == null ) return null;
         String syntaxTree = "=========================SYNTAX TREE===========================\n"
-                          + syntaxRoot.toString();
+                          + state.syntaxRoot.toString();
         return syntaxTree;
     }
 
     // return the decompiled code as a string
-    private static String decompiledCodeToString()
+    private String decompiledCodeToString()
     {
         return "=========================DECOMPILED CODE========================\n"
-            + CodeGen.decompile( fOutput );
-    }
-
-    // run the code in debug mode on the mj virtual machine and return the output
-    private static String runCodeToString( boolean debug )
-    {
-        if( debug )
-        {
-            return "=========================DEBUG CODE=============================\n"
-                + CodeGen.runCode( fOutput, debug );
-        }
-        else
-        {
-            return "=========================RUN CODE===============================\n"
-                + CodeGen.runCode( fOutput, debug );
-        }
+            + state.codeGen.decompile( state.fOutput );
     }
 
 
     // set the compiler parameters
     // +   compile [-verbose] [-lex file] [-par file] [-o file] file
     // +   returns true if everything is ok
-    private static boolean setParams( String[] params )
+    private boolean setParams( String[] params )
     {
-        logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER PARAMS" );
-        logger.info( "Setting compiler parameters:" );
-        logger.info( String.join( " ", params ) );
+        state.logger.info( "---------------------------------------------------------------------------------------------------------------- <<< MJ COMPILER PARAMS" );
+        state.logger.info( "Setting compiler parameters:" );
+        state.logger.info( String.join( " ", params ) );
 
         // variables for storing file names
         String fnameLex = null;
@@ -438,7 +437,7 @@ public class Compiler
         String fnameInput = null;
         
         // clear errors
-        errors.clear();
+        state.errors.clear();
         
         // parse parameters
         for( int i = 0; i < params.length; i++ )
@@ -447,7 +446,7 @@ public class Compiler
             {
                 case "-verbose":
                 {
-                    verbose = true;
+                    state.verbose = true;
                     break;
                 }
 
@@ -455,19 +454,19 @@ public class Compiler
                 {
                     if( fnameLex != null )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file already specified", CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file already specified", CompilerError.NO_INDEX, i );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file not specified after the -lex flag", CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file not specified after the -lex flag", CompilerError.NO_INDEX, i );
                         break;
                     }
 
                     fnameLex = params[ ++i ];
                     if( !fnameLex.endsWith( ".lex" ) ) { fnameLex = fnameLex + ".lex"; }
                     
-                    logger.info( "fnameLex = " + fnameLex );
+                    state.logger.info( "fnameLex = " + fnameLex );
                     break;
                 }
 
@@ -475,19 +474,19 @@ public class Compiler
                 {
                     if( fnameParse != null )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file already specified", CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file already specified", CompilerError.NO_INDEX, i );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file not specified after the -par flag", CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file not specified after the -par flag", CompilerError.NO_INDEX, i );
                         break;
                     }
 
                     fnameParse = params[ ++i ];
                     if( !fnameParse.endsWith( ".par" ) ) { fnameParse = fnameParse + ".par"; }
 
-                    logger.info( "fnameParse = " + fnameParse );
+                    state.logger.info( "fnameParse = " + fnameParse );
                     break;
                 }
 
@@ -495,34 +494,39 @@ public class Compiler
                 {
                     if( fnameOutput != null )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, "Output file already specified", CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, "Output file already specified", CompilerError.NO_INDEX, i );
                         break;
                     }
                     if( i+1 >= params.length )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, "Output file not specified after the -o flag", CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, "Output file not specified after the -o flag", CompilerError.NO_INDEX, i );
                         break;
                     }
                     
                     fnameOutput = params[ ++i ];
                     if( !fnameOutput.endsWith( ".obj" ) ) { fnameOutput = fnameOutput + ".obj"; }
 
-                    logger.info( "fnameOutput = " + fnameOutput );
+                    state.logger.info( "fnameOutput = " + fnameOutput );
                     break;
                 }
 
                 default:
                 {
+                    if( params[ i ].charAt( 0 ) == '-' )
+                    {
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, String.format( "Unknown option: '%s'", params[ i ] ), CompilerError.NO_INDEX, i );
+                        break;
+                    }
                     if( fnameInput != null )
                     {
-                        errors.add( CompilerError.ARGUMENTS_ERROR, String.format( "Unknown option: '%s'", params[ i ] ), CompilerError.NO_INDEX, i );
+                        state.errors.add( CompilerError.ARGUMENTS_ERROR, String.format( "Cannot specify another input file: '%s'", params[ i ] ), CompilerError.NO_INDEX, i );
                         break;
                     }
                     
                     fnameInput = params[ i ];
                     if( !fnameInput.endsWith( ".mj" ) ) { fnameInput = fnameInput + ".mj"; }
 
-                    logger.info( "fnameInput = " + fnameInput );
+                    state.logger.info( "fnameInput = " + fnameInput );
                     break;
                 }
             }
@@ -531,13 +535,13 @@ public class Compiler
         // the input file must be specified
         if( fnameInput == null )
         {
-            errors.add( CompilerError.ARGUMENTS_ERROR, "Input file not specified" );
+            state.errors.add( CompilerError.ARGUMENTS_ERROR, "Input file not specified" );
         }
 
         // if there are errors, log them and return
-        if( errors.hasErrors() )
+        if( !state.errors.noErrorsSinceLastCheck() )
         {
-            resetParams();
+            state.resetParams();
             return false;
         }
 
@@ -546,74 +550,74 @@ public class Compiler
         if( fnameOutput == null && fnameLex == null && fnameParse == null )
         {
             fnameOutput = fnameInput.substring( 0, fnameInput.length() - ".mj".length() ) + ".obj";
-            logger.info( "fnameOutput = " + fnameOutput );
+            state.logger.info( "fnameOutput = " + fnameOutput );
         }
 
         // open the given files
-        if( fnameInput  != null ) fInput  = new File( fnameInput  );
-        if( fnameLex    != null ) fLex    = new File( fnameLex    );
-        if( fnameParse  != null ) fParse  = new File( fnameParse  );
-        if( fnameOutput != null ) fOutput = new File( fnameOutput );
+        if( fnameInput  != null ) state.fInput  = new File( fnameInput  );
+        if( fnameLex    != null ) state.fLex    = new File( fnameLex    );
+        if( fnameParse  != null ) state.fParse  = new File( fnameParse  );
+        if( fnameOutput != null ) state.fOutput = new File( fnameOutput );
 
-        if( verbose )
+        if( state.verbose )
         {
-            logger.info( "verbose = true" );
+            state.logger.info( "verbose = true" );
         }
         
         // check if the files exist and are readable/writable
-        if( fInput != null )
+        if( state.fInput != null )
         {
-            if( !fInput.exists() )
+            if( !state.fInput.exists() )
             {
-                errors.add( CompilerError.ARGUMENTS_ERROR, "Input file does not exist" );
+                state.errors.add( CompilerError.ARGUMENTS_ERROR, "Input file does not exist" );
             }
-            else if( !fInput.canRead() )
+            else if( !state.fInput.canRead() )
             {
-                errors.add( CompilerError.ARGUMENTS_ERROR, "Input file is not readable" );
+                state.errors.add( CompilerError.ARGUMENTS_ERROR, "Input file is not readable" );
             }
             
-            logger.info( "fInput = " + fInput.getAbsolutePath() );
+            state.logger.info( "fInput = " + state.fInput.getAbsolutePath() );
         }
         
-        if( fLex != null )
+        if( state.fLex != null )
         {
-            if( fLex.exists() && !fLex.canWrite() )
+            if( state.fLex.exists() && !state.fLex.canWrite() )
             {
-                errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file exists and is not writable" );
+                state.errors.add( CompilerError.ARGUMENTS_ERROR, "Lexer output file exists and is not writable" );
             }
             
-            logger.info( "fLex = " + fLex.getAbsolutePath() );
+            state.logger.info( "fLex = " + state.fLex.getAbsolutePath() );
         }
 
-        if( fParse != null )
+        if( state.fParse != null )
         {
-            if( fParse.exists() && !fParse.canWrite() )
+            if( state.fParse.exists() && !state.fParse.canWrite() )
             {
-                errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file exists and is not writable" );
+                state.errors.add( CompilerError.ARGUMENTS_ERROR, "Parser output file exists and is not writable" );
             }
             
-            logger.info( "fParse = " + fParse.getAbsolutePath() );
+            state.logger.info( "fParse = " + state.fParse.getAbsolutePath() );
         }
 
-        if( fOutput != null )
+        if( state.fOutput != null )
         {
-            if( fOutput.exists() && !fOutput.canWrite() )
+            if( state.fOutput.exists() && !state.fOutput.canWrite() )
             {
-                errors.add( CompilerError.ARGUMENTS_ERROR, "Output file exists and is not writable" );
+                state.errors.add( CompilerError.ARGUMENTS_ERROR, "Output file exists and is not writable" );
             }
             
-            logger.info( "fOutput = " + fOutput.getAbsolutePath() );
+            state.logger.info( "fOutput = " + state.fOutput.getAbsolutePath() );
         }
 
         // if there are errors log them and return
-        if( errors.hasErrors() )
+        if( !state.errors.noErrorsSinceLastCheck() )
         {
-            resetParams();
+            state.resetParams();
             return false;
         }
 
         // return that the compiler params are successfully set
-        logger.info( "Compiler parameters are valid" );
+        state.logger.info( "Compiler parameters are valid" );
         return true;
     }
 }
