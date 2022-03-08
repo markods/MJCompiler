@@ -193,7 +193,7 @@
             "TestUnitList": [],
         },
         {
-            "TestGroupName": "Name clashing",
+            "TestGroupName": "Name clashing errors",
             "FilePath": "./name-clashing-error.mj",
             "ExCompileOutput": [
                 "Ln 4   Col 7   SEM     Illegal 'static' modifier use -- only class fields can be static",

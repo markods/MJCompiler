@@ -140,7 +140,7 @@ if( "-cup" -in $args )
     # create the build comand array
     # +   relative paths should be relative to the project 'src' folder
     $BuildCmd = "java",
-        "-cp", "'../lib/cup_v10k.jar'", "java_cup.Main",
+        "-cp", "'../lib/cup-v10k.jar'", "java_cup.Main",
         "-destdir", "'./rs/ac/bg/etf/pp1'",
         "-parser", "'Parser'",
         "-interface", "-symbols", "'ITokenCode'",
@@ -189,7 +189,8 @@ if( "-jflex" -in $args )
 
     # create the build comand array
     $BuildCmd = "java",
-        "-cp", "'./MJCompiler/lib/jflex-1.4.3.jar'", "JFlex.Main",
+        "-cp", "'./MJCompiler/lib/jflex-1.8.2.jar'", "jflex.Main",
+        "--encoding utf-8",
         "-nobak",
         "-d", "'./MJCompiler/src/rs/ac/bg/etf/pp1'",
         "'./MJCompiler/spec/mjlexer.flex'";

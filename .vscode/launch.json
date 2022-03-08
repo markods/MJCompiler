@@ -12,6 +12,7 @@
             "projectName": "MJCompiler",
             "cwd": "${workspaceFolder}/MjCompiler/test",
             "args": [
+                "-verbose",
                 "__main__"
             ],
         },

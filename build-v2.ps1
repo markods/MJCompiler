@@ -56,7 +56,7 @@ using namespace System.Text.Json;
 [string[][]] $script:DefaultArgs =
     ( "=jflex", "=cup", "=clean", "=build", "=test" ),
     ( "=jflex", "=cup", "=build" ),
-    ( "=clean", "=build", "=test" );
+    ( "=clean", "-cache", "=build", "=test" );
 
 [string] $script:HelpMessage = @"
 build   [[-]-help] [-0][-1][-2]   [=jflex ...] [=cup ...]   [=clean] [=build] [=test]   [=compile ...] [=disasm ...] [=run ...]
@@ -100,12 +100,12 @@ Switches:
 
 [scriptblock] $script:StageScript_Default =
 {
-    param( [Stage] $Stage )
+    param( [Stage] $Stage, [bool] $PrintStageName = $true )
 
     if( $Stage.CmdPartArr.Count -eq 0 ) { $script:LastStatusCode = -1; return; }
 
-    # print the stage name
-    $script:StageSep -f $Stage.Name | Write-Output;
+    # print the stage name if requested
+    if( $PrintStageName ) { $script:StageSep -f $Stage.Name | Write-Output; }
     # print the stage command
     $Command = $Stage.GetCommand();
     $Command | Write-Output;
@@ -552,7 +552,7 @@ class Pipeline
         # the current working directory should be the 'src' folder, since the ast_cup tool can't find the 'ast' folder otherwise
         # NOTE: cup command paths should be relative to the project 'src' folder
         "java",                                      # invoke jvm
-        "-cp '../lib/cup_v10k.jar' java_cup.Main",   # call the CUP tool
+        "-cp '../lib/cup-v10k.jar' java_cup.Main",   # call the CUP tool
         "-destdir './rs/ac/bg/etf/pp1'",             # set the parser destination directory
         "-parser 'Parser'",                          # set the parser file name
         "-interface -symbols 'ITokenCode'",          # generate a java interface! between cup and jflex (instead of a class), also set its name
@@ -570,7 +570,8 @@ class Pipeline
     @(
         # NOTE: jflex command paths should be relative to the project 'src' folder
         "java",                                      # invoke jvm
-        "-cp '../lib/jflex-1.4.3.jar' JFlex.Main",   # call the jflex tool
+        "-cp '../lib/jflex-1.8.2.jar' jflex.Main",   # call the jflex tool
+        "--encoding utf-8",                          # set the output parser encoding to utf-8
         "-nobak",                                    # prevent backup files from being generated
         "-d './rs/ac/bg/etf/pp1'",                   # set the lexer output directory
         "'../spec/mjlexer.flex'"                     # set jflex specification location
@@ -584,11 +585,56 @@ class Pipeline
     {
         param( [Stage] $Stage )
 
-        # invoke the default stage script on this stage
-        Stage_ExecuteScript $script:StageScript_Default $Stage | Write-Output;
-        if( $script:LastStatusCode -ne 0 ) { return; }
+        # print the stage name
+        $script:StageSep -f $Stage.Name | Write-Output;
 
-        $ItemsToRemove = @(
+        # get the command arguments from the stage
+        $StageCommandArr = $Stage.CmdArgArr;
+
+        # clean command parameters
+        [bool] $TrueIfNoArgs = ( $StageCommandArr.Count -eq 0 ) ? $true : $false;
+        [bool] $ShouldCleanCache = $TrueIfNoArgs;
+        [bool] $ShouldCleanBuild = $TrueIfNoArgs;
+
+
+        # switch the clean command parameters
+        switch( $StageCommandArr )
+        {
+            "-cache"
+            {
+                $ShouldCleanCache = $true;
+                continue;
+            }
+            "-build"
+            {
+                $ShouldCleanBuild = $true;
+                continue;
+            }
+            default
+            {
+                "Unknown parameter: {0}" -f $_ | Write-Output;
+                $script:LastStatusCode = -1; return;
+            }
+        }
+
+
+        # if the build should be cleaned
+        if( $ShouldCleanBuild )
+        {
+            # remove the command arguments for the .ant task
+            $Stage.CmdArgArr = $();
+            if( $true )
+            {
+                # invoke the default stage script on this stage
+                Stage_ExecuteScript $script:StageScript_Default $Stage $false | Write-Output;
+            }
+            # restore the command arguments for the stage
+            $Stage.CmdArgArr = $StageCommandArr;
+
+            if( $script:LastStatusCode -ne 0 ) { return; }
+        }
+
+        $CacheItems = @(
             # remove 'ast.old' directory (cleanup unused code)
             [PSCustomObject]@{ Path="./MJCompiler/rs/ac/bg/etf/pp1/ast.old"; Filter=""; },
             # remove the generated cup specification files from the 'spec' directory
@@ -602,15 +648,23 @@ class Pipeline
             [PSCustomObject]@{ Path="./MJCompiler/test/build"; Filter=""; },
             [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.lex"; },
             [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.par"; },
-            [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.obj"; },
+            [PSCustomObject]@{ Path="./MJCompiler/test"; Filter="*.obj"; }
+        );
+        $BuildItems = @(
             # remove compiled java code directories
             [PSCustomObject]@{ Path ="./MJCompiler/bin";   Filter=""; },
             [PSCustomObject]@{ Path ="./MJCompiler/build"; Filter=""; },
             [PSCustomObject]@{ Path ="./MJCompiler/dist" ; Filter=""; }
         );
 
+        $ItemsToRemove = @();
+        if( $ShouldCleanCache ) { $ItemsToRemove = $ItemsToRemove + $CacheItems; }
+        if( $ShouldCleanBuild ) { $ItemsToRemove = $ItemsToRemove + $BuildItems; }
+
         foreach( $Item in $ItemsToRemove )
         {
+            '[clean] Path: "{0}" Filter: "{1}"' -f $Item.Path, $Item.Filter | Write-Output;
+            
             if( "" -eq $Item.Filter ) { FileUtil_RemoveFolder $Item.Path | Write-Output; }
             else                      { FileUtil_RemoveFiles $Item.Path $Item.Filter | Write-Output; }
 

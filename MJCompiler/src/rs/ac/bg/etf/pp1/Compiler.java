@@ -165,28 +165,19 @@ public class Compiler
         {
             // if the lexer hasn't already been created, create it
             if( state.lexer == null ) { state.lexer = new BufferedLexer( brInput ); }
-            Token token = null;
+            BufferedLexer.TokenIterator iterator = state.lexer.newTokenIterator();
 
             // lex the input .mj file
             try
             {
-                while( true )
+                for( Token token; iterator.hasCurrToken(); iterator.nextToken() )
                 {
-                    token = ( Token )( state.lexer.next_token() );
-
+                    token = iterator.currToken();
                     output.append( token.toString() ).append( "\n" );
                     state.logger.log( Log4J.INFO, token.toString(), true );
-
-                    if( token.isEOF() ) break;
-                    
-                    // // if the token is invalid
-                    // if( token.isInvalid() )
-                    // {
-                    //     // append an error to the output file
-                    //     CompilerError error = new CompilerError( CompilerError.LEXICAL_ERROR, "Invalid token", token.getIdx(), token.getIdx()+1 );
-                    //     output.append( error.toString() ).append( "\n" );
-                    // }
                 }
+
+                state.lexer.close();
             }
             catch( IOException ex )
             {
@@ -246,7 +237,7 @@ public class Compiler
             // if the lexer hasn't already been created, create it
             if( state.lexer == null ) { state.lexer = new BufferedLexer( brInput ); }
             // if the parser hasn't already been created, create it
-            if( state.parser == null ) { state.parser = new Parser( state.lexer ); state.parser.finishConstruction( state ); }
+            if( state.parser == null ) { state.parser = new Parser( state.lexer.newTokenIterator() ); state.parser.finishConstruction( state ); }
 
             try
             {
@@ -275,11 +266,18 @@ public class Compiler
                 {
                     state.syntaxRoot = ( SyntaxNode )( rootSymbol.value );
                 }
+
+                state.lexer.close();
             }
             catch( Exception ex )
             {
                 state.errors.add( CompilerError.SYNTAX_ERROR, "Error parsing input file", ex );
                 return false;
+            }
+            catch( Error err )
+            {
+                if( !"Symbol recycling detected (fix your scanner).".equals( err.getMessage() ) ) throw err;
+                state.errors.add( CompilerError.SYNTAX_ERROR, "Symbol recycling detected (fix your scanner).", err );
             }
         }
         catch( IOException ex )
@@ -395,7 +393,7 @@ public class Compiler
     private String sourceCodeToString()
     {
         return "=========================SOURCE CODE============================\n"
-            + state.lexer.toString();
+            + state.lexer.tokensToString();
     }
 
     // return the compiler's symbol table as a string

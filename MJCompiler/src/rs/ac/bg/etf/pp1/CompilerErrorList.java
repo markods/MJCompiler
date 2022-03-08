@@ -85,7 +85,7 @@ public class CompilerErrorList
 
     public CompilerError get( int index )
     {
-        if( !checkIndex( index ) ) throw new IndexOutOfBoundsException( "<Compiler error list>'s index out of bounds" );
+        if( !checkIndex( index ) ) throw new IndexOutOfBoundsException( "The wanted compiler error's index is outside the compiler error list" );
         return errorList.get( index );
     }
     public CompilerError getLast()

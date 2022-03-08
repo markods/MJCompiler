@@ -31,26 +31,36 @@ public class TokenList
     {
         return tokenList.size();
     }
+    public int lastIdx()
+    {
+        return ( tokenList.size() >= 1 ) ? tokenList.size() - 1 : 0;
+    }
 
     public boolean checkIndex( int index )
     {
         return index >= 0 && index < tokenList.size();
     }
+    public boolean hasFirst()
+    {
+        return checkIndex( 0 );
+    }
+    public boolean hasLast()
+    {
+        return checkIndex( lastIdx() );
+    }
 
     public Token get( int index )
     {
-        if( !checkIndex( index ) ) throw new IndexOutOfBoundsException( "<Token list>'s index out of bounds" );
+        if( !checkIndex( index ) ) throw new IndexOutOfBoundsException( "The wanted token's index is outside the token list" );
         return tokenList.get( index );
     }
-
     public Token getFirst()
     {
         return tokenList.get( 0 );
     }
-
     public Token getLast()
     {
-        return tokenList.get( tokenList.size() - 1 );
+        return tokenList.get( lastIdx() );
     }
 
     @Override
@@ -61,7 +71,7 @@ public class TokenList
         {
             builder.append( token.getValue() );
         }
-        if( builder.charAt( builder.length()-1 ) != '\n' ) builder.append( "\n" );
+        if( builder.length() != 0 && builder.charAt( builder.length() - 1 ) != '\n' ) builder.append( "\n" );
         return builder.toString();
     }
 

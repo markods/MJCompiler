@@ -9,6 +9,7 @@ package rs.ac.bg.etf.pp1;
 
 %class Lexer
 %apiprivate
+%unicode
 %cup
 // %unicode
 %line
@@ -18,39 +19,21 @@ package rs.ac.bg.etf.pp1;
 
 // methods
 %{
-    private int tokenIdx = 0;
+    // the current token's index
+    private int tokenIdx = -1;
 
-    // create a token from the given token type
-    private Token new_token( int tokenCode )
-    {
-        return new_token( tokenCode, null );
-    }
     // create a token from the given token type and its value
     private Token new_token( int tokenCode, Object value )
     {
-        return new Token( tokenCode, tokenIdx++, yyline+1, yycolumn, value );
+        return new Token( tokenCode, ++tokenIdx, yyline+1, yycolumn, value );
     }
 %}
 
-
-
-// classes
+// macros (user classes)
 Anything   = [^]*
-Newline    = \r|\n|\r\n
-NotNewline = [^\r\n]
+Newline    = \r\n|[\r\n\u2028\u2029\u000B\u000C\u0085]
+NotNewline = [^\r\n\u2028\u2029\u000B\u000C\u0085]
 Whitespace = [ \t\f]+
-
-// different types of comments
-// +   the line comment can be on the last line of the file, therefore not ending with a newline
-LineComment   = "//" {NotNewline}* {Newline}?
-InlineComment = "/*" !({Anything} ( \r|\n|"*/" ) {Anything}) "*/"
-
-IntLiteral = 0 | [1-9][0-9]*
-BoolLiteral = true | false
-CharLiteral = "'"."'"
-
-Identifier        = ([:jletter:]|_) ([:jletterdigit:]|_)*
-InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 
 
@@ -62,11 +45,17 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 
 // send newlines, whitespaces and comments to the parser
 // +   the parser will filter them out (used for better error reporting)
-{Newline}       { return new_token( TokenCode.newline, yytext() ); }
-{Whitespace}    { return new_token( TokenCode.whitespace, yytext() ); }
-{InlineComment} { return new_token( TokenCode.inline_comment, yytext() ); }
-{LineComment}   { return new_token( TokenCode.line_comment, yytext() ); }
-<<EOF>>         { return new_token( TokenCode.EOF ); }
+{Newline}    { return new_token( TokenCode.newline, yytext() ); }
+{Whitespace} { return new_token( TokenCode.whitespace, yytext() ); }
+
+// different types of comments
+// +   the line comment can be on the last line of the file, therefore not ending with a newline
+// +   NOTE: the line comment doesn't end with a newline! (the newline is a part of the look-ahead expression -- after '/')
+"/*" !( {Anything} ( {Newline}|"*/" ) {Anything} ) "*/" { return new_token( TokenCode.inline_comment, yytext() ); }
+"//" {NotNewline}* / {Newline}?                         { return new_token( TokenCode.line_comment, yytext() ); }
+
+// end of file
+<<EOF>>      { return new_token( TokenCode.EOF, "" ); }
 
 
 
@@ -127,7 +116,7 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 "<="         { return new_token( TokenCode.le, yytext() ); }
 "&&"         { return new_token( TokenCode.and, yytext() ); }
 "||"         { return new_token( TokenCode.or, yytext() ); }
-// "!"       { return new_token( TokenCode.emark, yytext() ); }
+"!"          { return new_token( TokenCode.invalid /*TokenCode.emark*/, yytext() ); }
 
 "="          { return new_token( TokenCode.assign, yytext() ); }
 
@@ -140,19 +129,22 @@ InvalidIdentifier = [0-9]           ([:jletterdigit:]|_)*
 ")"          { return new_token( TokenCode.rparen, yytext() ); }
 "["          { return new_token( TokenCode.lbracket, yytext() ); }
 "]"          { return new_token( TokenCode.rbracket, yytext() ); }
-// "?"       { return new_token( TokenCode.qmark, yytext() ); }
+"?"          { return new_token( TokenCode.invalid /*TokenCode.qmark*/, yytext() ); }
 ":"          { return new_token( TokenCode.colon, yytext() ); }
 
 
 
 // constants
-{IntLiteral}    { return new_token( TokenCode.int_lit, Integer.parseInt( yytext() ) ); }
-{BoolLiteral}   { return new_token( TokenCode.bool_lit, Boolean.parseBoolean( yytext() ) ); }
-{CharLiteral}   { return new_token( TokenCode.char_lit, yytext().charAt( 1 ) ); }
+// TODO: ne raditi parsiranje ovde! (onda promeniti token.toString())
+// TODO: ukloniti invalid identifier
+[:digit:]+     { return new_token( TokenCode.int_lit, Integer.parseInt( yytext() ) ); }
+true | false   { return new_token( TokenCode.bool_lit, Boolean.parseBoolean( yytext() ) ); }
+"'"."'"        { return new_token( TokenCode.char_lit, yytext().charAt( 1 ) ); }
 
+// FIX: support unicode identifiers (for some reason this doesn't work as expected in jflex)
 // identifiers
-{Identifier} 	      { return new_token( TokenCode.ident, yytext() ); }
-{InvalidIdentifier}   { return new_token( TokenCode.invalid, yytext() ); }
+([:letter:]|_) ([:letter:]|[:digit:]|_)*   { return new_token( TokenCode.ident, yytext() ); }
+[:digit:]      ([:letter:]|[:digit:]|_)*   { return new_token( TokenCode.invalid, yytext() ); }
 
 // error fallback (for unrecognized token)
 [^]             { return new_token( TokenCode.invalid, yytext() ); }
