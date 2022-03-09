@@ -1620,6 +1620,8 @@ public class SemanticVisitor extends VisitorAdaptor
     @Override
     public void visit( CaseScope_Plain curr )
     {
+        int caseNum = Integer.parseInt( curr.getCaseNum() );
+
         // find the switch scope surrounding this symbol
         SwitchScope_Plain scope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
             elem -> ( elem instanceof SwitchScope_Plain )
@@ -1632,7 +1634,7 @@ public class SemanticVisitor extends VisitorAdaptor
         }
         
         // if the case number already exists
-        if( !scope.jumpprop.add( String.format( "@Case_%d", curr.getCaseNum() ) ) )
+        if( !scope.jumpprop.add( String.format( "@Case_%d", caseNum ) ) )
         {
             report_error( curr, "Case with the same number already exists" );
             return;
@@ -2461,13 +2463,13 @@ public class SemanticVisitor extends VisitorAdaptor
     ////// 1202 | 'c' | true
     // Literal ::= (Literal_Int ) int_lit :Literal;
     @Override
-    public void visit( Literal_Int curr ) { curr.symbol = Symbol.newConst( "@Literal_Int", SymbolTable.intType, curr.getLiteral() ); }
+    public void visit( Literal_Int curr ) { curr.symbol = Symbol.newConst( "@Literal_Int", SymbolTable.intType, Integer.parseInt( curr.getLiteral() ) ); }
     // Literal ::= (Literal_Char) char_lit:Literal;
     @Override
-    public void visit( Literal_Char curr )  { curr.symbol = Symbol.newConst( "@Literal_Char", SymbolTable.charType, curr.getLiteral() ); }
+    public void visit( Literal_Char curr )  { curr.symbol = Symbol.newConst( "@Literal_Char", SymbolTable.charType, curr.getLiteral().charAt( 1 ) ); }
     // Literal ::= (Literal_Bool) bool_lit:Literal;
     @Override
-    public void visit( Literal_Bool curr ) { curr.symbol = Symbol.newConst( "@Literal_Bool", SymbolTable.boolType, ( curr.getLiteral() ) ? 1 : 0 ); }
+    public void visit( Literal_Bool curr ) { curr.symbol = Symbol.newConst( "@Literal_Bool", SymbolTable.boolType, Boolean.parseBoolean( curr.getLiteral() ) ? 1 : 0 ); }
 
     ////// =
     // Assignop ::= (Assignop_Assign) assign:Assignop;

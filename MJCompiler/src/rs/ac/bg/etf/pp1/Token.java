@@ -17,8 +17,8 @@ public class Token extends java_cup.runtime.Symbol
 
     public Token( int tokenCode, int tokenIdx, int line, int column, Object value )
     {
-     // super( sym,        left,      right, obj );
-        super( tokenCode, tokenIdx, line, value );
+     // super( sym,        left,    right, obj                           );
+        super( tokenCode, tokenIdx, line, ( value != null ) ? value : "" );
         this.column = column;
     }
 
@@ -28,27 +28,30 @@ public class Token extends java_cup.runtime.Symbol
     public boolean isNewline()    { return TokenCode.isNewline( sym ); }
     public boolean isEOF()        { return TokenCode.isEOF( sym ); }
     
-    public String getValue()
-    {
-        if( value == null ) return "";
-        if( sym == TokenCode.char_lit ) return "'" + value + "'";
-        if( sym == TokenCode.bool_lit ) return ( ( Boolean )value ) ? "true" : "false";
-        return value.toString();
-    }
-
     public int _code() { return sym; }
     public String _name() { return TokenCode.getTokenName( sym ); }
     public int _idx() { return left; }
     public int _line() { return right; }
     public int _column() { return column; }
-    public Object _value() { return value; }
+    public Object _value( boolean shouldParse )
+    {
+        if( !shouldParse ) return value;
+
+        switch( sym )
+        {
+            case TokenCode.int_lit:  return Integer.parseInt( ( String )value );
+            case TokenCode.bool_lit: return Boolean.parseBoolean( ( String )value );
+            case TokenCode.char_lit: return ( ( String )value ).charAt( 1 );
+            default:                 return value;
+        }
+    }
 
 
     @Override
     public String toString()
     {
         return String.format( "Ln %-3d Col %-3d Idx %-3d     %-15s `%s`",
-            _line(), _column(), _idx(), _name(), getValue()
+            _line(), _column(), _idx(), _name(), _value( false/*shouldParse*/ )
         );
     }
 }

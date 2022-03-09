@@ -69,7 +69,7 @@ public class TokenList
         StringBuilder builder = new StringBuilder();
         for( Token token : tokenList )
         {
-            builder.append( token.getValue() );
+            builder.append( token._value( false/*shouldParse*/ ) );
         }
         if( builder.length() != 0 && builder.charAt( builder.length() - 1 ) != '\n' ) builder.append( "\n" );
         return builder.toString();

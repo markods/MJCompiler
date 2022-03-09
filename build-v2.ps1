@@ -54,7 +54,7 @@ using namespace System.Text.Json;
 
 # NOTE: leave powershell array constructor ( @() ) if there is only one argument (otherwise it won't be a powershell array due to unpacking)
 [string[][]] $script:DefaultArgs =
-    ( "=jflex", "=cup", "=clean", "=build", "=test" ),
+    ( "=jflex", "=cup", "=clean", "-cache", "=build", "=test" ),
     ( "=jflex", "=cup", "=build" ),
     ( "=clean", "-cache", "=build", "=test" );
 
@@ -292,7 +292,7 @@ class Stage
 }
     function Stage_ExecuteScript
     {
-        param( [scriptblock] $Script, [Stage] $Stage )
+        param( [scriptblock] $Script, [Stage] $Stage, [bool] $PrintStageName = $true )
 
       # [System.Collections.ArrayList] $OutputStream = $null;
       # [System.Collections.ArrayList] $ErrorStream = $null;
@@ -306,7 +306,7 @@ class Stage
       # $OutputStream | Write-Output;
       # $ErrorStream | Write-Error;
         
-        Invoke-Command -ScriptBlock $Script -ArgumentList $Stage;
+        Invoke-Command -ScriptBlock $Script -ArgumentList $Stage, $PrintStageName;
     }
 # }
 

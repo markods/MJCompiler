@@ -179,9 +179,9 @@ terminal assign, plusplus, minusminus;
 terminal semicol, comma, dot, lbrace, rbrace, lparen, rparen, lbracket, rbracket, /*qmark,*/ colon;
 
 // literals [terminals]
-terminal Integer int_lit;      // 0   10   12012
-terminal Boolean bool_lit;     // true   false
-terminal Character char_lit;   // 'a'   '-'
+terminal String int_lit;    // 0   10   12012
+terminal String bool_lit;   // true   false
+terminal String char_lit;   // 'a'   '-'
 
 // identifiers [terminals]
 terminal String ident;         // asdf0_13

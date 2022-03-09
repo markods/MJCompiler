@@ -286,7 +286,7 @@ public class BufferedLexer implements AutoCloseable
                 if( token._line() > currLine ) break;
                 
                 // add the token to the token string builder
-                builder.append( token.getValue() );
+                builder.append( token._value( false/*shouldParse*/ ) );
 
                 // if the next token isn't yet lexed, try to lex it
                 // NOTE: we haven't hit the eof token yet, so at least one token exists after the current token

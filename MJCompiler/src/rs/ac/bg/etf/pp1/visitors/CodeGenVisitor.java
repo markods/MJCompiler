@@ -590,7 +590,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( Stmt_PrintFormat curr )
     {
-        _codeGen().loadConst( curr.getMinWidth() );
+        int minWidth = Integer.parseInt( curr.getMinWidth() );
+        _codeGen().loadConst( minWidth );
         _codeGen().print( curr.getExpr().symbol._type() );
     }
 
@@ -820,6 +821,8 @@ public class CodeGenVisitor extends VisitorAdaptor
     @Override
     public void visit( CaseScope_Plain curr )
     {
+        int caseNum = Integer.parseInt( curr.getCaseNum() );
+
         // find the switch scope surrounding this symbol
         SwitchScope_Plain scope = ( SwitchScope_Plain )context.syntaxNodeStack.find(
             elem -> ( elem instanceof SwitchScope_Plain )
@@ -829,7 +832,7 @@ public class CodeGenVisitor extends VisitorAdaptor
         int pointCase = _codeGen().i_epop();
 
         // update the case's starting address
-        scope.jumpprop.get( String.format( "@Case_%d", curr.getCaseNum() ) )._pointAddress( pointCase );
+        scope.jumpprop.get( String.format( "@Case_%d", caseNum ) )._pointAddress( pointCase );
     }
 
 

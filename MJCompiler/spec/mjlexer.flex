@@ -23,9 +23,9 @@ package rs.ac.bg.etf.pp1;
     private int tokenIdx = -1;
 
     // create a token from the given token type and its value
-    private Token new_token( int tokenCode, Object value )
+    private Token new_token( int tokenCode )
     {
-        return new Token( tokenCode, ++tokenIdx, yyline+1, yycolumn, value );
+        return new Token( tokenCode, ++tokenIdx, 1+yyline, yycolumn, yytext() );
     }
 %}
 
@@ -45,109 +45,107 @@ Whitespace = [ \t\f]+
 
 // send newlines, whitespaces and comments to the parser
 // +   the parser will filter them out (used for better error reporting)
-{Newline}    { return new_token( TokenCode.newline, yytext() ); }
-{Whitespace} { return new_token( TokenCode.whitespace, yytext() ); }
+{Newline}    { return new_token( TokenCode.newline ); }
+{Whitespace} { return new_token( TokenCode.whitespace ); }
 
 // different types of comments
 // +   the line comment can be on the last line of the file, therefore not ending with a newline
 // +   NOTE: the line comment doesn't end with a newline! (the newline is a part of the look-ahead expression -- after '/')
-"/*" !( {Anything} ( {Newline}|"*/" ) {Anything} ) "*/" { return new_token( TokenCode.inline_comment, yytext() ); }
-"//" {NotNewline}* / {Newline}?                         { return new_token( TokenCode.line_comment, yytext() ); }
+"/*" !( {Anything} ( {Newline}|"*/" ) {Anything} ) "*/" { return new_token( TokenCode.inline_comment ); }
+"//" {NotNewline}* / {Newline}?                         { return new_token( TokenCode.line_comment ); }
 
 // end of file
-<<EOF>>      { return new_token( TokenCode.EOF, "" ); }
+<<EOF>>      { return new_token( TokenCode.EOF ); }
 
 
 
 // keywords
-"program"    { return new_token( TokenCode.PROGRAM_K, yytext() ); }
-"class"      { return new_token( TokenCode.CLASS_K, yytext() ); }
-"struct"     { return new_token( TokenCode.invalid /*TokenCode.STRUCT_K*/, yytext() ); }
-"record"     { return new_token( TokenCode.RECORD_K, yytext() ); }
-"enum"       { return new_token( TokenCode.invalid /*TokenCode.ENUM_K*/, yytext() ); }
+"program"    { return new_token( TokenCode.PROGRAM_K ); }
+"class"      { return new_token( TokenCode.CLASS_K ); }
+"struct"     { return new_token( TokenCode.invalid /*TokenCode.STRUCT_K*/ ); }
+"record"     { return new_token( TokenCode.RECORD_K ); }
+"enum"       { return new_token( TokenCode.invalid /*TokenCode.ENUM_K*/ ); }
 
-"static"     { return new_token( TokenCode.STATIC_K, yytext() ); }
-"const"      { return new_token( TokenCode.CONST_K, yytext() ); }
-"void"       { return new_token( TokenCode.VOID_K, yytext() ); }
-"null"       { return new_token( TokenCode.NULL_K, yytext() ); }
+"static"     { return new_token( TokenCode.STATIC_K ); }
+"const"      { return new_token( TokenCode.CONST_K ); }
+"void"       { return new_token( TokenCode.VOID_K ); }
+"null"       { return new_token( TokenCode.NULL_K ); }
 
-"abstract"   { return new_token( TokenCode.invalid /*TokenCode.ABSTRACT_K*/, yytext() ); }
-"extends"    { return new_token( TokenCode.EXTENDS_K, yytext() ); }
-"implements" { return new_token( TokenCode.invalid /*TokenCode.IMPLEMENTS_K*/, yytext() ); }
-"this"       { return new_token( TokenCode.THIS_K, yytext() ); }
-"super"      { return new_token( TokenCode.SUPER_K, yytext() ); }
+"abstract"   { return new_token( TokenCode.invalid /*TokenCode.ABSTRACT_K*/ ); }
+"extends"    { return new_token( TokenCode.EXTENDS_K ); }
+"implements" { return new_token( TokenCode.invalid /*TokenCode.IMPLEMENTS_K*/ ); }
+"this"       { return new_token( TokenCode.THIS_K ); }
+"super"      { return new_token( TokenCode.SUPER_K ); }
 
-"if"         { return new_token( TokenCode.IF_K, yytext() ); }
-"else"       { return new_token( TokenCode.ELSE_K, yytext() ); }
-"switch"     { return new_token( TokenCode.SWITCH_K, yytext() ); }
-"case"       { return new_token( TokenCode.CASE_K, yytext() ); }
-"do"         { return new_token( TokenCode.DO_K, yytext() ); }
-"while"      { return new_token( TokenCode.WHILE_K, yytext() ); }
-"for"        { return new_token( TokenCode.invalid /*TokenCode.FOR_K*/, yytext() ); }
+"if"         { return new_token( TokenCode.IF_K ); }
+"else"       { return new_token( TokenCode.ELSE_K ); }
+"switch"     { return new_token( TokenCode.SWITCH_K ); }
+"case"       { return new_token( TokenCode.CASE_K ); }
+"do"         { return new_token( TokenCode.DO_K ); }
+"while"      { return new_token( TokenCode.WHILE_K ); }
+"for"        { return new_token( TokenCode.invalid /*TokenCode.FOR_K*/ ); }
 
-"default"    { return new_token( TokenCode.invalid /*TokenCode.DEFAULT_K*/, yytext() ); }
-"break"      { return new_token( TokenCode.BREAK_K, yytext() ); }
-"continue"   { return new_token( TokenCode.CONTINUE_K, yytext() ); }
-"return"     { return new_token( TokenCode.RETURN_K, yytext() ); }
-"goto"       { return new_token( TokenCode.GOTO_K, yytext() ); }
+"default"    { return new_token( TokenCode.invalid /*TokenCode.DEFAULT_K*/ ); }
+"break"      { return new_token( TokenCode.BREAK_K ); }
+"continue"   { return new_token( TokenCode.CONTINUE_K ); }
+"return"     { return new_token( TokenCode.RETURN_K ); }
+"goto"       { return new_token( TokenCode.GOTO_K ); }
 
-"new"        { return new_token( TokenCode.NEW_K, yytext() ); }
-"delete"     { return new_token( TokenCode.invalid /*TokenCode.DELETE_K*/, yytext() ); }
-"print"      { return new_token( TokenCode.PRINT_K, yytext() ); }
-"read"       { return new_token( TokenCode.READ_K, yytext() ); }
+"new"        { return new_token( TokenCode.NEW_K ); }
+"delete"     { return new_token( TokenCode.invalid /*TokenCode.DELETE_K*/ ); }
+"print"      { return new_token( TokenCode.PRINT_K ); }
+"read"       { return new_token( TokenCode.READ_K ); }
 
 
 
 // operators
-"++"         { return new_token( TokenCode.plusplus, yytext() ); }
-"--"         { return new_token( TokenCode.minusminus, yytext() ); }
+"++"         { return new_token( TokenCode.plusplus ); }
+"--"         { return new_token( TokenCode.minusminus ); }
 
-"+"          { return new_token( TokenCode.plus, yytext() ); }
-"-"          { return new_token( TokenCode.minus, yytext() ); }
-"*"          { return new_token( TokenCode.mul, yytext() ); }
-"/"          { return new_token( TokenCode.div, yytext() ); }
-"%"          { return new_token( TokenCode.perc, yytext() ); }
+"+"          { return new_token( TokenCode.plus ); }
+"-"          { return new_token( TokenCode.minus ); }
+"*"          { return new_token( TokenCode.mul ); }
+"/"          { return new_token( TokenCode.div ); }
+"%"          { return new_token( TokenCode.perc ); }
 
-"=="         { return new_token( TokenCode.eq, yytext() ); }
-"!="         { return new_token( TokenCode.ne, yytext() ); }
-">"          { return new_token( TokenCode.gt, yytext() ); }
-">="         { return new_token( TokenCode.ge, yytext() ); }
-"<"          { return new_token( TokenCode.lt, yytext() ); }
-"<="         { return new_token( TokenCode.le, yytext() ); }
-"&&"         { return new_token( TokenCode.and, yytext() ); }
-"||"         { return new_token( TokenCode.or, yytext() ); }
-"!"          { return new_token( TokenCode.invalid /*TokenCode.emark*/, yytext() ); }
+"=="         { return new_token( TokenCode.eq ); }
+"!="         { return new_token( TokenCode.ne ); }
+">"          { return new_token( TokenCode.gt ); }
+">="         { return new_token( TokenCode.ge ); }
+"<"          { return new_token( TokenCode.lt ); }
+"<="         { return new_token( TokenCode.le ); }
+"&&"         { return new_token( TokenCode.and ); }
+"||"         { return new_token( TokenCode.or ); }
+"!"          { return new_token( TokenCode.invalid /*TokenCode.emark*/ ); }
 
-"="          { return new_token( TokenCode.assign, yytext() ); }
+"="          { return new_token( TokenCode.assign ); }
 
-";"          { return new_token( TokenCode.semicol, yytext() ); }
-","          { return new_token( TokenCode.comma, yytext() ); }
-"."          { return new_token( TokenCode.dot, yytext() ); }
-"{"          { return new_token( TokenCode.lbrace, yytext() ); }
-"}"          { return new_token( TokenCode.rbrace, yytext() ); }
-"("          { return new_token( TokenCode.lparen, yytext() ); }
-")"          { return new_token( TokenCode.rparen, yytext() ); }
-"["          { return new_token( TokenCode.lbracket, yytext() ); }
-"]"          { return new_token( TokenCode.rbracket, yytext() ); }
-"?"          { return new_token( TokenCode.invalid /*TokenCode.qmark*/, yytext() ); }
-":"          { return new_token( TokenCode.colon, yytext() ); }
+";"          { return new_token( TokenCode.semicol ); }
+","          { return new_token( TokenCode.comma ); }
+"."          { return new_token( TokenCode.dot ); }
+"{"          { return new_token( TokenCode.lbrace ); }
+"}"          { return new_token( TokenCode.rbrace ); }
+"("          { return new_token( TokenCode.lparen ); }
+")"          { return new_token( TokenCode.rparen ); }
+"["          { return new_token( TokenCode.lbracket ); }
+"]"          { return new_token( TokenCode.rbracket ); }
+"?"          { return new_token( TokenCode.invalid /*TokenCode.qmark*/ ); }
+":"          { return new_token( TokenCode.colon ); }
 
 
 
 // constants
-// TODO: ne raditi parsiranje ovde! (onda promeniti token.toString())
-// TODO: ukloniti invalid identifier
-[:digit:]+     { return new_token( TokenCode.int_lit, Integer.parseInt( yytext() ) ); }
-true | false   { return new_token( TokenCode.bool_lit, Boolean.parseBoolean( yytext() ) ); }
-"'"."'"        { return new_token( TokenCode.char_lit, yytext().charAt( 1 ) ); }
+[:digit:]+     { return new_token( TokenCode.int_lit ); }
+true | false   { return new_token( TokenCode.bool_lit ); }
+"'"."'"        { return new_token( TokenCode.char_lit ); }
 
 // FIX: support unicode identifiers (for some reason this doesn't work as expected in jflex)
 // identifiers
-([:letter:]|_) ([:letter:]|[:digit:]|_)*   { return new_token( TokenCode.ident, yytext() ); }
-[:digit:]      ([:letter:]|[:digit:]|_)*   { return new_token( TokenCode.invalid, yytext() ); }
+([:letter:]|_) ([:letter:]|[:digit:]|_)*   { return new_token( TokenCode.ident ); }
+[:digit:]      ([:letter:]|[:digit:]|_)*   { return new_token( TokenCode.invalid ); }
 
 // error fallback (for unrecognized token)
-[^]             { return new_token( TokenCode.invalid, yytext() ); }
+[^]             { return new_token( TokenCode.invalid ); }
 
 
 

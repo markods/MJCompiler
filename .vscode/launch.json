@@ -21,7 +21,9 @@
             "type": "PowerShell",
             "request": "launch",
             "script": "${workspaceFolder}/build-v2.ps1",
-            "args": [],
+            "args": [
+                "=clean", "-cache", "=test"
+            ],
             "cwd": "${workspaceFolder}"
         },
     ]
