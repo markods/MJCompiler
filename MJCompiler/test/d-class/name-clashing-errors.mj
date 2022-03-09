@@ -1,5 +1,5 @@
 // name clashing
-program __name_clashing_error__
+program __name_clashing_errors__
 
 static int a;
 

@@ -1,17 +1,11 @@
-program __declaration_error__
+program __params_errors__
 
 class C
 {
-    int a-;
-    booool b;
-    char char;
-    int void;
+    int a;
+    bool b;
 
     {
-        void null() {}
-        void bad( intt arr[];, boolb b, chdar c,, ) {}
-        void bad( , ) {}
-
         int foo( int arr[], bool b, char c )
             int i;
         {
@@ -28,11 +22,17 @@ class C
     void main()
         int a, arr[];
         bool b;
-        char c;
         C c;
     {
         return 1;
         c = new C;
+
+        c.foo();
+        c.fooo();
+        c.foo( b, c, a );
+        c.foo( a, b, c );
+        c.foo( arr, b, c );
+        c.foo( arr, b, c, b );
 
         foo();
         foo( arr );
@@ -40,12 +40,5 @@ class C
         foo( b, c, a );
         foo( arr, b, c );
         
-        c.foo();
-        c.foo( , );
-        c.foo( asdfl kajsdf lk );
-        c.fooo();
-        c.foo( b, c, a );
-        c.foo( a, b, c );
-        c.foo( arr, b, c );
     }
 }

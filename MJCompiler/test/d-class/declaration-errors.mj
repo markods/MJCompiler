@@ -1,5 +1,5 @@
 // bad class and record declarations
-program __declaration_error__
+program __declaration_errors__
 
 record ()rec ordR
 {

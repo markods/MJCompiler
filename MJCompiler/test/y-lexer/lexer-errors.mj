@@ -1,4 +1,4 @@
-program __lexer_error__
+program __lexer_errors__
 
     int nula = 0, jedan =123, 2dva = 2, tri*, cetiri;
     int #pet=5-;
@@ -36,6 +36,6 @@ program __lexer_error__
         return z +* d + e;
     }
 
-    void main()	
+    void main()
     {}
 }

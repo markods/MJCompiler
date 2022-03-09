@@ -1,4 +1,4 @@
-program __return_error__
+program __missing_return__
 
 {
     int foo() {}
